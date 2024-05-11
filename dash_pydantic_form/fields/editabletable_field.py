@@ -1,4 +1,3 @@
-# pylint: disable = no-self-argument
 import base64
 import io
 import uuid
@@ -15,7 +14,6 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
-from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import (
     BaseField,
@@ -26,6 +24,8 @@ from dash_pydantic_form.fields.base_fields import (
     TextareaField,
     TextField,
 )
+from dash_pydantic_form.ids import field_dependent_id
+
 # from dash_pydantic_form.form_helpers.markdown_field import MarkdownField
 from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
 
@@ -42,13 +42,14 @@ class EditableTableField(BaseField):
     full_width = True
 
     def model_post_init(self, _context):
+        """Model post init."""
         super().model_post_init(_context)
         if self.fields_repr is None:
             self.fields_repr = {}
         if self.column_defs_overrides is None:
             self.column_defs_overrides = {}
 
-    class ids(BaseField.ids):  # pylint: disable = invalid-name
+    class ids(BaseField.ids):
         """Model list field ids."""
 
         editable_table = partial(field_dependent_id, "_pydf-editable-table-table")
@@ -56,7 +57,7 @@ class EditableTableField(BaseField):
         add_row = partial(field_dependent_id, "_pydf-editable-table-add-row")
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 
-    def _render(
+    def _render(  # noqa: PLR0913
         self,
         *,
         item: BaseModel,
@@ -183,6 +184,7 @@ class EditableTableField(BaseField):
 
         def get_field_repr(field: str) -> BaseField:
             from dash_pydantic_form.fields import get_default_repr
+
             if field in self.fields_repr:
                 return self.fields_repr[field]
             return get_default_repr(template.model_fields[field].annotation)
@@ -190,12 +192,14 @@ class EditableTableField(BaseField):
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
         return html.Div(
-            (title is not None) * [
+            (title is not None)
+            * [
                 dmc.Text(
                     [title]
                     + [
                         html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
-                    ] * self.is_required(field_info),
+                    ]
+                    * self.is_required(field_info),
                     size="sm",
                     mt=3,
                     mb=5,
@@ -234,7 +238,7 @@ class EditableTableField(BaseField):
                             field_repr=get_field_repr(field_name),
                             field_info=template.model_fields[field_name],
                             required_field=field_name in required_fields,
-                            editable=self.rows_editable
+                            editable=self.rows_editable,
                         )
                         for field_name in template.model_fields
                     ],
@@ -263,7 +267,7 @@ class EditableTableField(BaseField):
             style={"display": "grid", "gap": "1rem", "gridTemplateColumns": "1fr"},
         )
 
-    def _generate_field_column(
+    def _generate_field_column(  # noqa: PLR0913
         self,
         *,
         field_name: str,
@@ -295,19 +299,19 @@ class EditableTableField(BaseField):
             column_def["default_value"] = field_info.default_factory()
 
         # if select field, generate column of dropdowns
-        if isinstance(field_repr, (SelectField, SegmentedControlField, RadioItemsField)):
+        if isinstance(field_repr, SelectField | SegmentedControlField | RadioItemsField):
             data = (
                 field_repr.data_getter()
                 if field_repr.data_getter
-                else field_repr.input_kwargs.get("data", field_repr._get_data(field_info=field_info))  # pylint: disable = protected-access
+                else field_repr.input_kwargs.get("data", field_repr._get_data(field_info=field_info))
             )
             options = [
                 {
                     "value": x
-                    if isinstance(x, (str, int, float))
+                    if isinstance(x, str | int | float)
                     else (x["value"] if isinstance(x, dict) else x.value),
                     "label": x
-                    if isinstance(x, (str, int, float))
+                    if isinstance(x, str | int | float)
                     else (x["label"] if isinstance(x, dict) else x.label),
                 }
                 for x in data
@@ -326,7 +330,7 @@ class EditableTableField(BaseField):
                 }
             )
 
-        if isinstance(field_info, (TextareaField,)):# MarkdownField)):
+        if isinstance(field_info, TextareaField):  # MarkdownField)):
             column_def.update(
                 {
                     "cellEditor": "agLargeTextCellEditor",
@@ -335,7 +339,7 @@ class EditableTableField(BaseField):
                 }
             )
 
-        if isinstance(field_info, (TextField, TextareaField,)):# MarkdownField)):
+        if isinstance(field_info, TextField | TextareaField):  # MarkdownField)):
             column_def.update({"dtype": "str"})
 
         if isinstance(field_info, CheckboxField):

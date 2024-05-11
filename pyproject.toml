@@ -1,7 +1,7 @@
 [project]
 name = "dash-pydantic-form"
 dynamic = ["version"]
-description = "Interface between Dash and Firestore"
+description = "Create Dash forms from pydantic objects"
 authors = [
     {name = "Renaud Lainé", email = "renaud.laine@enea-consulting.com"},
 ]
@@ -40,47 +40,15 @@ doc = ["*"]
 
 [tool.setuptools_scm]
 
-[tool.black]
-line-length = 120
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | docs
-)/
-'''
-
 [tool.ruff]
 line-length = 120
 fix = true
-target-version = "py39"
-select = ["I", "D", "UP", "S", "C4", "SIM"]
-ignore = ["D100", "D104", "D401", "D205"]
+target-version = "py310"
+lint.select = ["I", "D", "UP", "S", "C4", "SIM", "B", "PL", "ARG", "E", "F"]
+lint.ignore = ["D100", "D104", "D205", "D200", "D401"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"
 
 [tool.ruff.per-file-ignores]
 "tests/*" = ["S101"]
-
-[tool.pylint.MASTER]
-ignore = ["*.ipynb","docs"]
-
-[tool.pylint.'MESSAGES CONTROL']
-disable=["import-error", "duplicate-code", "fixme", "missing-module-docstring", "too-few-public-methods"]
-
-[tool.pylint.REPORTS]
-reports = false
-
-[tool.pylint.BASIC]
-function-rgx = "[a-z_][a-z0-9_]{1,36}$"
-variable-rgx = "[a-z_][a-z0-9_]{1,36}$"
-variable-name-hint = "[a-z_][a-z0-9_]{1,36}$" # pylint: disable=E0015
-argument-rgx = "[a-z_][a-z0-9_]{1,36}$"
-const-rgx="[a-zA-Z_][a-zA-Z0-9_]{1,36}$"
-
-[tool.pylint.FORMAT]
-max-line-length=120
-
-[tool.conda-lock.dependencies]
-firebase-admin = {source = "pypi"}

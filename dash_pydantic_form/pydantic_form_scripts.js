@@ -139,8 +139,6 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   );
 });
 
-dagfuncs.firestoreSetPopupParentBody = () => document.querySelector("body");
-
 
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []

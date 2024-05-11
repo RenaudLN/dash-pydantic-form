@@ -4,46 +4,57 @@ from typing import Literal
 
 import dash_mantine_components as dmc
 from dash import Dash
-from dash_pydantic_form import FormSection, ModelForm, Sections, fields
 from pydantic import BaseModel, Field
+
+from dash_pydantic_form import FormSection, ModelForm, Sections, fields
 
 app = Dash(
     __name__,
-    external_stylesheets = [
+    external_stylesheets=[
         "https://unpkg.com/@mantine/dates@7/styles.css",
         "https://unpkg.com/@mantine/code-highlight@7/styles.css",
         "https://unpkg.com/@mantine/charts@7/styles.css",
         "https://unpkg.com/@mantine/carousel@7/styles.css",
         "https://unpkg.com/@mantine/notifications@7/styles.css",
         "https://unpkg.com/@mantine/nprogress@7/styles.css",
-    ]
+    ],
 )
 
 
 class Office(Enum):
+    """Office enum."""
+
     AU = "au"
     FR = "fr"
-    US = "us"
-    HK = "hk"
     UK = "uk"
 
 
 class Species(Enum):
+    """Species enum."""
+
     CAT = "cat"
     DOG = "dog"
 
 
 class Metadata(BaseModel):
+    """Metadata model."""
+
     languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
     param2: int | None = Field(title="Parameter 2", default=None)
 
+
 class Pet(BaseModel):
+    """Pet model."""
+
     name: str = Field(title="Name", description="Name of the pet")
     species: Species = Field(title="Species", description="Species of the pet")
     dob: date | None = Field(title="Date of birth", description="Date of birth of the pet", default=None)
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
+
 class Employee(BaseModel):
+    """Employee model."""
+
     name: str = Field(title="Name", description="Name of the employee")
     age: int = Field(title="Age", description="Age of the employee, starting from their birth")
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
@@ -74,7 +85,7 @@ app.layout = dmc.MantineProvider(
                             "languages": fields.Checklist(
                                 options_labels={"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"},
                             ),
-                        }
+                        },
                     ),
                     "pets": fields.EditableTable(
                         fields_repr={
@@ -85,7 +96,7 @@ app.layout = dmc.MantineProvider(
                 sections=Sections(
                     sections=[
                         FormSection(name="General", fields=["name", "age"], default_open=True),
-                        FormSection(name="HR", fields=["office", "joined","metadata"], default_open=True),
+                        FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
                         FormSection(name="Other", fields=["pets"], default_open=True),
                     ],
                     render="tabs",

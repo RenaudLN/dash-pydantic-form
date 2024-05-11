@@ -1,6 +1,6 @@
-# pylint: disable = no-self-argument
+from collections.abc import Callable
 from functools import partial
-from typing import Callable, Literal, Optional, Union
+from typing import Literal
 
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, Input, Output, Patch, State, callback, clientside_callback, ctx, dcc, html, no_update
@@ -8,34 +8,23 @@ from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from typing_extensions import Unpack
 
 from dash_pydantic_form import ids as common_ids
-from dash_pydantic_form.fields.base_fields import BaseField, VisibilityFilter
+from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_section import Sections
-from dash_pydantic_form.utils import get_fullpath, get_model_value, get_non_null_annotation, get_subitem_cls, get_model_cls
+from dash_pydantic_form.utils import (
+    get_fullpath,
+    get_model_cls,
+)
 
 
 class ModelField(BaseField):
     """Model field, used for nested BaseModel.
 
     Optional attributes:
-    * form_sections, list of FormSection for the NestedModel form
-
-    e.g.
-    ```python
-    from pydantic import BaseModel
-    from firestore_aio import Model
-    from firestore_aio.dash import fields
-
-    class Metadata(BaseModel):
-        param1: str
-        param2: str
-
-    class Person(Model):
-        name: str
-        metadata: Metadata = fields.Model(title="Metadata")
-    ```
+    * render_type (one of 'accordion', 'modal', default 'accordion')
+    * fields_repr, mapping between field name and field representation
+    * sections, list of FormSection for the NestedModel form
     """
 
     render_type: Literal["accordion", "modal"] = "accordion"
@@ -45,11 +34,12 @@ class ModelField(BaseField):
     full_width = True
 
     def model_post_init(self, _context):
+        """Model post init."""
         super().model_post_init(_context)
         if self.fields_repr is None:
             self.fields_repr = {}
 
-    class ids(BaseField.ids):  # pylint: disable = invalid-name
+    class ids(BaseField.ids):
         """Model field ids."""
 
         form_wrapper = partial(common_ids.field_dependent_id, "_pydf-model-form-wrapper")
@@ -57,7 +47,7 @@ class ModelField(BaseField):
         modal = partial(common_ids.field_dependent_id, "_pydf-model-field-modal")
         modal_save = partial(common_ids.field_dependent_id, "_pydf-model-field-modal-save")
 
-    def modal_item(
+    def modal_item(  # noqa: PLR0913
         self,
         item: BaseModel,
         aio_id: str,
@@ -68,6 +58,7 @@ class ModelField(BaseField):
     ) -> Component:
         """Model field modal render."""
         from dash_pydantic_form import ModelForm
+
         title = self.get_title(field_info, field_name=field)
         new_parent = get_fullpath(parent, field)
         return dmc.Paper(
@@ -124,10 +115,10 @@ class ModelField(BaseField):
             withBorder=True,
             radius="sm",
             p="xs",
-            className="firestore-model-list-modal-item",
+            className="pydf-model-list-modal-item",
         )
 
-    def accordion_item(
+    def accordion_item(  # noqa: PLR0913
         self,
         item: BaseModel,
         aio_id: str,
@@ -138,6 +129,7 @@ class ModelField(BaseField):
     ) -> Component:
         """Model field accordion item render."""
         from dash_pydantic_form import ModelForm
+
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
         return dmc.Accordion(
@@ -181,7 +173,7 @@ class ModelField(BaseField):
             style={"gridColumn": "span var(--col-4-4)"},
         )
 
-    def _render(
+    def _render(  # noqa: PLR0913
         self,
         *,
         item: BaseModel,
@@ -224,25 +216,12 @@ class ModelListField(BaseField):
     * render_type (one of 'accordion', 'modal', 'list', default 'accordion')
         new render types can be defined by extending this class and overriding
         the following methods: _contents_renderer and render_type_item_mapper
-    * form_sections, list of FormSection for the NestedModel form
+    * fields_repr, mapping between field name and field representation
+    * sections, list of FormSection for the NestedModel form
     * items_deletable, whether the items can be deleted (bool, default True)
     * items_creatable, whether new items can be created (bool, default True)
-
-    e.g.
-    ```python
-    from pydantic import BaseModel
-    from firestore_aio import Model
-    from firestore_aio.dash import fields
-
-    class Pet(BaseModel):
-        name: str
-        species: str
-
-    class Person(Model):
-        name: str
-        pets: list[Pet] = fields.ModelList(title="Pets")
-    ```
     """
+
     render_type: Literal["accordion", "modal", "list"] = "accordion"
     fields_repr: dict[str, BaseField] | None = None
     sections: Sections | None = None
@@ -252,11 +231,12 @@ class ModelListField(BaseField):
     full_width = True
 
     def model_post_init(self, _context):
+        """Model post init."""
         super().model_post_init(_context)
         if self.fields_repr is None:
             self.fields_repr = {}
 
-    class ids(BaseField.ids):  # pylint: disable = invalid-name
+    class ids(BaseField.ids):
         """Model list field ids."""
 
         wrapper = partial(common_ids.field_dependent_id, "_pydf-model-list-field-wrapper")
@@ -270,7 +250,7 @@ class ModelListField(BaseField):
         model_store = partial(common_ids.field_dependent_id, "_pydf-model-list-field-model-store")
 
     @classmethod
-    def accordion_item(  # pylint: disable=too-many-arguments
+    def accordion_item(  # noqa: PLR0913
         cls,
         *,
         item: BaseModel,
@@ -287,11 +267,12 @@ class ModelListField(BaseField):
     ):
         """Create an accordion item for the model list field."""
         from dash_pydantic_form import ModelForm
+
         new_parent = get_fullpath(parent, field, index)
         return dmc.AccordionItem(
             value=f"{index}",
             style={"position": "relative"},
-            className="firestore-model-list-accordion-item",
+            className="pydf-model-list-accordion-item",
             children=[
                 dmc.AccordionControl(
                     dmc.Text(str(value), id=cls.ids.accordion_parent_text(aio_id, form_id, "", parent=new_parent))
@@ -321,7 +302,7 @@ class ModelListField(BaseField):
         )
 
     @classmethod
-    def list_item(  # pylint: disable=too-many-arguments
+    def list_item(  # noqa: PLR0913
         cls,
         *,
         item: BaseModel,
@@ -337,6 +318,7 @@ class ModelListField(BaseField):
     ):
         """Create an item with bare forms for the model list field."""
         from dash_pydantic_form import ModelForm
+
         new_parent = get_fullpath(parent, field, index)
         return dmc.Group(
             [
@@ -361,11 +343,11 @@ class ModelListField(BaseField):
             ],
             gap="sm",
             align="top",
-            className="firestore-model-list-list-item",
+            className="pydf-model-list-list-item",
         )
 
     @classmethod
-    def modal_item(  # pylint: disable=too-many-arguments
+    def modal_item(  # noqa: PLR0913
         cls,
         *,
         item: BaseModel,
@@ -383,6 +365,7 @@ class ModelListField(BaseField):
     ):
         """Create an item with bare forms for the model list field."""
         from dash_pydantic_form import ModelForm
+
         new_parent = get_fullpath(parent, field, index)
         return dmc.Paper(
             dmc.Group(
@@ -450,7 +433,7 @@ class ModelListField(BaseField):
             withBorder=True,
             radius="md",
             p="xs",
-            className="firestore-model-list-modal-item",
+            className="pydf-model-list-modal-item",
         )
 
     def _contents_renderer(self, renderer_type: str) -> Callable:
@@ -465,7 +448,7 @@ class ModelListField(BaseField):
         """Mapping between render type and renderer function."""
         return {"accordion": cls.accordion_item, "list": cls.list_item, "modal": cls.modal_item}
 
-    def _render(
+    def _render(  # noqa: PLR0913
         self,
         *,
         item: BaseModel,
@@ -570,12 +553,16 @@ class ModelListField(BaseField):
             bool(title)
             * [
                 dmc.Stack(
-                    bool(title) * [
+                    bool(title)
+                    * [
                         dmc.Text(
                             [title]
                             + [
-                                html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
-                            ] * self.is_required(field_info),
+                                html.Span(
+                                    " *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}
+                                ),
+                            ]
+                            * self.is_required(field_info),
                             size="sm",
                             mt=3,
                             mb=5,
@@ -595,9 +582,9 @@ class ModelListField(BaseField):
                         "model": str(item.__class__),
                         "i_list": list(range(1, len(value) + 1)),
                         "sections": self.sections.model_dump(mode="json") if self.sections else None,
-                        "fields_repr": {
-                            k: v.to_dict() for k, v in self.fields_repr.items()
-                        } if self.fields_repr else None,
+                        "fields_repr": {k: v.to_dict() for k, v in self.fields_repr.items()}
+                        if self.fields_repr
+                        else None,
                         "items_deletable": self.items_deletable,
                         "render_type": self.render_type,
                     },
@@ -725,122 +712,3 @@ class ModelListField(BaseField):
         Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
     )
-
-
-# class ModelImportField(ModelField):
-#     """Model import field."""
-
-#     class ids(ModelField.ids):  # pylint: disable = invalid-name
-#         """Model import field ids."""
-
-#         select = partial(field_dependent_id, "_firestore-model-import-select")
-#         button = partial(field_dependent_id, "_firestore-model-import-button")
-#         model_store = partial(field_dependent_id, "_firestore-model-import-model-store")
-#         open_modal = partial(field_dependent_id, "_firestore-model-import-open-modal")
-#         modal = partial(field_dependent_id, "_firestore-model-import-modal")
-
-#     def _create_input(self, item: Model, aio_id: str, field: str, parent: str = "") -> Component:
-#         """Create a form input to interact with the field."""
-#         other_model: type[Model] = get_non_null_annotation(self.annotation)
-#         if not issubclass(other_model, Model):
-#             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use ModelImport.")
-
-#         import_selector = self.get_import_selector(other_model, aio_id, item.doc_id, field, parent)
-
-#         model_form = super()._create_input(item, aio_id, field, parent)
-#         for elem in model_form._traverse_ids():  # pylint: disable = protected-access
-#             if elem.id == self.ids.form_wrapper(aio_id, item.doc_id, field, parent):
-#                 elem.children = [import_selector] + list(elem.children or [])
-#                 break
-
-#         return dmc.Stack(
-#             [
-#                 model_form,
-#                 dcc.Store(
-#                     data=[item.__class__.__name__, other_model.__name__],
-#                     id=self.ids.model_store(aio_id, item.doc_id, field, parent),
-#                 ),
-#             ]
-#         )
-
-#     @classmethod
-#     def get_import_selector(  # pylint: disable = too-many-arguments
-#         cls, other_model: type[Model], aio_id: str, doc_id: str, field: str, parent: str = ""
-#     ):
-#         """Create a modal to select and import an existing item."""
-#         other_model_list = other_model.search()
-#         return html.Div(
-#             [
-#                 dmc.Button(
-#                     "Import existing",
-#                     size="sm",
-#                     leftSection=DashIconify(icon="carbon:cloud-download", height=16),
-#                     id=cls.ids.open_modal(aio_id, doc_id, field, parent),
-#                 ),
-#                 dmc.Modal(
-#                     dmc.Group(
-#                         [
-#                             dmc.Select(
-#                                 data=[{"label": str(m), "value": m.doc_id} for m in other_model_list],
-#                                 placeholder="Select one",
-#                                 id=cls.ids.select(aio_id, doc_id, field, parent),
-#                                 searchable=True,
-#                                 clearable=True,
-#                             ),
-#                             dmc.Button("Import", id=cls.ids.button(aio_id, doc_id, field, parent)),
-#                         ],
-#                         gap="xs",
-#                     ),
-#                     id=cls.ids.modal(aio_id, doc_id, field, parent),
-#                     title="Import existing",
-#                 ),
-#             ],
-#             style={"marginBottom": "1.5rem"},
-#         )
-
-#     @callback(
-#         Output(ids.form_wrapper(MATCH, MATCH, MATCH, parent=MATCH), "children"),
-#         Output(ids.select(MATCH, MATCH, MATCH, parent=MATCH), "value"),
-#         Input(ids.button(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
-#         State(ids.select(MATCH, MATCH, MATCH, parent=MATCH), "value"),
-#         State(ids.model_store(MATCH, MATCH, MATCH, parent=MATCH), "data"),
-#     )
-#     def update_form(trigger, other_doc_id: str, model_names: str):  # pylint: disable = too-many-locals
-#         """Update the form with the imported data."""
-#         if not ctx.triggered_id or not trigger:
-#             return no_update, no_update
-
-#         aio_id = ctx.triggered_id["aio_id"]
-#         doc_id = ctx.triggered_id["doc_id"]
-#         field = ctx.triggered_id["field"]
-#         parent = ctx.triggered_id["parent"]
-
-#         model_name, other_model_name = model_names
-#         other_model = MODELS[other_model_name]
-#         other_item = other_model.get(other_doc_id)
-
-#         new_form = create_form(aio_id, other_item)
-
-#         # Update all the doc_id and parent to use the one from the current model rather than the one imported
-#         new_parent = get_fullpath(parent, field)
-#         for base in new_form:
-#             for elem in base._traverse_ids():  # pylint: disable = protected-access
-#                 if isinstance(elem.id, dict):
-#                     if "doc_id" in elem.id:
-#                         elem.id["doc_id"] = doc_id
-#                     if "parent" in elem.id:
-#                         elem.id["parent"] = get_fullpath(new_parent, elem.id["parent"])
-#                     # pylint: disable-next = no-member
-#                     if elem.id.get("component") == ModelListField.ids.model_store.args[0]:
-#                         elem.data[0] = model_name
-
-#         import_selector = ModelImportField.get_import_selector(other_model, aio_id, doc_id, field, parent)
-#         return [import_selector] + new_form, None
-
-#     # Open the modal when the button is clicked
-#     clientside_callback(
-#         """n => !!n""",
-#         Output(ids.modal(MATCH, MATCH, MATCH, parent=MATCH), "opened"),
-#         Input(ids.open_modal(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
-#         prevent_initial_call=True,
-#     )

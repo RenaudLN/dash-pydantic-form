@@ -9,7 +9,7 @@ from dash_iconify import DashIconify
 from pydantic import BaseModel
 
 from .form_section import Sections
-from .utils import get_subitem_cls, get_non_null_annotation, deep_merge
+from .utils import deep_merge, get_non_null_annotation, get_subitem_cls
 
 
 def form_base_id(part: str, aio_id: str, form_id: str):
@@ -20,9 +20,13 @@ def form_base_id(part: str, aio_id: str, form_id: str):
 SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
 
-class ModelForm(html.Div):
 
-    class ids:  # pylint: disable = invalid-name
+class ModelForm(html.Div):
+    """Model form."""
+
+    class ids:
+        """Model form ids."""
+
         accordion = partial(form_base_id, "_pydantic-form-accordion")
         tabs = partial(form_base_id, "_pydantic-form-tabs")
         steps = partial(form_base_id, "_pydantic-form-steps")
@@ -31,7 +35,7 @@ class ModelForm(html.Div):
         steps_previous = partial(form_base_id, "_pydantic-form-steps-previous")
         steps_nsteps = partial(form_base_id, "_pydantic-form-steps-nsteps")
 
-    def __init__(
+    def __init__(  # noqa: PLR0912, PLR0913
         self,
         item: BaseModel,
         aio_id: str,
@@ -41,6 +45,7 @@ class ModelForm(html.Div):
         sections: Sections | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
+
         fields_repr = fields_repr or {}
         field_inputs = {}
         subitem_cls = get_subitem_cls(item.__class__, path)
@@ -65,9 +70,8 @@ class ModelForm(html.Div):
         if not sections:
             children = [self.grid(list(field_inputs.values()))]
         else:
-
-            fields_not_in_sections = (
-                set(field_inputs) - set(itertools.chain.from_iterable(s.fields for s in sections.sections))
+            fields_not_in_sections = set(field_inputs) - set(
+                itertools.chain.from_iterable(s.fields for s in sections.sections)
             )
 
             if sections.render == "accordion":
@@ -90,21 +94,20 @@ class ModelForm(html.Div):
             if sections.remaining_fields_position == "none" or not fields_not_in_sections:
                 children = sections_render
             elif sections.remaining_fields_position == "top":
-                children = [self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")] + sections_render
+                children = [
+                    self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+                ] + sections_render
             else:
-                children = sections_render + [self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")]
+                children = sections_render + [
+                    self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+                ]
 
         super().__init__(children=children)
 
     @classmethod
     def grid(cls, children, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(
-            children,
-            cols={"base": 1, "sm": 4},
-            className="pydantic-form-grid",
-            **kwargs
-        )
+        return dmc.SimpleGrid(children, cols={"base": 1, "sm": 4}, className="pydantic-form-grid", **kwargs)
 
     @classmethod
     def render_accordion_sections(
@@ -284,13 +287,17 @@ class ModelForm(html.Div):
                                 rightSection=DashIconify(icon="carbon:arrow-right", height=16),
                             ),
                         ],
-                        style={"position": "absolute", "top": f"calc({70 * (len(sections.sections) + 1) - 5}px + 1rem)"},
+                        style={
+                            "position": "absolute",
+                            "top": f"calc({70 * (len(sections.sections) + 1) - 5}px + 1rem)",
+                        },
                     ),
                     dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id)),
                 ],
                 style={"position": "relative"},
             )
         ]
+
 
 clientside_callback(
     """(_t1, _t2, active, nSteps) => {

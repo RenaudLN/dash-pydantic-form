@@ -5,7 +5,6 @@ from typing import Any, Union, get_args, get_origin
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 
-
 SEP = ":"
 
 
@@ -20,7 +19,7 @@ def deep_merge(dict1: dict, dict2: dict) -> dict:
     return dict_final
 
 
-def deep_diff(dict1: dict, dict2: dict) -> dict[str, Union[dict, tuple[Any, Any]]]:
+def deep_diff(dict1: dict, dict2: dict) -> dict[str, dict | tuple[Any, Any]]:
     """Compute the deep difference between two dictionaries."""
     diff = {}
     for key in dict1.keys() | dict2.keys():
@@ -38,7 +37,10 @@ def get_non_null_annotation(annotation: type[Any]) -> type[Any]:
 
     e.g., get_non_null_annotation(Optional[str]) = str
     """
-    if get_origin(annotation) in [Union, UnionType] and len(non_null_ann := list(set(get_args(annotation)) - {type(None)})) == 1:
+    if (
+        get_origin(annotation) in [Union, UnionType]
+        and len(non_null_ann := list(set(get_args(annotation)) - {type(None)})) == 1
+    ):
         return non_null_ann[0]
     return annotation
 
@@ -120,7 +122,8 @@ def get_fullpath(*parts):
     return SEP.join([str(p) for p in parts]).strip(SEP)
 
 
-def get_all_subclasses(cls):
+def get_all_subclasses(cls: type):
+    """Get all subclasses of a class."""
     all_subclasses = []
 
     for subclass in cls.__subclasses__():

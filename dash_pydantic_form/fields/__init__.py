@@ -6,9 +6,9 @@ from typing import Literal, get_args, get_origin
 from pydantic import BaseModel
 
 from dash_pydantic_form.utils import get_non_null_annotation
+
 from . import all_fields as fields
 from .base_fields import BaseField, VisibilityFilter
-
 
 DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
     str: fields.Text,
@@ -23,6 +23,7 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
     BaseModel: fields.Model,
 }
 DEFAULT_REPR = fields.Json
+
 
 def get_default_repr(ann: type) -> BaseField:
     """Get default field representation."""
@@ -42,6 +43,7 @@ def get_default_repr(ann: type) -> BaseField:
             if issubclass(ann, type_):
                 return field_repr()
     return DEFAULT_REPR()
+
 
 __all__ = [
     "BaseField",

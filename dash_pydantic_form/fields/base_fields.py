@@ -1,11 +1,11 @@
-import contextlib
 import json
 import os
-from datetime import date, time
-from enum import EnumMeta, Enum
+from collections.abc import Callable
+from datetime import time
+from enum import EnumMeta
 from functools import partial
 from types import UnionType
-from typing import Any, Literal, Callable, ClassVar, Union, get_origin, get_args
+from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import html
@@ -15,8 +15,7 @@ from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 
 from dash_pydantic_form import ids
-from dash_pydantic_form.utils import SEP, get_fullpath, get_model_value, get_non_null_annotation, get_all_subclasses
-
+from dash_pydantic_form.utils import SEP, get_all_subclasses, get_fullpath, get_model_value, get_non_null_annotation
 
 CHECKED_COMPONENTS = [
     dmc.Checkbox,
@@ -29,6 +28,7 @@ NO_LABEL_COMPONENTS = [
     dmc.Slider,
     dmc.ColorPicker,
 ]
+MAX_OPTIONS_INLINE = 4
 
 FilterOperator = Literal["==", "!=", "in", "not in", "array_contains", "array_contains_any"]
 VisibilityFilter = tuple[str, FilterOperator, Any]
@@ -52,13 +52,13 @@ class BaseField(BaseModel):
     def model_post_init(self, _context):
         """Model post init."""
         if self.n_cols is None:
-            self.n_cols = (4 if self.full_width else 2)
+            self.n_cols = 4 if self.full_width else 2
         if self.input_kwargs is None:
             self.input_kwargs = {}
         if self.field_id_meta is None:
             self.field_id_meta = ""
 
-    class ids:  # pylint: disable = invalid-name
+    class ids:
         """Form ids."""
 
         visibility_wrapper = partial(ids.field_dependent_id, "_pydf-field-visibility-wrapper")
@@ -74,7 +74,7 @@ class BaseField(BaseModel):
         field_cls = next(c for c in get_all_subclasses(BaseField) if str(c) == str_repr)
         return field_cls(**data)
 
-    def render(
+    def render(  # noqa: PLR0913
         self,
         *,
         item: BaseModel,
@@ -91,12 +91,7 @@ class BaseField(BaseModel):
             title = f"Field path: {get_fullpath(parent, field)}"
 
         inputs = self._render(
-            item=item,
-            aio_id=aio_id,
-            form_id=form_id,
-            field=field,
-            parent=parent,
-            field_info=field_info
+            item=item, aio_id=aio_id, form_id=form_id, field=field, parent=parent, field_info=field_info
         )
         visible = self.visible
 
@@ -125,7 +120,7 @@ class BaseField(BaseModel):
 
         return inputs
 
-    def _render(
+    def _render(  # noqa: PLR0913
         self,
         *,
         item: BaseModel,
@@ -160,7 +155,7 @@ class BaseField(BaseModel):
             )
         )
 
-        component = self.base_component(  # pylint: disable = not-callable
+        component = self.base_component(
             id=id_,
             **self.input_kwargs
             | self._additional_kwargs(item=item, aio_id=aio_id, field=field, parent=parent, field_info=field_info)
@@ -173,12 +168,14 @@ class BaseField(BaseModel):
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
         return dmc.Stack(
-            (title is not None) * [
+            (title is not None)
+            * [
                 dmc.Text(
                     [title]
                     + [
                         html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
-                    ] * self.is_required(field_info),
+                    ]
+                    * self.is_required(field_info),
                     size="sm",
                     mt=3,
                     mb=5,
@@ -212,7 +209,7 @@ class BaseField(BaseModel):
 
         return dependent_parent, dependent_field
 
-    def _add_visibility_wrapper(  # pylint: disable = too-many-locals
+    def _add_visibility_wrapper(  # noqa: PLR0913
         self,
         *,
         inputs,
@@ -297,13 +294,20 @@ class BaseField(BaseModel):
 
 
 class TextField(BaseField):
+    """Text field."""
+
     base_component = dmc.TextInput
 
 
 class TextareaField(BaseField):
+    """Textarea field."""
+
     base_component = dmc.Textarea
 
+
 class NumberField(BaseField):
+    """Number field."""
+
     base_component = dmc.NumberInput
 
     def _additional_kwargs(self, field_info: FieldInfo, **_kwargs) -> dict:
@@ -322,10 +326,14 @@ class NumberField(BaseField):
 
 
 class PasswordField(BaseField):
+    """Password field."""
+
     base_component = dmc.PasswordInput
 
 
 class JsonField(BaseField):
+    """Json field."""
+
     base_component = dmc.JsonInput
 
 
@@ -365,6 +373,7 @@ class DateField(BaseField):
     base_component = dmc.DatePicker
 
     def model_post_init(self, _context):
+        """Add defaults for date input."""
         super().model_post_init(_context)
         self.input_kwargs.setdefault("valueFormat", "YYYY-MM-DD")
 
@@ -394,12 +403,14 @@ class SelectField(BaseField):
     getters: ClassVar[dict[str, Callable]] = {}
 
     def model_post_init(self, _context):
+        """Convert data_getter from serialised version to function."""
         super().model_post_init(_context)
         if self.data_getter is not None:
             self.getters[str(self.data_getter)] = self.data_getter
 
     @field_serializer("data_getter")
     def serialize_data_getter(self, value):
+        """Serialize data_getter."""
         if value is None:
             return None
         return str(value)
@@ -407,6 +418,7 @@ class SelectField(BaseField):
     @field_validator("data_getter", mode="before")
     @classmethod
     def validate_data_getter(cls, value):
+        """Validate data_getter."""
         if isinstance(value, str) and value in cls.getters:
             return cls.getters[value]
         return value
@@ -501,7 +513,7 @@ class RadioItemsField(SelectField):
             for x in data
         ]
         mt = "5px" if self.get_title(field_info, field_name=field) and self.get_description(field_info) else 0
-        if len(data) <= 4:
+        if len(data) <= MAX_OPTIONS_INLINE:
             return {"children": dmc.Group(children, mt=mt, py="0.5rem")}
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem")}
 
@@ -522,7 +534,7 @@ class ChecklistField(MultiSelectField):
             for x in (kwargs["data"] or [])
         ]
         mt = "5px" if self.get_title(field_info, field_name=field) and self.get_description(field_info) else 0
-        if len(data) <= 4:
+        if len(data) <= MAX_OPTIONS_INLINE:
             return {"children": dmc.Group(children, mt=mt, py="0.5rem")}
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem")}
 

@@ -39,3 +39,17 @@
 .overflowing-ag-grid>div>div {
     overflow: visible !important;
 }
+
+.pydf-model-list-wrapper:empty:before {
+    content: "No items";
+    color: rgb(128, 128, 128);
+    font-size: 14px;
+    display: block;
+}
+
+.pydf-model-list-wrapper.required:empty {
+    outline: solid red;
+    border-radius: 0.25rem;
+    margin: -0.5rem 0 -2.5rem -0.25rem;
+    padding: 0.375rem 0.5rem 2rem;
+}
