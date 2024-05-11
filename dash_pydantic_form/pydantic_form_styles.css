@@ -1,0 +1,41 @@
+.pydantic-form-grid {
+    --col-1-4: 1;
+    --col-2-4: 2;
+    --col-3-4: 3;
+    --col-4-4: 4;
+}
+
+@media (max-width: 48em) {
+    .pydantic-form-grid {
+        --col-1-4: 1;
+        --col-2-4: 1;
+        --col-3-4: 1;
+        --col-4-4: 1;
+    }
+}
+
+[data-mantine-color-scheme="dark"] .ag-theme-alpine.ag-themed {
+    color-scheme: dark;
+    --ag-background-color: #181d1f;
+    --ag-foreground-color: #fff;
+    --ag-border-color: #68686e;
+    --ag-secondary-border-color: rgba(88, 86, 82, 0.5);
+    --ag-modal-overlay-background-color: rgba(24, 29, 31, 0.66);
+    --ag-header-background-color: #222628;
+    --ag-tooltip-background-color: #222628;
+    --ag-odd-row-background-color: #222628;
+    --ag-control-panel-background-color: #222628;
+    --ag-subheader-background-color: #000;
+    --ag-input-disabled-background-color: #282c2f;
+    --ag-input-focus-box-shadow: 0 0 2px 0.5px rgba(255, 255, 255, 0.5),
+        0 0 4px 3px var(--ag-input-focus-border-color);
+    --ag-card-shadow: 0 1px 20px 1px black;
+    --ag-disabled-foreground-color: rgba(255, 255, 255, 0.5);
+    --ag-chip-background-color: rgba(255, 255, 255, 0.07);
+    --ag-input-disabled-border-color: rgba(104, 104, 110, 0.3);
+    --ag-input-disabled-background-color: rgba(104, 104, 110, 0.07);
+}
+
+.overflowing-ag-grid>div>div {
+    overflow: visible !important;
+}
