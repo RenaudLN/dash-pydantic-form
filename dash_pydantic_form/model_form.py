@@ -1,7 +1,7 @@
 import contextlib
 import itertools
 from functools import partial
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Literal, Union
 
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
@@ -11,7 +11,10 @@ from pydantic import BaseModel
 
 from . import ids as common_ids
 from .form_section import Sections
-from .utils import deep_merge, get_non_null_annotation, get_subitem_cls
+from .utils import deep_merge, get_subitem_cls
+
+if TYPE_CHECKING:
+    from .fields import BaseField
 
 
 def form_base_id(part: str, aio_id: str, form_id: str):
@@ -44,7 +47,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str = "",
-        fields_repr: dict[str, Any] | None = None,
+        fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
@@ -60,10 +63,12 @@ class ModelForm(html.Div):
             if sections and field_name in sections.excluded_fields:
                 continue
             if field_name in fields_repr:
-                field_repr = fields_repr[field_name]
+                if isinstance(fields_repr[field_name], dict):
+                    field_repr = get_default_repr(field_info.annotation, **fields_repr[field_name])
+                else:
+                    field_repr = fields_repr[field_name]
             else:
-                annotation = get_non_null_annotation(field_info.annotation)
-                field_repr = get_default_repr(annotation)
+                field_repr = get_default_repr(field_info.annotation)
 
             field_inputs[field_name] = field_repr.render(
                 item=item,
@@ -221,13 +226,14 @@ class ModelForm(html.Div):
         ]
 
     @classmethod
-    def render_steps_sections(
+    def render_steps_sections(  # noqa: PLR0913
         cls,
         *,
         aio_id: str,
         form_id: str,
         field_inputs: dict[str, Component],
         sections: Sections,
+        additional_steps: list = None,
         **kwargs,
     ):
         """Render the form sections as steps."""
@@ -237,7 +243,7 @@ class ModelForm(html.Div):
                 "content": {"flex": 1, "padding": 0},
                 "steps": {"minWidth": 180},
                 "step": {"cursor": "pointer"},
-                "stepBody": {"padding-top": "0.625rem"},
+                "stepBody": {"padding-top": "0.6875rem"},
                 "stepCompletedIcon": {"&>svg": {"width": 12}},
             },
             kwargs.get("styles", {}),
@@ -256,25 +262,7 @@ class ModelForm(html.Div):
                 )
                 for section in sections.sections
             ]
-            + [
-                dmc.StepperStep(
-                    label="Save",
-                    icon=DashIconify(icon="carbon:save", height=14),
-                    children=dmc.Stack(
-                        [
-                            dmc.Text("All done!"),
-                            dmc.Button(
-                                "Save",
-                                id=cls.ids.steps_save(aio_id, form_id),
-                                leftSection=DashIconify(icon="carbon:save", height=16),
-                            ),
-                        ],
-                        style={"height": "100%"},
-                        align="center",
-                        justify="center",
-                    ),
-                ),
-            ],
+            + (additional_steps or []),
         )
 
         return [
@@ -299,7 +287,7 @@ class ModelForm(html.Div):
                         ],
                         style={
                             "position": "absolute",
-                            "top": f"calc({70 * (len(sections.sections) + 1) - 5}px + 1rem)",
+                            "top": f"calc({70 * (len(sections.sections) + len(additional_steps or []))}px + 1rem)",
                         },
                     ),
                     dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id)),
@@ -310,14 +298,7 @@ class ModelForm(html.Div):
 
 
 clientside_callback(
-    """(_t1, _t2, active, nSteps) => {
-        const trigger = dash_clientside.callback_context.triggered
-        if (!trigger || trigger.length === 0) return dash_clientside.no_update
-        const trigger_id = JSON.parse(trigger[0].prop_id.split(".")[0])
-        if (trigger_id.part.includes("next")) return Math.min(active + 1, nSteps)
-        if (trigger_id.part.includes("previous")) return Math.max(0, active - 1)
-        return dash_clientside.no_update
-    }""",
+    ClientsideFunction(namespace="pydf", function_name="stepsPreviousNext"),
     Output(ModelForm.ids.steps(MATCH, MATCH), "active"),
     Input(ModelForm.ids.steps_previous(MATCH, MATCH), "n_clicks"),
     Input(ModelForm.ids.steps_next(MATCH, MATCH), "n_clicks"),
@@ -327,7 +308,7 @@ clientside_callback(
 )
 
 clientside_callback(
-    """(active, nSteps) => [active === 0, active === nSteps]""",
+    ClientsideFunction(namespace="pydf", function_name="stepsDisable"),
     Output(ModelForm.ids.steps_previous(MATCH, MATCH), "disabled"),
     Output(ModelForm.ids.steps_next(MATCH, MATCH), "disabled"),
     Input(ModelForm.ids.steps(MATCH, MATCH), "active"),
@@ -335,18 +316,7 @@ clientside_callback(
 )
 
 clientside_callback(
-    """(id) => {
-    const strId = JSON.stringify(id, Object.keys(id).sort())
-    const steps = document.getElementById(strId).children[0].children
-    for (let i = 0; i < steps.length; i++) {
-        const child = steps[i]
-        child.addEventListener("click", event => {
-            dash_clientside.set_props(id, {active: i})
-        })
-    }
-
-    return dash_clientside.no_update
-    }""",
+    ClientsideFunction(namespace="pydf", function_name="stepsClickListener"),
     Output(ModelForm.ids.steps(MATCH, MATCH), "id"),
     Input(ModelForm.ids.steps(MATCH, MATCH), "id"),
 )

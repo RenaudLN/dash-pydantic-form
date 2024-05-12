@@ -2,19 +2,19 @@ import json
 import os
 from collections.abc import Callable
 from datetime import time
-from enum import EnumMeta
+from enum import Enum, EnumMeta
 from functools import partial
 from types import UnionType
 from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
-from dash import html
+from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
 from pydantic import BaseModel, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 
-from dash_pydantic_form import ids
+from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.utils import SEP, get_all_subclasses, get_fullpath, get_model_value, get_non_null_annotation
 
 CHECKED_COMPONENTS = [
@@ -61,7 +61,7 @@ class BaseField(BaseModel):
     class ids:
         """Form ids."""
 
-        visibility_wrapper = partial(ids.field_dependent_id, "_pydf-field-visibility-wrapper")
+        visibility_wrapper = partial(common_ids.field_dependent_id, "_pydf-field-visibility-wrapper")
 
     def to_dict(self) -> dict:
         """Return a dictionary representation of the field."""
@@ -70,6 +70,7 @@ class BaseField(BaseModel):
     @classmethod
     def from_dict(cls, data: dict) -> "BaseField":
         """Create a field from a dictionary."""
+        data = data.copy()
         str_repr = data.pop("__class__")
         field_cls = next(c for c in get_all_subclasses(BaseField) if str(c) == str_repr)
         return field_cls(**data)
@@ -134,7 +135,7 @@ class BaseField(BaseModel):
         if not self.base_component:
             raise NotImplementedError("This is an abstract class.")
 
-        id_ = (ids.checked_field if self.base_component in CHECKED_COMPONENTS else ids.value_field)(
+        id_ = (common_ids.checked_field if self.base_component in CHECKED_COMPONENTS else common_ids.value_field)(
             aio_id, form_id, field, parent, meta=self.field_id_meta
         )
         value_kwarg = (
@@ -228,6 +229,8 @@ class BaseField(BaseModel):
         dependent_parent, dependent_field = self._get_dependent_field_and_parent(dependent_field, parent)
 
         current_value = self.get_value(item, dependent_field, dependent_parent)
+        if isinstance(current_value, Enum):
+            current_value = current_value.value
         if os.getenv("DEBUG"):
             keyword = "Visible" if index == 0 else "   AND"
             title += (
@@ -548,3 +551,13 @@ class SegmentedControlField(SelectField):
     """Segmented control field."""
 
     base_component = dmc.SegmentedControl
+
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="updateFieldVisibility"),
+    Output(BaseField.ids.visibility_wrapper(MATCH, MATCH, MATCH, MATCH, ALL), "style"),
+    Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, ALL), "value"),
+    Input(common_ids.checked_field(MATCH, MATCH, MATCH, MATCH, ALL), "checked"),
+    State(BaseField.ids.visibility_wrapper(MATCH, MATCH, MATCH, MATCH, ALL), "style"),
+    prevent_initial_call=True,
+)

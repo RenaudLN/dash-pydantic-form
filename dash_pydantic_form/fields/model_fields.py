@@ -3,7 +3,21 @@ from functools import partial
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import ALL, MATCH, Input, Output, Patch, State, callback, clientside_callback, ctx, dcc, html, no_update
+from dash import (
+    ALL,
+    MATCH,
+    ClientsideFunction,
+    Input,
+    Output,
+    Patch,
+    State,
+    callback,
+    clientside_callback,
+    ctx,
+    dcc,
+    html,
+    no_update,
+)
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from pydantic import BaseModel
@@ -15,6 +29,7 @@ from dash_pydantic_form.form_section import Sections
 from dash_pydantic_form.utils import (
     get_fullpath,
     get_model_cls,
+    get_subitem_cls,
 )
 
 
@@ -28,7 +43,7 @@ class ModelField(BaseField):
     """
 
     render_type: Literal["accordion", "modal"] = "accordion"
-    fields_repr: dict[str, BaseField] | None = None
+    fields_repr: dict[str, dict | BaseField] | None = None
     sections: Sections = None
 
     full_width = True
@@ -194,7 +209,7 @@ class ModelField(BaseField):
 
     # Open a model modal when editing an item
     clientside_callback(
-        """nClicks => !!nClicks""",
+        ClientsideFunction(namespace="pydf", function_name="syncTrue"),
         Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
         Input(ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
         prevent_initial_call=True,
@@ -202,7 +217,7 @@ class ModelField(BaseField):
 
     # Close a model modal when saving an item
     clientside_callback(
-        """nClicks => !nClicks""",
+        ClientsideFunction(namespace="pydf", function_name="syncFalse"),
         Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
         Input(ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
         prevent_initial_call=True,
@@ -223,7 +238,7 @@ class ModelListField(BaseField):
     """
 
     render_type: Literal["accordion", "modal", "list"] = "accordion"
-    fields_repr: dict[str, BaseField] | None = None
+    fields_repr: dict[str, dict | BaseField] | None = None
     sections: Sections | None = None
     items_deletable: bool = True
     items_creatable: bool = True
@@ -260,7 +275,7 @@ class ModelListField(BaseField):
         parent: str,
         index: int,
         value: BaseModel,
-        fields_repr: dict[str, BaseField] | None = None,
+        fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
         **_kwargs,
@@ -311,7 +326,7 @@ class ModelListField(BaseField):
         field: str,
         parent: str,
         index: int,
-        fields_repr: dict[str, BaseField] | None = None,
+        fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
         **_kwargs,
@@ -358,7 +373,7 @@ class ModelListField(BaseField):
         index: int,
         value: BaseModel,
         opened: bool = False,
-        fields_repr: dict[str, BaseField] | None = None,
+        fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
         **_kwargs,
@@ -459,6 +474,8 @@ class ModelListField(BaseField):
         field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
+        from dash_pydantic_form.fields import get_default_repr
+
         value: list = self.get_value(item, field, parent) or []
 
         class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
@@ -549,6 +566,20 @@ class ModelListField(BaseField):
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+
+        subitem_cls = get_subitem_cls(item, get_fullpath(parent, field, "0"))
+        fields_repr_dicts = (
+            {
+                field_name: (
+                    get_default_repr(subitem_cls.model_fields[field_name].annotation, **field_repr)
+                    if isinstance(field_repr, dict)
+                    else field_repr
+                ).to_dict()
+                for field_name, field_repr in self.fields_repr.items()
+            }
+            if self.fields_repr
+            else None
+        )
         return dmc.Stack(
             bool(title)
             * [
@@ -582,9 +613,7 @@ class ModelListField(BaseField):
                         "model": str(item.__class__),
                         "i_list": list(range(1, len(value) + 1)),
                         "sections": self.sections.model_dump(mode="json") if self.sections else None,
-                        "fields_repr": {k: v.to_dict() for k, v in self.fields_repr.items()}
-                        if self.fields_repr
-                        else None,
+                        "fields_repr": fields_repr_dicts,
                         "items_deletable": self.items_deletable,
                         "render_type": self.render_type,
                     },
@@ -684,7 +713,7 @@ class ModelListField(BaseField):
 
     # Open a model list modal when editing an item
     clientside_callback(
-        """nClicks => !!nClicks""",
+        ClientsideFunction(namespace="pydf", function_name="syncTrue"),
         Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
         Input(ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
         prevent_initial_call=True,
@@ -692,7 +721,7 @@ class ModelListField(BaseField):
 
     # Close a model list modal when saving an item
     clientside_callback(
-        """nClicks => !nClicks""",
+        ClientsideFunction(namespace="pydf", function_name="syncFalse"),
         Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
         Input(ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
         prevent_initial_call=True,
@@ -700,7 +729,7 @@ class ModelListField(BaseField):
 
     # Update the modal title and list item to match the name field of the item (if it exists)
     clientside_callback(
-        """val => val != null ? [String(val), String(val)] : [dash_clientside.no_update, dash_clientside.no_update]""",
+        ClientsideFunction(namespace="pydf", function_name="updateModalTitle"),
         Output(ids.modal_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Output(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "title"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
@@ -708,7 +737,7 @@ class ModelListField(BaseField):
 
     # Update the accordion title to match the name field of the item (if it exists)
     clientside_callback(
-        """val => val != null ? String(val) : dash_clientside.no_update""",
+        ClientsideFunction(namespace="pydf", function_name="updateAccordionTitle"),
         Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
     )

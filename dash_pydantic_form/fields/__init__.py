@@ -25,24 +25,24 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
 DEFAULT_REPR = fields.Json
 
 
-def get_default_repr(ann: type) -> BaseField:
+def get_default_repr(ann: type, **kwargs) -> BaseField:
     """Get default field representation."""
     ann = get_non_null_annotation(ann)
     with contextlib.suppress(Exception):
         if get_origin(ann) == list and issubclass(get_args(ann)[0], BaseModel):
-            return fields.ModelList()
+            return fields.ModelList(**kwargs)
 
     if ann in DEFAULT_FIELDS_REPR:
-        return DEFAULT_FIELDS_REPR[ann]()
+        return DEFAULT_FIELDS_REPR[ann](**kwargs)
     with contextlib.suppress(Exception):
         origin = get_origin(ann)
         if origin in DEFAULT_FIELDS_REPR:
-            return DEFAULT_FIELDS_REPR[origin]()
+            return DEFAULT_FIELDS_REPR[origin](**kwargs)
     for type_, field_repr in DEFAULT_FIELDS_REPR.items():
         with contextlib.suppress(Exception):
             if issubclass(ann, type_):
-                return field_repr()
-    return DEFAULT_REPR()
+                return field_repr(**kwargs)
+    return DEFAULT_REPR(**kwargs)
 
 
 __all__ = [

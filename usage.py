@@ -74,44 +74,65 @@ FORM_ID = "Bob"
 
 app.layout = dmc.MantineProvider(
     # defaultColorScheme="dark",
-    children=dmc.Container(
+    children=dmc.AppShell(
         [
-            dmc.Title("Dash Pydantic form", mb=32),
-            ModelForm(
-                bob,
-                AIO_ID,
-                FORM_ID,
-                fields_repr={
-                    "office": fields.RadioItems(
-                        options_labels={"au": "Australia", "fr": "France"},
-                    ),
-                    "metadata": fields.Model(
-                        render_type="accordion",
-                        fields_repr={
-                            "languages": fields.Checklist(
-                                options_labels={"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"},
+            dmc.AppShellMain(
+                dmc.Container(
+                    [
+                        dmc.Title("Dash Pydantic form", mb="1rem", order=3),
+                        ModelForm(
+                            bob,
+                            AIO_ID,
+                            FORM_ID,
+                            fields_repr={
+                                "office": fields.RadioItems(
+                                    options_labels={"au": "Australia", "fr": "France"},
+                                ),
+                                "metadata": {
+                                    "render_type": "accordion",
+                                    "fields_repr": {
+                                        "languages": fields.Checklist(
+                                            options_labels={
+                                                "fr": "French",
+                                                "en": "English",
+                                                "sp": "Spanish",
+                                                "cn": "Chinese",
+                                            },
+                                            visible=("_root_:office", "==", "au"),
+                                        ),
+                                    },
+                                },
+                                "pets": fields.EditableTable(
+                                    fields_repr={
+                                        "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
+                                    },
+                                    table_height=250,
+                                ),
+                            },
+                            sections=Sections(
+                                sections=[
+                                    FormSection(name="General", fields=["name", "age"], default_open=True),
+                                    FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
+                                    FormSection(name="Other", fields=["pets"], default_open=True),
+                                ],
+                                render="steps",
                             ),
-                        },
-                    ),
-                    "pets": fields.EditableTable(
-                        fields_repr={
-                            "species": fields.Select(options_labels={"dog": "Dog", "cat": "Cat"}),
-                        }
-                    ),
-                },
-                sections=Sections(
-                    sections=[
-                        FormSection(name="General", fields=["name", "age"], default_open=True),
-                        FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
-                        FormSection(name="Other", fields=["pets"], default_open=True),
+                        ),
                     ],
-                    render="tabs",
-                    remaining_fields_position="bottom",
+                    pt="1rem",
+                )
+            ),
+            dmc.AppShellAside(
+                dmc.ScrollArea(
+                    dmc.Text(
+                        id=ids.form_dependent_id("output", AIO_ID, FORM_ID),
+                        style={"whiteSpace": "pre-wrap"},
+                        p="1rem 0.5rem",
+                    ),
                 ),
             ),
-            dmc.Space(h="2rem"),
-            dmc.Text(id=ids.form_dependent_id("output", AIO_ID, FORM_ID), style={"whiteSpace": "pre-wrap"}),
-        ]
+        ],
+        aside={"width": 350},
     )
 )
 
@@ -124,7 +145,7 @@ def display(form_data):
     """Display form data."""
     children = dmc.Stack(
         [
-            dmc.Text("Form data", mb="-0.5rem"),
+            dmc.Text("Form data", mb="-0.5rem", fw=600),
             dmc.Code(
                 json.dumps(form_data, indent=2),
             ),
@@ -135,7 +156,7 @@ def display(form_data):
     except ValidationError as e:
         children.children.extend(
             [
-                dmc.Text("Validation errors", mb="-0.5rem"),
+                dmc.Text("Validation errors", mb="-0.5rem", fw=500, c="red"),
                 dmc.List(
                     [
                         dmc.ListItem(
@@ -144,6 +165,7 @@ def display(form_data):
                         for error in e.errors()
                     ],
                     size="sm",
+                    c="red",
                 ),
             ]
         )

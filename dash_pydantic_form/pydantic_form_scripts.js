@@ -168,5 +168,87 @@ dash_clientside.pydf = {
         return acc
     }, {})
     return formData
-  }
+  },
+  updateFieldVisibility: (value, checked) => {
+
+    const checkVisibility = (value, operator, expectedValue) => {
+        switch (operator) {
+            case "==":
+                return value == expectedValue
+            case "!=":
+                return value != expectedValue
+            case "in":
+                return expectedValue.includes(value)
+            case "not in":
+                return !expectedValue.includes(value)
+            case "array_contains":
+                return value.includes(expectedValue)
+            case "array_contains_any":
+                return value.some(v => expectedValue.includes(v))
+            default:
+                return true
+        }
+    }
+
+    const newStyles = []
+    let actualValue
+    if (value.length > 0) {
+        actualValue = value[0]
+    } else {
+        actualValue = checked[0]
+    }
+    // Iterate through each visibility wrapper and check its dependent field value
+    // to update its display property
+    dash_clientside.callback_context.states_list[0].forEach(state => {
+        let [_f, operator, expectedValue] = state.id.meta.split("|")
+        expectedValue = JSON.parse(expectedValue)
+        newStyles.push({
+            ...state.value,
+            display: checkVisibility(actualValue, operator, expectedValue) ? null : "none",
+        })
+    })
+
+    return newStyles
+  },
+  syncTrue: x => !!x,
+  syncFalse: x => !x,
+  updateModalTitle: (val) => {
+    return val != null ? Array(2).fill(String(val)) : Array(2).fill(dash_clientside.no_update)
+  },
+  updateAccordionTitle: (val) => {
+    return val != null ? String(val) : dash_clientside.no_update
+  },
+  syncTableJson: (rowData, virtualRowData) => {
+    let val = rowData
+    if (
+        dash_clientside.callback_context.triggered.map(
+            x => x.prop_id.split(".").slice(-1)[0]
+        )
+        .includes("virtualRowData")
+    ) {
+        val = virtualRowData
+    }
+    return val.filter(row => Object.values(row).some(x => x != null))
+  },
+  stepsClickListener: (id) => {
+    const strId = JSON.stringify(id, Object.keys(id).sort())
+    const steps = document.getElementById(strId).children[0].children
+    for (let i = 0; i < steps.length; i++) {
+        const child = steps[i]
+        child.addEventListener("click", event => {
+            dash_clientside.set_props(id, {active: i})
+        })
+    }
+
+    return dash_clientside.no_update
+  },
+  stepsDisable: (active, nSteps) => [active === 0, active === nSteps],
+  stepsPreviousNext: (_t1, _t2, active, nSteps) => {
+    const trigger = dash_clientside.callback_context.triggered
+    if (!trigger || trigger.length === 0) return dash_clientside.no_update
+    const trigger_id = JSON.parse(trigger[0].prop_id.split(".")[0])
+    if (trigger_id.part.includes("next")) return Math.min(active + 1, nSteps)
+    if (trigger_id.part.includes("previous")) return Math.max(0, active - 1)
+    return dash_clientside.no_update
+  },
 }

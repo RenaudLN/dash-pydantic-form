@@ -8,7 +8,7 @@ from typing import get_args
 import dash_ag_grid as dag
 import dash_mantine_components as dmc
 import pandas as pd
-from dash import MATCH, Input, Output, State, callback, clientside_callback, dcc, html, no_update
+from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -33,7 +33,7 @@ from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
 class EditableTableField(BaseField):
     """Editable table input field attributes and rendering."""
 
-    fields_repr: dict[str, BaseField] | None = None
+    fields_repr: dict[str, dict | BaseField] | None = None
     with_upload: bool = True
     rows_editable: bool = True
     table_height: int = 300
@@ -163,10 +163,10 @@ class EditableTableField(BaseField):
             upload = [
                 dmc.Menu(
                     [
-                        dmc.MenuTarget(dmc.Button("Upload CSV", size="compact-md")),
+                        dmc.MenuTarget(dmc.Button("Upload CSV", size="compact-sm")),
                         dmc.MenuDropdown(upload_),
                     ],
-                    shadow="md",
+                    shadow="xl",
                     position="top-start",
                     styles={"dropdown": {"maxWidth": "min(90vw, 500px)"}},
                 ),
@@ -176,13 +176,13 @@ class EditableTableField(BaseField):
         if self.rows_editable:
             add_row = [
                 dmc.Button(
-                    "Add Row",
+                    "Add row",
                     id=self.ids.add_row(aio_id, form_id, field, parent=parent),
-                    size="compact-md",
+                    size="compact-sm",
                 ),
             ]
 
-        def get_field_repr(field: str) -> BaseField:
+        def get_field_repr(field: str) -> BaseField | dict:
             from dash_pydantic_form.fields import get_default_repr
 
             if field in self.fields_repr:
@@ -192,24 +192,28 @@ class EditableTableField(BaseField):
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
         return html.Div(
-            (title is not None)
-            * [
-                dmc.Text(
-                    [title]
-                    + [
-                        html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
+            [
+                html.Div(
+                    (title is not None)
+                    * [
+                        dmc.Text(
+                            [title]
+                            + [
+                                html.Span(
+                                    " *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}
+                                ),
+                            ]
+                            * self.is_required(field_info),
+                            size="sm",
+                            mt=3,
+                            mb=5,
+                            fw=500,
+                            lh=1.55,
+                        )
                     ]
-                    * self.is_required(field_info),
-                    size="sm",
-                    mt=3,
-                    mb=5,
-                    fw=500,
-                    lh=1.55,
-                )
-            ]
-            + (title is not None and description is not None)
-            * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)]
-            + [
+                    + (title is not None and description is not None)
+                    * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
+                ),
                 dag.AgGrid(
                     id=self.ids.editable_table(aio_id, form_id, field, parent=parent),
                     columnDefs=(
@@ -253,9 +257,9 @@ class EditableTableField(BaseField):
                         # "stopEditingWhenCellsLoseFocus": True,
                     },
                     className="ag-theme-alpine ag-themed overflowing-ag-grid",
-                )
+                ),
             ]
-            + ([dmc.Group(add_row + upload, mt=-8)] if (self.rows_editable or self.with_upload) else [])
+            + ([dmc.Group(add_row + upload)] if (self.rows_editable or self.with_upload) else [])
             + [
                 dmc.JsonInput(
                     id=common_ids.value_field(aio_id, form_id, field, parent=parent),
@@ -264,19 +268,23 @@ class EditableTableField(BaseField):
                 ),
                 html.Div(id=self.ids.notification_wrapper(aio_id, form_id, field, parent=parent)),
             ],
-            style={"display": "grid", "gap": "1rem", "gridTemplateColumns": "1fr"},
+            style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 
     def _generate_field_column(  # noqa: PLR0913
         self,
         *,
         field_name: str,
-        field_repr: BaseField,
+        field_repr: BaseField | dict,
         field_info: FieldInfo,
         required_field: bool,
         editable: bool = True,
     ):
         """Takes a field and generates the 'columnDefs' dictionary for said field based on its type."""
+        from dash_pydantic_form.fields import get_default_repr
+
+        if isinstance(field_repr, dict):
+            field_repr = get_default_repr(field_info.annotation, **field_repr)
         # Column_def no matter the type
         column_def = {
             "editable": editable,
@@ -362,18 +370,7 @@ class EditableTableField(BaseField):
 
     # Sync the JsonInput from the table data
     clientside_callback(
-        """(rowData, virtualRowData) => {
-            let val = rowData
-            if (
-                dash_clientside.callback_context.triggered.map(
-                    x => x.prop_id.split(".").slice(-1)[0]
-                )
-                .includes("virtualRowData")
-            ) {
-                val = virtualRowData
-            }
-            return val.filter(row => Object.values(row).some(x => x != null))
-        }""",
+        ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "virtualRowData"),
