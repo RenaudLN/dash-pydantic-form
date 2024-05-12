@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 from functools import partial
 from typing import Any, Literal
@@ -39,7 +40,7 @@ class ModelForm(html.Div):
 
     def __init__(  # noqa: PLR0912, PLR0913
         self,
-        item: BaseModel,
+        item: BaseModel | type[BaseModel],
         aio_id: str,
         form_id: str,
         path: str = "",
@@ -47,6 +48,10 @@ class ModelForm(html.Div):
         sections: Sections | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
+
+        with contextlib.suppress(Exception):
+            if issubclass(item, BaseModel):
+                item = item.model_construct()
 
         fields_repr = fields_repr or {}
         field_inputs = {}
