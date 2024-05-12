@@ -298,14 +298,19 @@ class TextField(BaseField):
 
     base_component = dmc.TextInput
 
+    def model_post_init(self, _context):
+        """Add defaults for text input."""
+        super().model_post_init(_context)
+        self.input_kwargs.setdefault("debounce", 200)
 
-class TextareaField(BaseField):
+
+class TextareaField(TextField):
     """Textarea field."""
 
     base_component = dmc.Textarea
 
 
-class NumberField(BaseField):
+class NumberField(TextField):
     """Number field."""
 
     base_component = dmc.NumberInput
@@ -325,13 +330,13 @@ class NumberField(BaseField):
         return kwargs
 
 
-class PasswordField(BaseField):
+class PasswordField(TextField):
     """Password field."""
 
     base_component = dmc.PasswordInput
 
 
-class JsonField(BaseField):
+class JsonField(TextField):
     """Json field."""
 
     base_component = dmc.JsonInput

@@ -143,3 +143,30 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []
 ).map(o => o.value).includes(params.value) ? "" : "required_cell"
+
+
+
+window.dash_clientside = window.dash_clientside || {}
+dash_clientside.pydf = {
+  getValues: () => {
+    const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
+    const formData = inputs.reduce((acc, val) => {
+        const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
+        const parts = key.split(":")
+        let pointer = acc
+        parts.forEach((part, i) => {
+            if (i === parts.length - 1) {
+                pointer[part] = val.value
+            } else {
+                const prt = /^\d+$/.test(part) ? Number(part) : part
+                if (!pointer[prt]) {
+                    pointer[prt] = /^\d+$/.test(parts[i + 1]) ? [] : {}
+                }
+                pointer = pointer[prt]
+            }
+        })
+        return acc
+    }, {})
+    return formData
+  }
+}

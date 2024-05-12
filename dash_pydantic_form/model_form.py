@@ -3,11 +3,12 @@ from functools import partial
 from typing import Any, Literal
 
 import dash_mantine_components as dmc
-from dash import MATCH, Input, Output, State, clientside_callback, dcc, html
+from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from pydantic import BaseModel
 
+from . import ids as common_ids
 from .form_section import Sections
 from .utils import deep_merge, get_non_null_annotation, get_subitem_cls
 
@@ -27,6 +28,7 @@ class ModelForm(html.Div):
     class ids:
         """Model form ids."""
 
+        main = partial(form_base_id, "_pydantic-form-main")
         accordion = partial(form_base_id, "_pydantic-form-accordion")
         tabs = partial(form_base_id, "_pydantic-form-tabs")
         steps = partial(form_base_id, "_pydantic-form-steps")
@@ -101,6 +103,9 @@ class ModelForm(html.Div):
                 children = sections_render + [
                     self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
                 ]
+
+        if not path:
+            children.append(dcc.Store(id=self.ids.main(aio_id, form_id)))
 
         super().__init__(children=children)
 
@@ -339,4 +344,11 @@ clientside_callback(
     }""",
     Output(ModelForm.ids.steps(MATCH, MATCH), "id"),
     Input(ModelForm.ids.steps(MATCH, MATCH), "id"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="getValues"),
+    Output(ModelForm.ids.main(MATCH, MATCH), "data"),
+    Input(common_ids.value_field(MATCH, MATCH, ALL, ALL), "value"),
+    Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL), "checked"),
 )

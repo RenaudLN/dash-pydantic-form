@@ -53,3 +53,8 @@
     margin: -0.5rem 0 -2.5rem -0.25rem;
     padding: 0.375rem 0.5rem 2rem;
 }
+
+.required_cell {
+    background: rgba(255, 0, 0, 0.05);
+    border-bottom: 2px solid var(--mantine-color-red-6) !important;
+}

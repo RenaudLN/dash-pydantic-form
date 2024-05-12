@@ -1,12 +1,13 @@
+import json
 from datetime import date
 from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import Dash
-from pydantic import BaseModel, Field
+from dash import MATCH, Dash, Input, Output, callback
+from pydantic import BaseModel, Field, ValidationError
 
-from dash_pydantic_form import FormSection, ModelForm, Sections, fields
+from dash_pydantic_form import FormSection, ModelForm, Sections, fields, ids
 
 app = Dash(
     __name__,
@@ -19,6 +20,8 @@ app = Dash(
         "https://unpkg.com/@mantine/nprogress@7/styles.css",
     ],
 )
+
+server = app.server
 
 
 class Office(Enum):
@@ -66,6 +69,9 @@ class Employee(BaseModel):
 bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pets=[{"name": "Rex", "species": "dog"}])
 
 
+AIO_ID = "home"
+FORM_ID = "Bob"
+
 app.layout = dmc.MantineProvider(
     # defaultColorScheme="dark",
     children=dmc.Container(
@@ -73,8 +79,8 @@ app.layout = dmc.MantineProvider(
             dmc.Title("Dash Pydantic form", mb=32),
             ModelForm(
                 bob,
-                "home",
-                "bob-form",
+                AIO_ID,
+                FORM_ID,
                 fields_repr={
                     "office": fields.RadioItems(
                         options_labels={"au": "Australia", "fr": "France"},
@@ -103,11 +109,47 @@ app.layout = dmc.MantineProvider(
                     remaining_fields_position="bottom",
                 ),
             ),
+            dmc.Space(h="2rem"),
+            dmc.Text(id=ids.form_dependent_id("output", AIO_ID, FORM_ID), style={"whiteSpace": "pre-wrap"}),
         ]
     )
 )
 
-server = app.server
+
+@callback(
+    Output(ids.form_dependent_id("output", MATCH, MATCH), "children"),
+    Input(ModelForm.ids.main(MATCH, MATCH), "data"),
+)
+def display(form_data):
+    """Display form data."""
+    children = dmc.Stack(
+        [
+            dmc.Text("Form data", mb="-0.5rem"),
+            dmc.Code(
+                json.dumps(form_data, indent=2),
+            ),
+        ]
+    )
+    try:
+        Employee.model_validate(form_data)
+    except ValidationError as e:
+        children.children.extend(
+            [
+                dmc.Text("Validation errors", mb="-0.5rem"),
+                dmc.List(
+                    [
+                        dmc.ListItem(
+                            [".".join([str(x) for x in error["loc"]]), f" : {error['msg']}, got {error['input']}"],
+                        )
+                        for error in e.errors()
+                    ],
+                    size="sm",
+                ),
+            ]
+        )
+
+    return children
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
