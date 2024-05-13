@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from pydantic import BaseModel
 
 from dash_pydantic_form.fields import fields
@@ -19,6 +21,7 @@ _js_dist = [
         "namespace": "dash_pydantic_form",
     },
 ]
-__version__ = "0.1.0"
 
-__all__ = ["FormSection", "ModelForm", "Sections", "fields"]
+__version__ = version(__package__)
+
+__all__ = ["FormSection", "ModelForm", "Sections", "fields", "__version__"]

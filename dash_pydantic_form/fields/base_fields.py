@@ -36,12 +36,23 @@ VisibilityFilter = tuple[str, FilterOperator, Any]
 
 class BaseField(BaseModel):
     """Base field representation class.
-    
+
     :param title: Field label, overrides the title defined in the pydantic Field.
     :param description: Field helper text, overrides the description defined in the pydantic Field.
     :param required: Whether to display a required asterisk. If not provided, uses pydantic's field `is_required`.
     :param n_cols: Number of columns in the form, out of 4. Default 2.
     :param visible: Define visibility conditions based on other form fields.
+        Accepts a boolean, a 3-tuple or list of 3-tuples with format: (field, operator, value).
+        The available operators are:
+        * "=="
+        * "!="
+        * "in"
+        * "not in"
+        * "array_contains"
+        * "array_contains_any"
+        NOTE: The field in the 3-tuples is a ":" separated path relative to the current field's level of nesting.
+        If you need to reference a field from a parent or the root use the special values `_parent_` or `_root_`.
+        E.g. visible=("_root_:first_name", "==", "Bob")
     :param input_kwargs: Arguments to be passed to the underlying rendered component.
     """
 
