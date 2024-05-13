@@ -33,11 +33,9 @@ requires = ["setuptools >= 67", "setuptools_scm>=7.1"]
 
 [tool.setuptools]
 include-package-data = true
-packages = ["dash_pydantic_form"]
 
-[tool.setuptools.package-data]
-doc = ["*"]
-"*" = ["*.lock"]
+[tool.setuptools.packages]
+find = {}
 
 [tool.setuptools_scm]
 
