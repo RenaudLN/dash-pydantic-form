@@ -63,7 +63,7 @@ class Employee(BaseModel):
     age: int = Field(title="Age", description="Age of the employee, starting from their birth")
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
-    metadata: Metadata | None = Field(title="Employee metadata", default=None, description="Lorem Ipsum")
+    metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
 
 
@@ -82,7 +82,7 @@ app.layout = dmc.MantineProvider(
                     [
                         dmc.Title("Dash Pydantic form", mb="1rem", order=3),
                         ModelForm(
-                            bob,
+                            Employee,
                             AIO_ID,
                             FORM_ID,
                             fields_repr={
