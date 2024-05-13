@@ -35,7 +35,15 @@ VisibilityFilter = tuple[str, FilterOperator, Any]
 
 
 class BaseField(BaseModel):
-    """Base repr class."""
+    """Base field representation class.
+    
+    :param title: Field label, overrides the title defined in the pydantic Field.
+    :param description: Field helper text, overrides the description defined in the pydantic Field.
+    :param required: Whether to display a required asterisk. If not provided, uses pydantic's field `is_required`.
+    :param n_cols: Number of columns in the form, out of 4. Default 2.
+    :param visible: Define visibility conditions based on other form fields.
+    :param input_kwargs: Arguments to be passed to the underlying rendered component.
+    """
 
     base_component: ClassVar[type[Component] | None] = None
     reserved_attributes: ClassVar = ("value", "label", "description", "id", "required")
