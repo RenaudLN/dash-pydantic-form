@@ -4,6 +4,12 @@ This package allows users to quickly create forms with Plotly Dash based on pyda
 
 ## Getting started
 
+Install with pip
+
+```sh
+pip install dash-pydantic-form
+```
+
 Create a pydantic model you would like to display a form for.
 
 *Note: This package uses pydantic 2.*
