@@ -26,7 +26,7 @@ class Employee(BaseModel):
     joined: date = Field(title="Employment date")
 ```
 
-Then you can get an auto-generated form with `ModelForm`, leveraging [dash-mantine-components](https://dash-mantine-components.com) for form inputs.
+Then you can get an auto-generated form with `ModelForm`, leveraging [dash-mantine-components](https://dash-mantine-components.com) (vercion 0.14) for form inputs.
 
 ```py
 from dash_pydantic_form import ModelForm
@@ -40,6 +40,19 @@ form = ModelForm(
 ```
 
 ![Simple form](images/simple-form.png)
+
+You can also render a pre-filled form by passing an instance of the data model rather than the class
+
+```py
+# NOTE: This could come from a database
+bob = Employee(first_name="Bob", last_name="K", office="au", joined="2020-05-20")
+
+form = ModelForm(
+    bob,
+    aio_id="employees",
+    form_id="bob",
+)
+```
 
 You can then retrieve the contents of the whole form at once in a callback as follows
 
