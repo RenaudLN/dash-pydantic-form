@@ -4,11 +4,12 @@ from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import MATCH, Dash, Input, Output, callback
+from dash import MATCH, Dash, Input, Output, _dash_renderer, callback
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormSection, ModelForm, Sections, fields, ids
 
+_dash_renderer._set_react_version("18.2.0")
 app = Dash(
     __name__,
     external_stylesheets=[
@@ -43,7 +44,7 @@ class Metadata(BaseModel):
     """Metadata model."""
 
     languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
-    param2: int | None = Field(title="Parameter 2", default=None)
+    siblings: int | None = Field(title="Siblings", default=None)
 
 
 class Pet(BaseModel):
@@ -106,7 +107,7 @@ app.layout = dmc.MantineProvider(
                                     fields_repr={
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },
-                                    table_height=250,
+                                    table_height=200,
                                 ),
                             },
                             sections=Sections(
@@ -115,7 +116,7 @@ app.layout = dmc.MantineProvider(
                                     FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
                                     FormSection(name="Other", fields=["pets"], default_open=True),
                                 ],
-                                render="steps",
+                                render="accordion",
                             ),
                         ),
                     ],
