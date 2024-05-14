@@ -210,6 +210,7 @@ dash_clientside.pydf = {
 
     return newStyles
   },
+  sync: x => x,
   syncTrue: x => !!x,
   syncFalse: x => !x,
   updateModalTitle: (val) => {

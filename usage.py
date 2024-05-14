@@ -61,6 +61,7 @@ class Employee(BaseModel):
 
     name: str = Field(title="Name", description="Name of the employee")
     age: int = Field(title="Age", description="Age of the employee, starting from their birth")
+    mini_bio: str | None = Field(title="Mini bio", description="Short bio of the employee", default=None)
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
@@ -86,6 +87,7 @@ app.layout = dmc.MantineProvider(
                             AIO_ID,
                             FORM_ID,
                             fields_repr={
+                                "mini_bio": fields.Markdown(),
                                 "office": fields.RadioItems(
                                     options_labels={"au": "Australia", "fr": "France"},
                                 ),
@@ -112,7 +114,7 @@ app.layout = dmc.MantineProvider(
                             },
                             sections=Sections(
                                 sections=[
-                                    FormSection(name="General", fields=["name", "age"], default_open=True),
+                                    FormSection(name="General", fields=["name", "age", "mini_bio"], default_open=True),
                                     FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
                                     FormSection(name="Other", fields=["pets"], default_open=True),
                                 ],

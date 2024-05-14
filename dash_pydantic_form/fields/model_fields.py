@@ -20,7 +20,7 @@ from dash import (
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
@@ -42,9 +42,14 @@ class ModelField(BaseField):
     * sections, list of FormSection for the NestedModel form
     """
 
-    render_type: Literal["accordion", "modal"] = "accordion"
-    fields_repr: dict[str, dict | BaseField] | None = None
-    sections: Sections = None
+    render_type: Literal["accordion", "modal"] = Field(
+        default="accordion", description="How to render the model field, one of 'accordion', 'modal'."
+    )
+    fields_repr: dict[str, dict | BaseField] | None = Field(
+        default=None,
+        description="Fields representation, mapping between field name and field representation for the nested fields.",
+    )
+    sections: Sections = Field(default=None, description="Sub-form sections.")
 
     full_width = True
 
@@ -237,11 +242,16 @@ class ModelListField(BaseField):
     * items_creatable, whether new items can be created (bool, default True)
     """
 
-    render_type: Literal["accordion", "modal", "list"] = "accordion"
-    fields_repr: dict[str, dict | BaseField] | None = None
-    sections: Sections | None = None
-    items_deletable: bool = True
-    items_creatable: bool = True
+    render_type: Literal["accordion", "modal", "list"] = Field(
+        default="accordion", description="How to render the list of items, one  of 'accordion', 'modal', 'list'."
+    )
+    fields_repr: dict[str, dict | BaseField] | None = Field(
+        default=None,
+        description="Fields representation, mapping between field name and field representation for the nested fields.",
+    )
+    sections: Sections | None = Field(default=None, description="Sub-form sections.")
+    items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
+    items_creatable: bool = Field(default=True, description="Whether new items can be created.")
 
     full_width = True
 

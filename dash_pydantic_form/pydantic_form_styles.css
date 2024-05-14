@@ -58,3 +58,19 @@
     background: rgba(255, 0, 0, 0.05);
     border-bottom: 2px solid var(--mantine-color-red-6) !important;
 }
+
+.pydf-markdown-preview {
+    font-size: 14px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.5rem 0;
+    position: relative;
+}
+
+.pydf-markdown-preview::after {
+    content: "Preview";
+    position: absolute;
+    top: 0;
+    right: 0.25rem;
+    color: var(--mantine-color-gray-5);
+}

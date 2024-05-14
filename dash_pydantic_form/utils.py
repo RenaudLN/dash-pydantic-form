@@ -48,10 +48,16 @@ def get_non_null_annotation(annotation: type[Any]) -> type[Any]:
 def get_model_value(item: BaseModel, field: str, parent: str, allow_default: bool = True):
     """Get the value of a model (parent, field) pair.
 
-    :param item: The object to get the value from
-    :param parent: The parent of the field (for nested fields), in dot notation
-    :param field: The field name
-    :param allow_default: Allow to return the default value, when the object has been created with model_construct.
+    Parameters
+    ----------
+    item: BaseModel
+        The object to get the value from
+    field: str
+        The field name
+    parent: str
+        The parent of the field (for nested fields), in dot notation
+    allow_default: bool
+        Allow to return the default value, when the object has been created with model_construct.
     """
     try:
         return get_subitem(item, parent)[field]

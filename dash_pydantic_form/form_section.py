@@ -10,10 +10,16 @@ Position = Literal["top", "bottom", "none"]
 class FormSection(BaseModel):
     """Form section model.
 
-    :param name: Section name.
-    :param fields: List of field names from the pydantic model.
-    :param icon: Section icon displayed before the section name, optional.
-    :param default_open: Whether the section is open by default, only used for accordion sections.
+    Parameters
+    ----------
+    name: str
+        Section name.
+    fields: list[str]
+        List of field names from the pydantic model.
+    icon: str | DashIconify | None
+        Section icon displayed before the section name, optional.
+    default_open: bool
+        Whether the section is open by default, only used for accordion sections.
     """
 
     name: str
@@ -27,12 +33,19 @@ class FormSection(BaseModel):
 class Sections(BaseModel):
     """Form sections model.
 
-    :param sections: List of FormSection.
-    :param remaining_fields_position: Position of the fields not listed in the sections. Default "top".
-    :param render: how the sections should be rendered. Possible values: "accordion", "tabs", "steps".
+    Parameters
+    ----------
+    sections: list[FormSection]
+        List of FormSection.
+    remaining_fields_position: Literal["top", "bottom", "none"]
+        Position of the fields not listed in the sections. Default "top".
+    render: Literal["accordion", "tabs", "steps"]
+        how the sections should be rendered. Possible values: "accordion", "tabs", "steps".
         Default "accordion".
-    :param excluded_fields: List of field names to exclude from the form altogether, optional.
-    :param render_kwargs: Additional render kwargs passed to the section render functions, optional.
+    excluded_fields: list[str] | None
+        List of field names to exclude from the form altogether, optional.
+    render_kwargs: dict | None
+        Additional render kwargs passed to the section render functions, optional.
         See :meth:`dash_pydantic_form.model_form.ModelForm.render_accordion_sections`,
         :meth:`dash_pydantic_form.model_form.ModelForm.render_tabs_sections` and
         :meth:`dash_pydantic_form.model_form.ModelForm.render_steps_sections`

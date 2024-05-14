@@ -31,16 +31,23 @@ Position = Literal["top", "bottom", "none"]
 class ModelForm(html.Div):
     """Create a Dash form from a pydantic model.
 
-    :param item: The model to create the form from, can be the model class or an instance of the class.
+    Parameters
+    ----------
+    item: BaseModel | type[BaseModel]
+        The model to create the form from, can be the model class or an instance of the class.
         If the class is passed, the form will be empty. If an instance is passed, the form will be pre-filled
         with existing values.
-    :param aio_id: All-in-one component ID
-    :param form_id: Form ID, can be used to create multiple forms on the same page. When working with databases
+    aio_id: str
+        All-in-one component ID
+    form_id: str
+        Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID.
-    :param fields_repr: Mapping between field name and field representation. If not provided, default field
+    fields_repr: dict[str, dict | BaseField] | None
+        Mapping between field name and field representation. If not provided, default field
         representations will be used based on the field annotation.
         See :meth:`dash_pydantic_form.fields.get_default_repr`.
-    :param sections: List of form sections (optional). See :class:`dash_pydantic_form.form_section.Sections`.
+    sections: Sections | None
+        List of form sections (optional). See :class:`dash_pydantic_form.form_section.Sections`.
     """
 
     class ids:

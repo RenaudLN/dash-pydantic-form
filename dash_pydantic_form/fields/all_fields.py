@@ -16,8 +16,7 @@ from .base_fields import TextareaField as Textarea
 from .base_fields import TextField as Text
 from .base_fields import TimeField as Time
 from .editabletable_field import EditableTableField as EditableTable
-
-# from .markdown_field import MarkdownField as Markdown
+from .markdown_field import MarkdownField as Markdown
 from .model_fields import ModelField as Model
 from .model_fields import ModelListField as ModelList
 
@@ -29,7 +28,7 @@ __all__ = [
     "EditableTable",
     # "Image",
     "Json",
-    # "Markdown",
+    "Markdown",
     "Model",
     "ModelList",
     "MultiSelect",

@@ -10,7 +10,7 @@ import dash_mantine_components as dmc
 import pandas as pd
 from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -24,20 +24,22 @@ from dash_pydantic_form.fields.base_fields import (
     TextareaField,
     TextField,
 )
+from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.ids import field_dependent_id
-
-# from dash_pydantic_form.form_helpers.markdown_field import MarkdownField
 from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
 
 
 class EditableTableField(BaseField):
     """Editable table input field attributes and rendering."""
 
-    fields_repr: dict[str, dict | BaseField] | None = None
-    with_upload: bool = True
-    rows_editable: bool = True
-    table_height: int = 300
-    column_defs_overrides: dict | None = None
+    fields_repr: dict[str, dict | BaseField] | None = Field(
+        default=None,
+        description="Fields representation, mapping between field name and field representation for the nested fields.",
+    )
+    with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
+    rows_editable: bool = Field(default=True, description="Whether to allow editing rows.")
+    table_height: int = Field(default=300, description="Table rows height in pixels.")
+    column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
 
     full_width = True
 
@@ -338,7 +340,7 @@ class EditableTableField(BaseField):
                 }
             )
 
-        if isinstance(field_info, TextareaField):  # MarkdownField)):
+        if isinstance(field_info, TextareaField | MarkdownField):
             column_def.update(
                 {
                     "cellEditor": "agLargeTextCellEditor",
@@ -347,7 +349,7 @@ class EditableTableField(BaseField):
                 }
             )
 
-        if isinstance(field_info, TextField | TextareaField):  # MarkdownField)):
+        if isinstance(field_info, TextField | TextareaField | MarkdownField):
             column_def.update({"dtype": "str"})
 
         if isinstance(field_info, CheckboxField):

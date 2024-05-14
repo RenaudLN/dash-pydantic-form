@@ -4,13 +4,14 @@ from collections.abc import Callable
 from datetime import time
 from enum import Enum, EnumMeta
 from functools import partial
+from textwrap import TextWrapper
 from types import UnionType
 from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
-from pydantic import BaseModel, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 
@@ -35,38 +36,60 @@ VisibilityFilter = tuple[str, FilterOperator, Any]
 
 
 class BaseField(BaseModel):
-    """Base field representation class.
-
-    :param title: Field label, overrides the title defined in the pydantic Field.
-    :param description: Field helper text, overrides the description defined in the pydantic Field.
-    :param required: Whether to display a required asterisk. If not provided, uses pydantic's field `is_required`.
-    :param n_cols: Number of columns in the form, out of 4. Default 2.
-    :param visible: Define visibility conditions based on other form fields.
-        Accepts a boolean, a 3-tuple or list of 3-tuples with format: (field, operator, value).
-        The available operators are:
-        * "=="
-        * "!="
-        * "in"
-        * "not in"
-        * "array_contains"
-        * "array_contains_any"
-        NOTE: The field in the 3-tuples is a ":" separated path relative to the current field's level of nesting.
-        If you need to reference a field from a parent or the root use the special values `_parent_` or `_root_`.
-        E.g. visible=("_root_:first_name", "==", "Bob")
-    :param input_kwargs: Arguments to be passed to the underlying rendered component.
-    """
+    """Base field representation class."""
 
     base_component: ClassVar[type[Component] | None] = None
     reserved_attributes: ClassVar = ("value", "label", "description", "id", "required")
     full_width: ClassVar[bool] = False
 
-    title: str | None = None
-    description: str | None = None
-    required: bool | None = None
-    n_cols: int | None = None
-    visible: bool | VisibilityFilter | list[VisibilityFilter] | None = None
-    input_kwargs: dict | None = None
-    field_id_meta: str | None = None
+    title: str | None = Field(
+        default=None, description="Field label, overrides the title defined in the pydantic Field."
+    )
+    description: str | None = Field(
+        default=None, description="Field helper text, overrides the description defined in the pydantic Field."
+    )
+    required: bool | None = Field(
+        default=None,
+        description="Whether to display a required asterisk. If not provided, uses pydantic's field `is_required`.",
+    )
+    n_cols: int | None = Field(default=None, description="Number of columns in the form, out of 4. Default 2.")
+    visible: bool | VisibilityFilter | list[VisibilityFilter] | None = Field(
+        default=None,
+        description=(
+            "Define visibility conditions based on other form fields.\n"
+            "Accepts a boolean, a 3-tuple or list of 3-tuples with format: (field, operator, value).\n"
+            "The available operators are:\n"
+            "* '=='\n"
+            "* '!='\n"
+            "* 'in'\n"
+            "* 'not in'\n"
+            "* 'array_contains'\n"
+            "* 'array_contains_any'\n"
+            "NOTE: The field in the 3-tuples is a ':' separated path relative to the current field's "
+            "level of nesting.\n"
+            "If you need to reference a field from a parent or the root "
+            "use the special values `_parent_` or `_root_`.\n"
+            "E.g. visible=('_root_:first_name', '==', 'Bob')"
+            ""
+        ),
+    )
+    input_kwargs: dict | None = Field(
+        default=None,
+        description="Arguments to be passed to the underlying rendered component.",
+    )
+    field_id_meta: str | None = Field(default=None, description="Optional str to be set in the field id's 'meta' key.")
+
+    @classmethod
+    def __pydantic_init_subclass__(cls):
+        """Add docstring in subclasses."""
+        tw = TextWrapper(width=89, initial_indent="    ", subsequent_indent="    ")
+        result = (cls.__doc__ or "") + "\n\nParameters\n----------\n"
+        for field_name, field_info in cls.model_fields.items():
+            annotation = str(field_info.annotation)
+            description = tw.fill(field_info.description) if field_info.description else "    (missing description)"
+            result += f"{field_name}: {annotation}\n{description}\n"
+
+        cls.__doc__ = result
 
     def model_post_init(self, _context):
         """Model post init."""
@@ -423,10 +446,14 @@ class TimeField(BaseField):
 class SelectField(BaseField):
     """Select field."""
 
-    data_getter: Callable[[], list] | None = None
-    options_labels: dict | None = None
-    base_component = dmc.Select
+    data_getter: Callable[[], list] | None = Field(
+        default=None, description="Function to retrieve a list of options. This function takes no argument."
+    )
+    options_labels: dict | None = Field(
+        default=None, description="Mapper from option to label. Especially useful for Literals and Enums."
+    )
 
+    base_component = dmc.Select
     getters: ClassVar[dict[str, Callable]] = {}
 
     def model_post_init(self, _context):
