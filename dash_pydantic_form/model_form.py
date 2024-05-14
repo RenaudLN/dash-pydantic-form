@@ -85,11 +85,11 @@ class ModelForm(html.Div):
                 continue
             if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
-                    field_repr = get_default_repr(field_info.annotation, **fields_repr[field_name])
+                    field_repr = get_default_repr(field_info, **fields_repr[field_name])
                 else:
                     field_repr = fields_repr[field_name]
             else:
-                field_repr = get_default_repr(field_info.annotation)
+                field_repr = get_default_repr(field_info)
 
             field_inputs[field_name] = field_repr.render(
                 item=item,

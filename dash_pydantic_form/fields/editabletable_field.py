@@ -189,7 +189,7 @@ class EditableTableField(BaseField):
 
             if field in self.fields_repr:
                 return self.fields_repr[field]
-            return get_default_repr(template.model_fields[field].annotation)
+            return get_default_repr(template.model_fields[field])
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
@@ -286,7 +286,7 @@ class EditableTableField(BaseField):
         from dash_pydantic_form.fields import get_default_repr
 
         if isinstance(field_repr, dict):
-            field_repr = get_default_repr(field_info.annotation, **field_repr)
+            field_repr = get_default_repr(field_info, **field_repr)
         # Column_def no matter the type
         column_def = {
             "editable": editable,

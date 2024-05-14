@@ -37,11 +37,11 @@ def get_non_null_annotation(annotation: type[Any]) -> type[Any]:
 
     e.g., get_non_null_annotation(Optional[str]) = str
     """
-    if (
-        get_origin(annotation) in [Union, UnionType]
-        and len(non_null_ann := list(set(get_args(annotation)) - {type(None)})) == 1
-    ):
-        return non_null_ann[0]
+    if get_origin(annotation) in [Union, UnionType]:
+        args = tuple(x for x in get_args(annotation) if x != type(None))
+        if len(args) == 1:
+            return args[0]
+        return Union[args]  # noqa: UP007
     return annotation
 
 
@@ -142,3 +142,11 @@ def get_all_subclasses(cls: type):
 def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
     return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
+
+
+def is_subclass(cls: type, base_cls: type) -> bool:
+    """Check if a class is a subclass of another class, handling issubclass errors."""
+    try:
+        return issubclass(cls, base_cls)
+    except TypeError:
+        return False
