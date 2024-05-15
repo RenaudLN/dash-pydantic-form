@@ -1,8 +1,8 @@
 from copy import deepcopy
 from types import UnionType
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 from pydantic_core import PydanticUndefined
 
 SEP = ":"
@@ -63,7 +63,10 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         return get_subitem(item, parent)[field]
     except:
         if allow_default:
-            field_info = get_subitem_cls(item, parent).model_fields[field]
+            subitem_cls = get_subitem_cls(item.__class__, parent)
+            if not is_subclass(subitem_cls, BaseModel):
+                return None
+            field_info = subitem_cls.model_fields[field]
             if field_info.default is not PydanticUndefined:
                 return field_info.default
             if field_info.default_factory:
@@ -108,7 +111,8 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
     second_part = None
 
     if len(path) == 1:
-        return get_non_null_annotation(model.model_fields[first_part].annotation)
+        ann = get_non_null_annotation(model.model_fields[first_part].annotation)
+        return ann
 
     second_part = path[1]
     if isinstance(second_part, str) and second_part.isdigit():
@@ -121,6 +125,33 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
             SEP.join(path[2:]),
         )
     return get_subitem_cls(first_annotation, SEP.join(path[1:]))
+
+
+def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, disc_field: str, disc_val: Any):
+    """Handle a discriminated model."""
+    all_vals = set()
+    out = None
+    for possible in get_args(annotation):
+        if not get_origin(possible.model_fields[disc_field].annotation) == Literal:
+            raise ValueError("Discriminator must be a Literal")
+
+        vals = get_args(possible.model_fields[disc_field].annotation)
+        all_vals = all_vals.union(vals)
+        if disc_val is not None and disc_val in vals:
+            out = possible
+
+    all_vals = tuple(all_vals)
+
+    if disc_val is None:
+        return create_model(
+            f"{model.__name__}{parent.replace(SEP, ' ').title().replace(' ', '')}Discriminator",
+            **{disc_field: (Literal[tuple(all_vals)], ...)},
+        ), all_vals
+
+    if out is None:
+        raise ValueError(f"Invalid discriminator value: {disc_val}")
+
+    return out, all_vals
 
 
 def get_fullpath(*parts):
@@ -150,3 +181,37 @@ def is_subclass(cls: type, base_cls: type) -> bool:
         return issubclass(cls, base_cls)
     except TypeError:
         return False
+
+
+def model_construct_recursive(data: dict, data_model: type[BaseModel]):
+    """Construct a model recursively."""
+    updated = deepcopy(data)
+    for key, val in data.items():
+        if key not in data_model.model_fields:
+            continue
+
+        field_info = data_model.model_fields[key]
+        ann = get_non_null_annotation(field_info.annotation)
+        if is_subclass(ann, BaseModel):
+            updated[key] = model_construct_recursive(val, ann)
+        elif (
+            get_origin(ann) in [Union, UnionType]
+            and all(is_subclass(x, BaseModel) for x in get_args(ann))
+            and field_info.discriminator
+            and field_info.discriminator in val
+        ):
+            disc_val = val[field_info.discriminator]
+            out = None
+            for possible in get_args(ann):
+                if not get_origin(possible.model_fields[field_info.discriminator].annotation) == Literal:
+                    raise ValueError("Discriminator must be a Literal")
+
+                if disc_val in get_args(possible.model_fields[field_info.discriminator].annotation):
+                    out = possible
+                    break
+            if out is not None:
+                updated[key] = model_construct_recursive(val, possible)
+        elif get_origin(ann) == list and is_subclass(get_args(ann)[0], BaseModel) and isinstance(val, list):
+            updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
+
+    return data_model.model_construct(**updated)

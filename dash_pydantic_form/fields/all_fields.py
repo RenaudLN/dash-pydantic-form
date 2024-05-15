@@ -15,6 +15,7 @@ from .base_fields import SwitchField as Switch
 from .base_fields import TextareaField as Textarea
 from .base_fields import TextField as Text
 from .base_fields import TimeField as Time
+from .discriminated_model_field import DiscriminatedModelField as DiscriminatedModel
 from .editabletable_field import EditableTableField as EditableTable
 from .markdown_field import MarkdownField as Markdown
 from .model_field import ModelField as Model
@@ -25,6 +26,7 @@ __all__ = [
     "Checklist",
     "Color",
     "Date",
+    "DiscriminatedModel",
     "EditableTable",
     "Json",
     "Markdown",

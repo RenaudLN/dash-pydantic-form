@@ -38,8 +38,7 @@ def get_default_repr(field_info: FieldInfo, **kwargs) -> BaseField:
     # Test for discriminated model
     if field_info.discriminator:
         if get_origin(ann) in [Union, UnionType] and all(is_subclass(x, BaseModel) for x in get_args(ann)):
-            # return fields.DiscriminatedModel(**kwargs)
-            logging.info("Discriminated model fields not yet supported.")
+            return fields.Model(**kwargs)
         else:
             logging.info(f"Discriminator not supported for {field_info.annotation}")
 

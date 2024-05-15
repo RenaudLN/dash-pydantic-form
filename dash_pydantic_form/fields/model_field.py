@@ -8,6 +8,7 @@ from dash import (
     Input,
     Output,
     clientside_callback,
+    html,
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
@@ -36,7 +37,7 @@ class ModelField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    sections: Sections = Field(default=None, description="Sub-form sections.")
+    sections: Sections | None = Field(default=None, description="Sub-form sections.")
 
     full_width = True
 
@@ -147,16 +148,21 @@ class ModelField(BaseField):
                     dmc.AccordionPanel(
                         [
                             *([dmc.Text(description, size="xs", c="dimmed")] * bool(title) * bool(description)),
-                            ModelForm(
-                                item=item,
-                                aio_id=aio_id,
-                                form_id=form_id,
-                                path=get_fullpath(parent, field),
-                                fields_repr=self.fields_repr,
-                                sections=self.sections,
+                            html.Div(
+                                ModelForm(
+                                    item=item,
+                                    aio_id=aio_id,
+                                    form_id=form_id,
+                                    path=get_fullpath(parent, field),
+                                    fields_repr=self.fields_repr,
+                                    sections=self.sections,
+                                    discriminator=field_info.discriminator,
+                                ),
+                                id=self.ids.form_wrapper(
+                                    aio_id, form_id, field_info.discriminator or "", parent=get_fullpath(parent, field)
+                                ),
                             ),
                         ],
-                        id=self.ids.form_wrapper(aio_id, form_id, field, parent=parent),
                     ),
                 ],
             ),

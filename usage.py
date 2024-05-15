@@ -56,6 +56,20 @@ class Pet(BaseModel):
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
 
+class Cat(BaseModel):
+    """Cat model."""
+
+    species: Literal["cat"]
+    meows: bool = True
+
+
+class Dog(BaseModel):
+    """Dog model."""
+
+    species: Literal["dog"]
+    barks: bool = True
+
+
 class Employee(BaseModel):
     """Employee model."""
 
@@ -65,10 +79,11 @@ class Employee(BaseModel):
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
-    pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
+    # pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
+    pet: Cat | Dog | None = Field(title="Pet", description="Employee pet", default=None, discriminator="species")
 
 
-bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pets=[{"name": "Rex", "species": "dog"}])
+bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pet={"species": "cat"})
 
 
 AIO_ID = "home"
@@ -84,6 +99,7 @@ app.layout = dmc.MantineProvider(
                         dmc.Title("Dash Pydantic form", mb="1rem", order=3),
                         ModelForm(
                             Employee,
+                            # bob,
                             AIO_ID,
                             FORM_ID,
                             fields_repr={
@@ -111,6 +127,12 @@ app.layout = dmc.MantineProvider(
                                     },
                                     table_height=200,
                                 ),
+                                "pet": {
+                                    "sections": Sections(
+                                        sections=[FormSection(name="Noise", fields=["meows", "barks"])],
+                                        render="tabs",
+                                    )
+                                },
                             },
                             sections=Sections(
                                 sections=[
