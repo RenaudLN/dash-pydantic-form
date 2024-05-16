@@ -50,4 +50,4 @@ jobs:
       - name: Build and Publish package
         run: |
           python3 -m build
-          twine upload dist/* -u __token__ -p $PYPI_TOKEN --non-interactive
+          twine upload dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
