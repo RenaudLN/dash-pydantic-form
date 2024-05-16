@@ -1,0 +1,49 @@
+name: Publish to Pypi
+
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Python based on pyproject.toml
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: pyproject.toml
+          cache: pip
+
+      - name: Run Pre-commit
+        uses: pre-commit/action@v3.0.0
+        env:
+          RUFF_FORMAT: github
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [pre-commit]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Python based on pyproject.toml
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: pyproject.toml
+          cache: pip
+
+      - name: Build and Publish package
+        run: |
+          python3 -m build
+          twine upload dist/* -u __token__ -p $PYPI_TOKEN --non-interactive
