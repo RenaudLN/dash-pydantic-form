@@ -43,6 +43,10 @@ jobs:
           python-version-file: pyproject.toml
           cache: pip
 
+      - name: Install dependencies
+        run: |
+          pip install build twine
+
       - name: Build and Publish package
         run: |
           python3 -m build
