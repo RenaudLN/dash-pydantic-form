@@ -16,7 +16,13 @@ from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 
 from dash_pydantic_form import ids as common_ids
-from dash_pydantic_form.utils import SEP, get_all_subclasses, get_fullpath, get_model_value, get_non_null_annotation
+from dash_pydantic_form.utils import (
+    SEP,
+    get_all_subclasses,
+    get_fullpath,
+    get_model_value,
+    get_non_null_annotation,
+)
 
 CHECKED_COMPONENTS = [
     dmc.Checkbox,
@@ -507,7 +513,7 @@ class SelectField(BaseField):
         """Get list of possible values from annotation recursively."""
         data = []
         # if the annotation is a union of types, recursively calls this function on each type.
-        if get_origin(non_null_annotation) is Union or get_origin(non_null_annotation) is UnionType:
+        if get_origin(non_null_annotation) in [Union, UnionType]:
             data.extend(
                 sum(
                     [self._get_data_list_recursive(sub_annotation) for sub_annotation in get_args(non_null_annotation)],
@@ -597,6 +603,11 @@ class SegmentedControlField(SelectField):
     """Segmented control field."""
 
     base_component = dmc.SegmentedControl
+
+    def model_post_init(self, _context):
+        """Add default style."""
+        super().model_post_init(_context)
+        self.input_kwargs.setdefault("style", {"alignSelf": "baseline"})
 
 
 clientside_callback(

@@ -56,6 +56,20 @@ class Pet(BaseModel):
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
 
+class HomeOffice(BaseModel):
+    """Home office model."""
+
+    type: Literal["home_office"]
+    has_workstation: bool = Field(title="Has workstation", description="Does the employee have a suitable workstation")
+
+
+class WorkOffice(BaseModel):
+    """Work office model."""
+
+    type: Literal["work_office"]
+    commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
+
+
 class Employee(BaseModel):
     """Employee model."""
 
@@ -65,10 +79,11 @@ class Employee(BaseModel):
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
+    location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
 
 
-bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pets=[{"name": "Rex", "species": "dog"}])
+bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pet={"species": "cat"})
 
 
 AIO_ID = "home"
@@ -84,6 +99,7 @@ app.layout = dmc.MantineProvider(
                         dmc.Title("Dash Pydantic form", mb="1rem", order=3),
                         ModelForm(
                             Employee,
+                            # bob,
                             AIO_ID,
                             FORM_ID,
                             fields_repr={
@@ -111,11 +127,22 @@ app.layout = dmc.MantineProvider(
                                     },
                                     table_height=200,
                                 ),
+                                "location": {
+                                    "fields_repr": {
+                                        "type": fields.RadioItems(
+                                            options_labels={"home_office": "Home", "work_office": "Work"}
+                                        )
+                                    },
+                                },
                             },
                             sections=Sections(
                                 sections=[
                                     FormSection(name="General", fields=["name", "age", "mini_bio"], default_open=True),
-                                    FormSection(name="HR", fields=["office", "joined", "metadata"], default_open=True),
+                                    FormSection(
+                                        name="HR",
+                                        fields=["office", "joined", "location", "metadata"],
+                                        default_open=True,
+                                    ),
                                     FormSection(name="Other", fields=["pets"], default_open=True),
                                 ],
                                 render="accordion",

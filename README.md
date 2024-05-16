@@ -262,6 +262,46 @@ NOTE: The field in the 3-tuples is a ":" separated path relative to the current 
 
 E.g., `visible=("_root_:first_name", "==", "Bob")`
 
+## Discriminated unions
+
+Dash pydantic form supports Pydantic [discriminated unions with str discriminator](https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators)
+
+```py
+class HomeOffice(BaseModel):
+    """Home office model."""
+
+    type: Literal["home_office"]
+    has_workstation: bool = Field(title="Has workstation", description="Does the employee have a suitable workstation")
+
+
+class WorkOffice(BaseModel):
+    """Work office model."""
+
+    type: Literal["work_office"]
+    commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
+
+class Employee(BaseModel):
+    name: str = Field(title="Name")
+    work_location: HomeOffice | WorkOffice | None = Field("Work location", default=None, discriminator="type")
+
+form = ModelForm(
+    Employee,
+    aio_id="employees",
+    form_id="new_employee",
+    fields_repr={
+        "work_location": {
+            "fields_repr": {
+                "type": fields.RadioItems(
+                    options_labels={"home_office": "Home", "work_office": "Work"}
+                )
+            },
+        },
+    }
+)
+```
+
+![Discriminated union](images/discriminated-union.gif)
+
 ## Creating custom fields
 
 *To be written*

@@ -1,25 +1,46 @@
 import contextlib
 import itertools
+from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Union
+from typing import Literal, Union
 
 import dash_mantine_components as dmc
-from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
+from dash import (
+    ALL,
+    MATCH,
+    ClientsideFunction,
+    Input,
+    Output,
+    State,
+    callback,
+    clientside_callback,
+    ctx,
+    dcc,
+    html,
+)
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from pydantic import BaseModel
 
 from . import ids as common_ids
+from .fields import BaseField, fields
 from .form_section import Sections
-from .utils import deep_merge, get_subitem_cls
+from .utils import (
+    SEP,
+    Type,
+    deep_merge,
+    get_fullpath,
+    get_model_cls,
+    get_subitem,
+    get_subitem_cls,
+    handle_discriminated,
+    model_construct_recursive,
+)
 
-if TYPE_CHECKING:
-    from .fields import BaseField
 
-
-def form_base_id(part: str, aio_id: str, form_id: str):
+def form_base_id(part: str, aio_id: str, form_id: str, parent: str = ""):
     """Form parts id."""
-    return {"part": part, "aio_id": aio_id, "form_id": form_id}
+    return {"part": part, "aio_id": aio_id, "form_id": form_id, "parent": parent}
 
 
 Children_ = Component | str | int | float
@@ -53,16 +74,18 @@ class ModelForm(html.Div):
     class ids:
         """Model form ids."""
 
-        main = partial(form_base_id, "_pydantic-form-main")
-        accordion = partial(form_base_id, "_pydantic-form-accordion")
-        tabs = partial(form_base_id, "_pydantic-form-tabs")
-        steps = partial(form_base_id, "_pydantic-form-steps")
-        steps_save = partial(form_base_id, "_pydantic-form-steps-save")
-        steps_next = partial(form_base_id, "_pydantic-form-steps-next")
-        steps_previous = partial(form_base_id, "_pydantic-form-steps-previous")
-        steps_nsteps = partial(form_base_id, "_pydantic-form-steps-nsteps")
+        main = partial(form_base_id, "_pydf-main")
+        accordion = partial(form_base_id, "_pydf-accordion")
+        tabs = partial(form_base_id, "_pydf-tabs")
+        steps = partial(form_base_id, "_pydf-steps")
+        steps_save = partial(form_base_id, "_pydf-steps-save")
+        steps_next = partial(form_base_id, "_pydf-steps-next")
+        steps_previous = partial(form_base_id, "_pydf-steps-previous")
+        steps_nsteps = partial(form_base_id, "_pydf-steps-nsteps")
+        model_store = partial(form_base_id, "_pydf-model-store")
+        form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
 
-    def __init__(  # noqa: PLR0912, PLR0913
+    def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
         item: BaseModel | type[BaseModel],
         aio_id: str,
@@ -70,6 +93,7 @@ class ModelForm(html.Div):
         path: str = "",
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
+        discriminator: str | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
 
@@ -80,16 +104,36 @@ class ModelForm(html.Div):
         fields_repr = fields_repr or {}
         field_inputs = {}
         subitem_cls = get_subitem_cls(item.__class__, path)
+
+        # Handle type unions
+        disc_vals = None
+        discriminator_value = None
+        if Type.classify(subitem_cls, discriminator) == Type.DISCRIMINATED_MODEL:
+            subitem = get_subitem(item, path)
+            discriminator_value = None if subitem is None else getattr(subitem, discriminator, None)
+            subitem_cls, disc_vals = handle_discriminated(
+                item.__class__, path, subitem_cls, discriminator, discriminator_value
+            )
+
+        more_kwargs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
             if sections and field_name in sections.excluded_fields:
                 continue
+            # If discriminating field, ensure all discriminator values are shown
+            # Also add required metadata for discriminator callback
+            if disc_vals and field_name == discriminator:
+                field_info = deepcopy(field_info)  # noqa: PLW2901
+                field_info.annotation = Literal[disc_vals]
+                more_kwargs |= {"n_cols": 4, "field_id_meta": "discriminator"}
             if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
-                    field_repr = get_default_repr(field_info, **fields_repr[field_name])
+                    field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
                 else:
                     field_repr = fields_repr[field_name]
+                    for key, val in more_kwargs.items():
+                        setattr(field_repr, key, val)
             else:
-                field_repr = get_default_repr(field_info)
+                field_repr = get_default_repr(field_info, **more_kwargs)
 
             field_inputs[field_name] = field_repr.render(
                 item=item,
@@ -100,7 +144,7 @@ class ModelForm(html.Div):
                 field_info=field_info,
             )
 
-        if not sections:
+        if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
             children = [self.grid(list(field_inputs.values()))]
         else:
             fields_not_in_sections = set(field_inputs) - set(
@@ -119,6 +163,7 @@ class ModelForm(html.Div):
             sections_render = render_function(
                 aio_id=aio_id,
                 form_id=form_id,
+                path=path,
                 field_inputs=field_inputs,
                 sections=sections,
                 **sections.render_kwargs,
@@ -135,8 +180,32 @@ class ModelForm(html.Div):
                     self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
                 ]
 
+        fields_repr_dicts = (
+            {
+                field_name: (
+                    get_default_repr(subitem_cls.model_fields[field_name], **field_repr)
+                    if isinstance(field_repr, dict)
+                    else field_repr
+                ).to_dict()
+                for field_name, field_repr in fields_repr.items()
+            }
+            if fields_repr
+            else None
+        )
         if not path:
             children.append(dcc.Store(id=self.ids.main(aio_id, form_id)))
+            children.append(dcc.Store(data=str(item.__class__), id=self.ids.model_store(aio_id, form_id)))
+
+        if discriminator:
+            children.append(
+                dcc.Store(
+                    data={
+                        "sections": sections.model_dump(mode="json") if sections else None,
+                        "fields_repr": fields_repr_dicts,
+                    },
+                    id=self.ids.form_specs_store(aio_id, form_id, path),
+                )
+            )
 
         super().__init__(children=children)
 
@@ -146,11 +215,12 @@ class ModelForm(html.Div):
         return dmc.SimpleGrid(children, cols={"base": 1, "sm": 4}, className="pydantic-form-grid", **kwargs)
 
     @classmethod
-    def render_accordion_sections(
+    def render_accordion_sections(  # noqa: PLR0913
         cls,
         *,
         aio_id: str,
         form_id: str,
+        path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
         **_kwargs,
@@ -193,17 +263,18 @@ class ModelForm(html.Div):
                         "padding": "0.125rem 0.5rem 0.5rem",
                     },
                 },
-                id=cls.ids.accordion(aio_id, form_id),
+                id=cls.ids.accordion(aio_id, form_id, path),
                 multiple=True,
             )
         ]
 
     @classmethod
-    def render_tabs_sections(
+    def render_tabs_sections(  # noqa: PLR0913
         cls,
         *,
         aio_id: str,
         form_id: str,
+        path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
         **_kwargs,
@@ -242,7 +313,7 @@ class ModelForm(html.Div):
                 styles={
                     "panel": {"padding": "1rem 0.5rem 0"},
                 },
-                id=cls.ids.tabs(aio_id, form_id),
+                id=cls.ids.tabs(aio_id, form_id, path),
             )
         ]
 
@@ -252,6 +323,7 @@ class ModelForm(html.Div):
         *,
         aio_id: str,
         form_id: str,
+        path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
         additional_steps: list = None,
@@ -270,7 +342,7 @@ class ModelForm(html.Div):
             kwargs.get("styles", {}),
         )
         stepper = dmc.Stepper(
-            id=cls.ids.steps(aio_id, form_id),
+            id=cls.ids.steps(aio_id, form_id, path),
             active=0,
             orientation="vertical",
             size="sm",
@@ -294,14 +366,14 @@ class ModelForm(html.Div):
                         [
                             dmc.Button(
                                 "Back",
-                                id=cls.ids.steps_previous(aio_id, form_id),
+                                id=cls.ids.steps_previous(aio_id, form_id, path),
                                 disabled=True,
                                 size="compact-md",
                                 leftSection=DashIconify(icon="carbon:arrow-left", height=16),
                             ),
                             dmc.Button(
                                 "Next",
-                                id=cls.ids.steps_next(aio_id, form_id),
+                                id=cls.ids.steps_next(aio_id, form_id, path),
                                 size="compact-md",
                                 rightSection=DashIconify(icon="carbon:arrow-right", height=16),
                             ),
@@ -311,7 +383,7 @@ class ModelForm(html.Div):
                             "top": f"calc({70 * (len(sections.sections) + len(additional_steps or []))}px + 1rem)",
                         },
                     ),
-                    dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id)),
+                    dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id, path)),
                 ],
                 style={"position": "relative"},
             )
@@ -320,31 +392,72 @@ class ModelForm(html.Div):
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="stepsPreviousNext"),
-    Output(ModelForm.ids.steps(MATCH, MATCH), "active"),
-    Input(ModelForm.ids.steps_previous(MATCH, MATCH), "n_clicks"),
-    Input(ModelForm.ids.steps_next(MATCH, MATCH), "n_clicks"),
-    State(ModelForm.ids.steps(MATCH, MATCH), "active"),
-    State(ModelForm.ids.steps_nsteps(MATCH, MATCH), "data"),
+    Output(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
+    Input(ModelForm.ids.steps_previous(MATCH, MATCH, MATCH), "n_clicks"),
+    Input(ModelForm.ids.steps_next(MATCH, MATCH, MATCH), "n_clicks"),
+    State(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
+    State(ModelForm.ids.steps_nsteps(MATCH, MATCH, MATCH), "data"),
     prevent_inital_call=True,
 )
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="stepsDisable"),
-    Output(ModelForm.ids.steps_previous(MATCH, MATCH), "disabled"),
-    Output(ModelForm.ids.steps_next(MATCH, MATCH), "disabled"),
-    Input(ModelForm.ids.steps(MATCH, MATCH), "active"),
-    State(ModelForm.ids.steps_nsteps(MATCH, MATCH), "data"),
+    Output(ModelForm.ids.steps_previous(MATCH, MATCH, MATCH), "disabled"),
+    Output(ModelForm.ids.steps_next(MATCH, MATCH, MATCH), "disabled"),
+    Input(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
+    State(ModelForm.ids.steps_nsteps(MATCH, MATCH, MATCH), "data"),
 )
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="stepsClickListener"),
-    Output(ModelForm.ids.steps(MATCH, MATCH), "id"),
-    Input(ModelForm.ids.steps(MATCH, MATCH), "id"),
+    Output(ModelForm.ids.steps(MATCH, MATCH, MATCH), "id"),
+    Input(ModelForm.ids.steps(MATCH, MATCH, MATCH), "id"),
 )
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="getValues"),
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
-    Input(common_ids.value_field(MATCH, MATCH, ALL, ALL), "value"),
-    Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL), "checked"),
+    Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),
+    Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
 )
+
+
+@callback(
+    Output(fields.Model.ids.form_wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+    Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "discriminator"), "value"),
+    State(ModelForm.ids.main(MATCH, MATCH), "data"),
+    State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
+    State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
+    prevent_initial_call=True,
+)
+def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict):
+    """Update discriminated form."""
+    path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
+    parts = path.split(SEP)
+    # Update the form data with the new value as it wouldn't have been updated yet
+    pointer = form_data
+    for i, part in enumerate(parts):
+        if i == len(parts) - 1:
+            pointer[part] = val
+        pointer = pointer[int(part) if part.isdigit() else part]
+
+    # Create an instance of the model sith the form data using model_construct_recursive
+    # to build it out as much as possible without failing on validation
+    model_cls = get_model_cls(model_name)
+    item = model_construct_recursive(form_data, model_cls)
+
+    # Retrieve fields-repr and sections from the stored data
+    fields_repr: dict[str, BaseField] = {
+        k: BaseField.from_dict(v) for k, v in (form_specs["fields_repr"] or {}).items()
+    }
+    sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
+
+    return ModelForm(
+        item=item,
+        aio_id=ctx.triggered_id["aio_id"],
+        form_id=ctx.triggered_id["form_id"],
+        path=ctx.triggered_id["parent"],
+        discriminator=ctx.triggered_id["field"],
+        sections=sections,
+        fields_repr=fields_repr,
+    )

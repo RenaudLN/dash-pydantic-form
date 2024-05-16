@@ -1,11 +1,54 @@
 from copy import deepcopy
+from datetime import date, time
+from enum import Enum
+from numbers import Number
 from types import UnionType
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 from pydantic_core import PydanticUndefined
 
 SEP = ":"
+
+
+class Type(Enum):
+    """Types of fields."""
+
+    SCALAR = "scalar"
+    MODEL = "model"
+    DISCRIMINATED_MODEL = "discriminated_model"
+    MODEL_LIST = "model_list"
+    SCALAR_LIST = "scalar_list"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911
+        """Classify a value as a field type."""
+        annotation = get_non_null_annotation(annotation)
+
+        if is_subclass(annotation, str | Number | bool | date | time):
+            return cls.SCALAR
+
+        if is_subclass(annotation, BaseModel):
+            return cls.MODEL
+
+        if get_origin(annotation) in [Union, UnionType]:
+            if discriminator and all(is_subclass(x, BaseModel) for x in get_args(annotation)):
+                return cls.DISCRIMINATED_MODEL
+            if all(is_subclass(x, str | Number) for x in get_args(annotation)):
+                return cls.SCALAR
+
+        if get_origin(annotation) == list and not depth:
+            ann_args = get_args(annotation)
+            if not ann_args:
+                return cls.SCALAR_LIST
+            args_type = Type.classify(ann_args[0], depth=1)
+            if args_type == Type.SCALAR:
+                return cls.SCALAR_LIST
+            if args_type == Type.MODEL:
+                return cls.MODEL_LIST
+
+        return cls.UNKNOWN
 
 
 def deep_merge(dict1: dict, dict2: dict) -> dict:
@@ -63,7 +106,10 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         return get_subitem(item, parent)[field]
     except:
         if allow_default:
-            field_info = get_subitem_cls(item, parent).model_fields[field]
+            subitem_cls = get_subitem_cls(item.__class__, parent)
+            if not is_subclass(subitem_cls, BaseModel):
+                return None
+            field_info = subitem_cls.model_fields[field]
             if field_info.default is not PydanticUndefined:
                 return field_info.default
             if field_info.default_factory:
@@ -108,7 +154,8 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
     second_part = None
 
     if len(path) == 1:
-        return get_non_null_annotation(model.model_fields[first_part].annotation)
+        ann = get_non_null_annotation(model.model_fields[first_part].annotation)
+        return ann
 
     second_part = path[1]
     if isinstance(second_part, str) and second_part.isdigit():
@@ -121,6 +168,33 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
             SEP.join(path[2:]),
         )
     return get_subitem_cls(first_annotation, SEP.join(path[1:]))
+
+
+def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, disc_field: str, disc_val: Any):
+    """Handle a discriminated model."""
+    all_vals = set()
+    out = None
+    for possible in get_args(annotation):
+        if not get_origin(possible.model_fields[disc_field].annotation) == Literal:
+            raise ValueError("Discriminator must be a Literal")
+
+        vals = get_args(possible.model_fields[disc_field].annotation)
+        all_vals = all_vals.union(vals)
+        if disc_val is not None and disc_val in vals:
+            out = possible
+
+    all_vals = tuple(all_vals)
+
+    if disc_val is None:
+        return create_model(
+            f"{model.__name__}{parent.replace(SEP, ' ').title().replace(' ', '')}Discriminator",
+            **{disc_field: (Literal[tuple(all_vals)], ...)},
+        ), all_vals
+
+    if out is None:
+        raise ValueError(f"Invalid discriminator value: {disc_val}")
+
+    return out, all_vals
 
 
 def get_fullpath(*parts):
@@ -150,3 +224,33 @@ def is_subclass(cls: type, base_cls: type) -> bool:
         return issubclass(cls, base_cls)
     except TypeError:
         return False
+
+
+def model_construct_recursive(data: dict, data_model: type[BaseModel]):
+    """Construct a model recursively."""
+    updated = deepcopy(data)
+    for key, val in data.items():
+        if key not in data_model.model_fields:
+            continue
+
+        field_info = data_model.model_fields[key]
+        ann = get_non_null_annotation(field_info.annotation)
+        type_ = Type.classify(ann, field_info.discriminator)
+        if type_ == Type.MODEL:
+            updated[key] = model_construct_recursive(val, ann)
+        elif type_ == Type.DISCRIMINATED_MODEL and field_info.discriminator in val:
+            disc_val = val[field_info.discriminator]
+            out = None
+            for possible in get_args(ann):
+                if not get_origin(possible.model_fields[field_info.discriminator].annotation) == Literal:
+                    raise ValueError("Discriminator must be a Literal")
+
+                if disc_val in get_args(possible.model_fields[field_info.discriminator].annotation):
+                    out = possible
+                    break
+            if out is not None:
+                updated[key] = model_construct_recursive(val, possible)
+        elif type_ == Type.MODEL_LIST and isinstance(val, list):
+            updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
+
+    return data_model.model_construct(**updated)
