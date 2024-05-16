@@ -1,4 +1,7 @@
 from copy import deepcopy
+from datetime import date, time
+from enum import Enum
+from numbers import Number
 from types import UnionType
 from typing import Any, Literal, Union, get_args, get_origin
 
@@ -6,6 +9,46 @@ from pydantic import BaseModel, create_model
 from pydantic_core import PydanticUndefined
 
 SEP = ":"
+
+
+class Type(Enum):
+    """Types of fields."""
+
+    SCALAR = "scalar"
+    MODEL = "model"
+    DISCRIMINATED_MODEL = "discriminated_model"
+    MODEL_LIST = "model_list"
+    SCALAR_LIST = "scalar_list"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911
+        """Classify a value as a field type."""
+        annotation = get_non_null_annotation(annotation)
+
+        if is_subclass(annotation, str | Number | bool | date | time):
+            return cls.SCALAR
+
+        if is_subclass(annotation, BaseModel):
+            return cls.MODEL
+
+        if get_origin(annotation) in [Union, UnionType]:
+            if discriminator and all(is_subclass(x, BaseModel) for x in get_args(annotation)):
+                return cls.DISCRIMINATED_MODEL
+            if all(is_subclass(x, str | Number) for x in get_args(annotation)):
+                return cls.SCALAR
+
+        if get_origin(annotation) == list and not depth:
+            ann_args = get_args(annotation)
+            if not ann_args:
+                return cls.SCALAR_LIST
+            args_type = Type.classify(ann_args[0], depth=1)
+            if args_type == Type.SCALAR:
+                return cls.SCALAR_LIST
+            if args_type == Type.MODEL:
+                return cls.MODEL_LIST
+
+        return cls.UNKNOWN
 
 
 def deep_merge(dict1: dict, dict2: dict) -> dict:
@@ -192,14 +235,10 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
 
         field_info = data_model.model_fields[key]
         ann = get_non_null_annotation(field_info.annotation)
-        if is_subclass(ann, BaseModel):
+        type_ = Type.classify(ann, field_info.discriminator)
+        if type_ == Type.MODEL:
             updated[key] = model_construct_recursive(val, ann)
-        elif (
-            get_origin(ann) in [Union, UnionType]
-            and all(is_subclass(x, BaseModel) for x in get_args(ann))
-            and field_info.discriminator
-            and field_info.discriminator in val
-        ):
+        elif type_ == Type.DISCRIMINATED_MODEL and field_info.discriminator in val:
             disc_val = val[field_info.discriminator]
             out = None
             for possible in get_args(ann):
@@ -211,7 +250,7 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
                     break
             if out is not None:
                 updated[key] = model_construct_recursive(val, possible)
-        elif get_origin(ann) == list and is_subclass(get_args(ann)[0], BaseModel) and isinstance(val, list):
+        elif type_ == Type.MODEL_LIST and isinstance(val, list):
             updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
 
     return data_model.model_construct(**updated)

@@ -1,8 +1,8 @@
 import contextlib
 import itertools
+from copy import deepcopy
 from functools import partial
-from types import UnionType
-from typing import Literal, Union, get_origin
+from typing import Literal, Union
 
 import dash_mantine_components as dmc
 from dash import (
@@ -27,6 +27,7 @@ from .fields import BaseField, fields
 from .form_section import Sections
 from .utils import (
     SEP,
+    Type,
     deep_merge,
     get_fullpath,
     get_model_cls,
@@ -94,7 +95,7 @@ class ModelForm(html.Div):
         sections: Sections | None = None,
         discriminator: str | None = None,
     ) -> None:
-        from dash_pydantic_form.fields import fields, get_default_repr
+        from dash_pydantic_form.fields import get_default_repr
 
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
@@ -107,25 +108,31 @@ class ModelForm(html.Div):
         # Handle type unions
         disc_vals = None
         discriminator_value = None
-        if get_origin(subitem_cls) in [Union, UnionType] and discriminator:
+        if Type.classify(subitem_cls, discriminator) == Type.DISCRIMINATED_MODEL:
             subitem = get_subitem(item, path)
             discriminator_value = None if subitem is None else getattr(subitem, discriminator, None)
             subitem_cls, disc_vals = handle_discriminated(
                 item.__class__, path, subitem_cls, discriminator, discriminator_value
             )
 
+        more_kwargs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
             if sections and field_name in sections.excluded_fields:
                 continue
+            # Handle discriminated models
             if disc_vals and field_name == discriminator:
-                field_repr = fields.Select(input_kwargs={"data": disc_vals}, n_cols=4, field_id_meta="discriminator")
-            elif field_name in fields_repr:
+                field_info = deepcopy(field_info)  # noqa: PLW2901
+                field_info.annotation = Literal[disc_vals]
+                more_kwargs |= {"n_cols": 4, "field_id_meta": "discriminator"}
+            if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
-                    field_repr = get_default_repr(field_info, **fields_repr[field_name])
+                    field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
                 else:
                     field_repr = fields_repr[field_name]
+                    for key, val in more_kwargs.items():
+                        setattr(field_repr, key, val)
             else:
-                field_repr = get_default_repr(field_info)
+                field_repr = get_default_repr(field_info, **more_kwargs)
 
             field_inputs[field_name] = field_repr.render(
                 item=item,
@@ -446,12 +453,3 @@ def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict
         sections=sections,
         fields_repr=fields_repr,
     )
-
-
-print(
-    fields.Model.ids.form_wrapper(MATCH, MATCH, MATCH, MATCH),
-    ModelForm.ids.main(MATCH, MATCH),
-    ModelForm.ids.model_store(MATCH, MATCH),
-    ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH),
-    sep="\n",
-)
