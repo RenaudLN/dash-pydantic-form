@@ -119,7 +119,8 @@ class ModelForm(html.Div):
         for field_name, field_info in subitem_cls.model_fields.items():
             if sections and field_name in sections.excluded_fields:
                 continue
-            # Handle discriminated models
+            # If discriminating field, ensure all discriminator values are shown
+            # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:
                 field_info = deepcopy(field_info)  # noqa: PLW2901
                 field_info.annotation = Literal[disc_vals]
@@ -433,17 +434,24 @@ def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict
     """Update discriminated form."""
     path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
     parts = path.split(SEP)
+    # Update the form data with the new value as it wouldn't have been updated yet
     pointer = form_data
     for i, part in enumerate(parts):
         if i == len(parts) - 1:
             pointer[part] = val
         pointer = pointer[int(part) if part.isdigit() else part]
+
+    # Create an instance of the model sith the form data using model_construct_recursive
+    # to build it out as much as possible without failing on validation
     model_cls = get_model_cls(model_name)
     item = model_construct_recursive(form_data, model_cls)
+
+    # Retrieve fields-repr and sections from the stored data
     fields_repr: dict[str, BaseField] = {
         k: BaseField.from_dict(v) for k, v in (form_specs["fields_repr"] or {}).items()
     }
     sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
+
     return ModelForm(
         item=item,
         aio_id=ctx.triggered_id["aio_id"],
