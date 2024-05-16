@@ -6,7 +6,7 @@ authors = [
     {name = "Renaud Lainé", email = "renaud.laine@enea-consulting.com"},
 ]
 readme = "README.md"
-requires-python =  ">=3.10,<3.11"
+requires-python =  ">=3.10,<3.13"
 license = {text = "Copyright ENEA Australia Pty Ltd - All Rights Reserved. Proprietary and confidential"}
 dependencies = [
     "dash",
