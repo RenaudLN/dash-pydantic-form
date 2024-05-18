@@ -46,9 +46,8 @@ class Sections(BaseModel):
         List of field names to exclude from the form altogether, optional.
     render_kwargs: dict | None
         Additional render kwargs passed to the section render functions, optional.
-        See :meth:`dash_pydantic_form.model_form.ModelForm.render_accordion_sections`,
-        :meth:`dash_pydantic_form.model_form.ModelForm.render_tabs_sections` and
-        :meth:`dash_pydantic_form.model_form.ModelForm.render_steps_sections`
+        See `ModelForm.render_accordion_sections`, `ModelForm.render_tabs_sections` and
+        `ModelForm.render_steps_sections`
     """
 
     sections: list[FormSection]

@@ -66,14 +66,18 @@ class ModelForm(html.Div):
     fields_repr: dict[str, dict | BaseField] | None
         Mapping between field name and field representation. If not provided, default field
         representations will be used based on the field annotation.
-        See :meth:`dash_pydantic_form.fields.get_default_repr`.
+        See `fields.get_default_repr`.
     sections: Sections | None
-        List of form sections (optional). See :class:`dash_pydantic_form.form_section.Sections`.
+        List of form sections (optional). See `Sections`.
+    submit_on_enter: bool
+        Whether to submit the form on enter. Default False.
+        Note: this may break the behaviour of some fields (e.g. editable table), use with caution.
     """
 
     class ids:
         """Model form ids."""
 
+        form = partial(form_base_id, "_pydf-form")
         main = partial(form_base_id, "_pydf-main")
         accordion = partial(form_base_id, "_pydf-accordion")
         tabs = partial(form_base_id, "_pydf-tabs")
@@ -93,6 +97,7 @@ class ModelForm(html.Div):
         path: str = "",
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
+        submit_on_enter: bool = False,
         discriminator: str | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
@@ -207,7 +212,17 @@ class ModelForm(html.Div):
                 )
             )
 
-        super().__init__(children=children)
+        super().__init__(
+            children=children,
+            **(
+                {
+                    "id": self.ids.form(aio_id, form_id, path),
+                    "data-entersubmits": submit_on_enter,
+                }
+                if not path
+                else {}
+            ),
+        )
 
     @classmethod
     def grid(cls, children: Children, **kwargs):
@@ -419,6 +434,13 @@ clientside_callback(
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
     Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="listenToSubmit"),
+    Output(ModelForm.ids.form(MATCH, MATCH), "id"),
+    Input(ModelForm.ids.form(MATCH, MATCH), "id"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-entersubmits"),
 )
 
 

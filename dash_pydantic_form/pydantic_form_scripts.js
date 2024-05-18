@@ -252,4 +252,18 @@ dash_clientside.pydf = {
     if (trigger_id.part.includes("previous")) return Math.max(0, active - 1)
     return dash_clientside.no_update
   },
+  listenToSubmit: (id, enterSubmits) => {
+    const el = document.getElementById(
+      JSON.stringify(id, Object.keys(id).sort())
+    )
+    if (el && enterSubmits) {
+      el.addEventListener("keypress", event => {
+          if (event.key === "Enter" && event.target.tagName === "INPUT") {
+              event.preventDefault()
+              dash_clientside.set_props(id, {"data-submit": 1})
+          }
+      })
+    }
+    return dash_clientside.no_update
+  },
 }
