@@ -26,7 +26,7 @@ class Employee(BaseModel):
     joined: date = Field(title="Employment date")
 ```
 
-Then you can get an auto-generated form with `ModelForm`, leveraging [dash-mantine-components](https://dash-mantine-components.com) (vercion 0.14) for form inputs.
+Then you can get an auto-generated form with `ModelForm`, leveraging [dash-mantine-components](https://dash-mantine-components.com) (version 0.14) for form inputs.
 
 ```py
 from dash_pydantic_form import ModelForm
@@ -248,7 +248,7 @@ form = ModelForm(
 )
 ```
 
-![Conditionnally visible field](images/conditionnally-visible-field.gif)
+![Conditionally visible field](images/conditionnally-visible-field.gif)
 
 `visible` accepts a boolean, a 3-tuple or list of 3-tuples with format: (field, operator, value). The available operators are:
 * "=="
