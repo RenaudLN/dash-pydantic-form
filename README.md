@@ -2,6 +2,8 @@
 
 This package allows users to quickly create forms with Plotly Dash based on pydantic models.
 
+See the full docs at [dash-pydantic-form docs](https://pydf-docs.onrender.com).
+
 ## Getting started
 
 Install with pip
