@@ -74,6 +74,8 @@ class ModelForm(html.Div):
         Note: this may break the behaviour of some fields (e.g. editable table), use with caution.
     excluded_fields: list[str] | None
         List of field names to exclude from the form altogether, optional.
+    container_kwargs: dict | None
+        Additional kwargs to pass to the containing div.
     """
 
     class ids:
@@ -102,6 +104,7 @@ class ModelForm(html.Div):
         submit_on_enter: bool = False,
         discriminator: str | None = None,
         excluded_fields: list[str] | None = None,
+        container_kwargs: dict | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
 
@@ -216,15 +219,16 @@ class ModelForm(html.Div):
 
         super().__init__(
             children=children,
-            style={"containerType": "inline-size"},
             **(
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-entersubmits": submit_on_enter,
+                    "style": {"containerType": "inline-size"},
                 }
                 if not path
                 else {}
             ),
+            **(container_kwargs or {}),
         )
 
     @classmethod

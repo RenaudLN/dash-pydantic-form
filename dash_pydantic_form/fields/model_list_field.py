@@ -158,6 +158,7 @@ class ModelListField(BaseField):
                     path=new_parent,
                     fields_repr=fields_repr,
                     sections=sections,
+                    container_kwargs={"style": {"flex": 1}},
                 ),
             ]
             + items_deletable
