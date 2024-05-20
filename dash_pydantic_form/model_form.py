@@ -204,16 +204,15 @@ class ModelForm(html.Div):
             children.append(dcc.Store(id=self.ids.main(aio_id, form_id)))
             children.append(dcc.Store(data=str(item.__class__), id=self.ids.model_store(aio_id, form_id)))
 
-        if discriminator:
-            children.append(
-                dcc.Store(
-                    data={
-                        "sections": sections.model_dump(mode="json") if sections else None,
-                        "fields_repr": fields_repr_dicts,
-                    },
-                    id=self.ids.form_specs_store(aio_id, form_id, path),
-                )
+        children.append(
+            dcc.Store(
+                data={
+                    "sections": sections.model_dump(mode="json") if sections else None,
+                    "fields_repr": fields_repr_dicts,
+                },
+                id=self.ids.form_specs_store(aio_id, form_id, path),
             )
+        )
 
         super().__init__(
             children=children,

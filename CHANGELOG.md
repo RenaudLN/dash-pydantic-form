@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2024-05-20
+### Changed
+- Always store form specs in in a `ids.form_specs_store`, not just for discriminated unions
+
 ## [0.1.5] - 2024-05-20
 ### Changed
 - BREAKING: Moved `excluded_fields` from `Sections` to `ModelForm`
