@@ -3,14 +3,16 @@
     --col-2-4: 2;
     --col-3-4: 3;
     --col-4-4: 4;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-@media (max-width: 48em) {
+@container (max-width: 48rem) {
     .pydantic-form-grid {
         --col-1-4: 1;
         --col-2-4: 1;
         --col-3-4: 1;
         --col-4-4: 1;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
     }
 }
 

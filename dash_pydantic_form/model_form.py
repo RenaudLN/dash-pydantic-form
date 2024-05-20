@@ -125,7 +125,7 @@ class ModelForm(html.Div):
 
         more_kwargs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
-            if field_name in excluded_fields:
+            if field_name in (excluded_fields or []):
                 continue
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
@@ -216,6 +216,7 @@ class ModelForm(html.Div):
 
         super().__init__(
             children=children,
+            style={"containerType": "inline-size"},
             **(
                 {
                     "id": self.ids.form(aio_id, form_id, path),
@@ -229,7 +230,7 @@ class ModelForm(html.Div):
     @classmethod
     def grid(cls, children: Children, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(children, cols={"base": 1, "sm": 4}, className="pydantic-form-grid", **kwargs)
+        return dmc.SimpleGrid(children, className="pydantic-form-grid", **kwargs)
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913
