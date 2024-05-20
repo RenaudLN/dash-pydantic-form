@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2024-05-20
+### Changed
+- BREAKING: Moved `excluded_fields` from `Sections` to `ModelForm`
+
 ## [0.1.4] - 2024-05-19
 ### Added
 - Allow form submit on Enter press (optional as it may break some field renders and more complex forms)

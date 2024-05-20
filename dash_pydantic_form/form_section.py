@@ -42,8 +42,6 @@ class Sections(BaseModel):
     render: Literal["accordion", "tabs", "steps"]
         how the sections should be rendered. Possible values: "accordion", "tabs", "steps".
         Default "accordion".
-    excluded_fields: list[str] | None
-        List of field names to exclude from the form altogether, optional.
     render_kwargs: dict | None
         Additional render kwargs passed to the section render functions, optional.
         See `ModelForm.render_accordion_sections`, `ModelForm.render_tabs_sections` and
@@ -53,13 +51,9 @@ class Sections(BaseModel):
     sections: list[FormSection]
     remaining_fields_position: Position = "top"
     render: SectionRender = "accordion"
-    excluded_fields: list[str] | None = None
     render_kwargs: dict | None = None
 
     def model_post_init(self, _context):
         """Model post init."""
         if self.render_kwargs is None:
             self.render_kwargs = {}
-
-        if self.excluded_fields is None:
-            self.excluded_fields = []

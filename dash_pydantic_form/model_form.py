@@ -72,6 +72,8 @@ class ModelForm(html.Div):
     submit_on_enter: bool
         Whether to submit the form on enter. Default False.
         Note: this may break the behaviour of some fields (e.g. editable table), use with caution.
+    excluded_fields: list[str] | None
+        List of field names to exclude from the form altogether, optional.
     """
 
     class ids:
@@ -99,6 +101,7 @@ class ModelForm(html.Div):
         sections: Sections | None = None,
         submit_on_enter: bool = False,
         discriminator: str | None = None,
+        excluded_fields: list[str] | None = None,
     ) -> None:
         from dash_pydantic_form.fields import get_default_repr
 
@@ -122,7 +125,7 @@ class ModelForm(html.Div):
 
         more_kwargs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
-            if sections and field_name in sections.excluded_fields:
+            if field_name in excluded_fields:
                 continue
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
