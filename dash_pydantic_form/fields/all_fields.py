@@ -19,6 +19,7 @@ from .editabletable_field import EditableTableField as EditableTable
 from .markdown_field import MarkdownField as Markdown
 from .model_field import ModelField as Model
 from .model_list_field import ModelListField as ModelList
+from .transferlist_field import TransferListField as TransferList
 
 __all__ = [
     "Checkbox",
@@ -42,4 +43,5 @@ __all__ = [
     "Textarea",
     "Text",
     "Time",
+    "TransferList",
 ]

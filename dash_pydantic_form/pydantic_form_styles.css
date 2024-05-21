@@ -6,7 +6,7 @@
     --sg-cols: 4 !important;
 }
 
-@container (max-width: 48rem) {
+@container (max-width: 40rem) {
     .pydantic-form-grid {
         --col-1-4: 1;
         --col-2-4: 1;
@@ -75,4 +75,13 @@
     top: 0;
     right: 0.25rem;
     color: var(--mantine-color-gray-5);
+}
+
+.transferlist-checkbox {
+    border-radius: 0.25rem;
+    transition: background-color 0.05s;
+}
+
+.transferlist-checkbox:hover {
+    background-color: color-mix(in srgb, var(--mantine-color-gray-5), transparent 90%)
 }

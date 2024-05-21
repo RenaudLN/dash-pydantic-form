@@ -81,6 +81,7 @@ class Employee(BaseModel):
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
+    test: list = Field(title="Test", default_factory=lambda: [["a", "b", "c"], []])
 
 
 bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pet={"species": "cat"})
@@ -90,7 +91,7 @@ AIO_ID = "home"
 FORM_ID = "Bob"
 
 app.layout = dmc.MantineProvider(
-    # defaultColorScheme="dark",
+    defaultColorScheme="dark",
     children=dmc.AppShell(
         [
             dmc.AppShellMain(
@@ -134,6 +135,11 @@ app.layout = dmc.MantineProvider(
                                         )
                                     },
                                 },
+                                "test": fields.TransferList(
+                                    placeholder="No items",
+                                    nothing_found="Nothing found",
+                                    options_labels={"a": "A", "b": "B", "c": "C"},
+                                ),
                             },
                             sections=Sections(
                                 sections=[
@@ -163,7 +169,7 @@ app.layout = dmc.MantineProvider(
             ),
         ],
         aside={"width": 350},
-    )
+    ),
 )
 
 
