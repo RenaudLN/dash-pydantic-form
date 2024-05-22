@@ -262,11 +262,15 @@ class BaseField(BaseModel):
         outputs.children.append(
             dmc.Paper(
                 value_repr,
-                withBorder=False,
+                withBorder=True,
                 radius="sm",
-                px="0.75rem",
-                h=36,
-                style={"display": "flex", "alignItems": "center", "gap": "0.5rem"},
+                p="0.375rem 0.75rem",
+                style={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "gap": "0.5rem",
+                    "borderColor": "color-mix(in srgb, var(--mantine-color-default-border), transparent 70%)",
+                },
             )
         )
 
@@ -284,7 +288,7 @@ class BaseField(BaseModel):
             if value is None:
                 value_repr = "-"
         elif val_type == Type.SCALAR_LIST:
-            value_repr = [dmc.Badge(str(val), variant="light", radius="sm") for val in value]
+            value_repr = [dmc.Badge(str(val), variant="light", radius="sm", tt="unset") for val in value]
 
         return value_repr
 
@@ -562,16 +566,13 @@ class SelectField(BaseField):
     def _get_data_list(
         self,
         non_null_annotation: type,
-        item: BaseModel | None = None,
-        field: str | None = None,
-        parent: str | None = None,
         **kwargs,
     ) -> list[dict]:
         """Get list of possible values from annotation."""
-        data = self._get_data_list_recursive(non_null_annotation, item=item, field=field, parent=parent, **kwargs)
+        data = self._get_data_list_recursive(non_null_annotation, **kwargs)
         return data
 
-    def _get_data_list_recursive(self, non_null_annotation: type, **_kwargs) -> list:
+    def _get_data_list_recursive(self, non_null_annotation: type, **kwargs) -> list:
         """Get list of possible values from annotation recursively."""
         data = []
         # if the annotation is a union of types, recursively calls this function on each type.
@@ -586,7 +587,7 @@ class SelectField(BaseField):
         elif get_origin(non_null_annotation) == list:
             annotation_args = get_args(non_null_annotation)
             if len(annotation_args) == 1:
-                return self._get_data_list_recursive(annotation_args[0], **_kwargs)
+                return self._get_data_list_recursive(annotation_args[0], **kwargs)
         elif get_origin(non_null_annotation) == Literal:
             data = list(get_args(non_null_annotation))
         elif isinstance(non_null_annotation, EnumMeta):
@@ -611,6 +612,31 @@ class SelectField(BaseField):
         return {
             "data": self.data_getter() if self.data_getter else self.input_kwargs.get("data", self._get_data(**kwargs))
         }
+
+    def _get_value_repr(self, value: Any, field_info: FieldInfo):
+        value_repr = super()._get_value_repr(value, field_info)
+        data = self._get_data(field_info)
+
+        def _get_label(value, data, value_repr):
+            if isinstance(value, Enum):
+                value = value.value
+            option = next(
+                (x for x in data if (x.get("value") if isinstance(x, dict) else getattr(x, "value", None)) == value),
+                None,
+            )
+            print(option)
+            label = (
+                option.get("label")
+                if isinstance(option, dict)
+                else getattr(option, "label", getattr(option, "children", None))
+            )
+            return label if label is not None else value_repr
+
+        if Type.classify(field_info.annotation) == Type.SCALAR:
+            return _get_label(value, data, value_repr)
+        if Type.classify(field_info.annotation) == Type.SCALAR_LIST:
+            return [dmc.Badge(_get_label(x, data, value_repr), radius="sm", variant="light", tt="unset") for x in value]
+        return value_repr
 
 
 class MultiSelectField(SelectField):

@@ -56,13 +56,6 @@ class MarkdownField(BaseField):
             style={"display": "grid", "gap": "1rem", "gridTemplateColumns": "1fr 1fr"},
         )
 
-    def _render_read_only(self, value: Any, field: str, field_info: FieldInfo):
-        """Render a read only field."""
-        output = super()._render_read_only(value, field, field_info)
-        if value is not None:
-            output.children[-1].h = None
-        return output
-
     @staticmethod
     def _get_value_repr(value: Any, _field_info: FieldInfo):
         if value is None:

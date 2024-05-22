@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2024-05-23
+### Added
+- read_only option on the ModelForm to simply dislpay the values
+
 ## [0.1.10] - 2024-05-22
 ### Added
 - fields.Datetime leveraging dmc.DateTimePicker

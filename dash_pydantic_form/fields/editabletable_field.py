@@ -274,7 +274,8 @@ class EditableTableField(BaseField):
                     style={"display": "none"},
                 ),
                 html.Div(id=self.ids.notification_wrapper(aio_id, form_id, field, parent=parent)),
-            ],
+            ]
+            * (not self.read_only),
             style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 

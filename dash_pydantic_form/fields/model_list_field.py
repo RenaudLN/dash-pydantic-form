@@ -218,7 +218,7 @@ class ModelListField(BaseField):
                     dmc.Group(
                         [
                             dmc.ActionIcon(
-                                DashIconify(icon="carbon:edit", height=16),
+                                DashIconify(icon="carbon:view" if read_only else "carbon:edit", height=16),
                                 variant="light",
                                 size="sm",
                                 id=cls.ids.edit(aio_id, form_id, "", parent=new_parent),
