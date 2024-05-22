@@ -26,7 +26,10 @@ class Type(Enum):
         """Classify a value as a field type."""
         annotation = get_non_null_annotation(annotation)
 
-        if is_subclass(annotation, str | Number | bool | date | time):
+        if is_subclass(annotation, str | Number | bool | date | time | Enum):
+            return cls.SCALAR
+
+        if get_origin(annotation) == Literal:
             return cls.SCALAR
 
         if is_subclass(annotation, BaseModel):

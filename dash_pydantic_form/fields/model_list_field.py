@@ -92,6 +92,7 @@ class ModelListField(BaseField):
         fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
+        read_only: bool | None = None,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -114,6 +115,7 @@ class ModelListField(BaseField):
                         path=new_parent,
                         fields_repr=fields_repr,
                         sections=sections,
+                        read_only=read_only,
                     ),
                 ),
             ]
@@ -143,6 +145,7 @@ class ModelListField(BaseField):
         fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
+        read_only: bool | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -159,6 +162,7 @@ class ModelListField(BaseField):
                     fields_repr=fields_repr,
                     sections=sections,
                     container_kwargs={"style": {"flex": 1}},
+                    read_only=read_only,
                 ),
             ]
             + items_deletable
@@ -191,6 +195,7 @@ class ModelListField(BaseField):
         fields_repr: dict[str, dict | BaseField] | None = None,
         sections: Sections | None = None,
         items_deletable: bool = True,
+        read_only: bool | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -240,6 +245,7 @@ class ModelListField(BaseField):
                                 path=new_parent,
                                 fields_repr=fields_repr,
                                 sections=sections,
+                                read_only=read_only,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -291,6 +297,10 @@ class ModelListField(BaseField):
         """Create a form field of type checklist to interact with the model field."""
         from dash_pydantic_form.fields import get_default_repr
 
+        if self.read_only:
+            self.items_deletable = False
+            self.items_creatable = False
+
         value: list = self.get_value(item, field, parent) or []
 
         class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
@@ -308,6 +318,7 @@ class ModelListField(BaseField):
                         fields_repr=self.fields_repr,
                         sections=self.sections,
                         items_deletable=self.items_deletable,
+                        read_only=self.read_only,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -344,6 +355,7 @@ class ModelListField(BaseField):
                         fields_repr=self.fields_repr,
                         sections=self.sections,
                         items_deletable=self.items_deletable,
+                        read_only=self.read_only,
                     )
                     for i, _ in enumerate(value)
                 ],
@@ -364,6 +376,7 @@ class ModelListField(BaseField):
                         fields_repr=self.fields_repr,
                         sections=self.sections,
                         items_deletable=self.items_deletable,
+                        read_only=self.read_only,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -431,6 +444,7 @@ class ModelListField(BaseField):
                         "fields_repr": fields_repr_dicts,
                         "items_deletable": self.items_deletable,
                         "render_type": self.render_type,
+                        "read_only": self.read_only,
                     },
                     id=self.ids.model_store(aio_id, form_id, field, parent=parent),
                 ),
@@ -478,6 +492,7 @@ class ModelListField(BaseField):
         sections = Sections(**model_data["sections"]) if model_data["sections"] else None
         items_deletable = model_data["items_deletable"]
         render_type = model_data["render_type"]
+        read_only = model_data["read_only"]
 
         i = max(i_list) if i_list else 0
         i_list.append(i + 1)
@@ -496,6 +511,7 @@ class ModelListField(BaseField):
             fields_repr=fields_repr,
             sections=sections,
             items_deletable=items_deletable,
+            read_only=read_only,
         )
         if i == 0:
             update = [new_item]
