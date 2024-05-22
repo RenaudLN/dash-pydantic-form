@@ -59,21 +59,14 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
   const componentProps = (colDef.cellEditorParams || {});
 
   React.useEffect(() => {
-    const inp = eGridCell.querySelector('.mantine-Select-input')
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-Select-input')
+    : eGridCell.querySelector('.mantine-Select-input');
     inp.tabIndex = "1";
     inp.focus();
     colDef.suppressKeyboardEvent = (p) => {
       return p.editing;
     };
-    const handleEscape = (e) => {
-      if (e.code === "Escape") {
-        stopEditing();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    }
   }, [])
 
   const setProps = (newProps) => {
@@ -100,24 +93,13 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
 dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
   const [value, setValue] = React.useState(initialValue);
-  const componentProps = (colDef.cellEditorParams || {});
+  const componentProps = {...colDef.cellEditorParams};
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DatePickerInput-input')
-    : eGridCell.querySelector('.mantine-DatePickerInput-input');
-
-    inp.click()
-
-    const handleEscape = (e) => {
-      if (e.code === "Escape") {
-        props.stopEditing();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    }
+    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DateInput-input')
+    : eGridCell.querySelector('.mantine-DateInput-input');
+    inp.focus()
   }, []);
 
   componentProps.setProps = (newProps) => {
@@ -125,12 +107,11 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
     delete colDef.suppressKeyboardEvent;
     node.setDataValue(column.colId, newProps.value || value);
     setValue(value)
-    setTimeout(() => stopEditing(), 1);
   };
 
 
   return React.createElement(
-    window.dash_mantine_components.DatePicker,
+    window.dash_mantine_components.DateInput,
     {
       ...componentProps,
       value,

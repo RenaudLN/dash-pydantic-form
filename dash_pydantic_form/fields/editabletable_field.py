@@ -255,8 +255,7 @@ class EditableTableField(BaseField):
                     dashGridOptions={
                         "singleClickEdit": True,
                         "rowSelection": "multiple",
-                        # Below doesn't work with current datePicker implementation
-                        # "stopEditingWhenCellsLoseFocus": True,
+                        "stopEditingWhenCellsLoseFocus": True,
                     },
                     className="ag-theme-alpine ag-themed overflowing-ag-grid",
                 ),
@@ -326,11 +325,12 @@ class EditableTableField(BaseField):
                 }
                 for x in data
             ]
+            params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
             column_def.update(
                 {
                     "cellEditor": {"function": "PydfDropdown"},
                     "cellEditorPopup": False,
-                    "cellEditorParams": {"options": options},
+                    "cellEditorParams": {"options": options, **params},
                     "cellRenderer": "PydfOptionsRenderer",
                     "cellClass": {
                         "function": "selectRequiredCell(params)",

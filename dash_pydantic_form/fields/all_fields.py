@@ -2,6 +2,7 @@ from .base_fields import CheckboxField as Checkbox
 from .base_fields import ChecklistField as Checklist
 from .base_fields import ColorField as Color
 from .base_fields import DateField as Date
+from .base_fields import DatetimeField as Datetime
 from .base_fields import JsonField as Json
 from .base_fields import MultiSelectField as MultiSelect
 from .base_fields import NumberField as Number
@@ -25,6 +26,7 @@ __all__ = [
     "Checklist",
     "Color",
     "Date",
+    "Datetime",
     "EditableTable",
     "Json",
     "Markdown",

@@ -426,7 +426,7 @@ class SwitchField(BaseField):
 class DateField(BaseField):
     """Date field."""
 
-    base_component = dmc.DatePicker
+    base_component = dmc.DateInput
 
     def model_post_init(self, _context):
         """Add defaults for date input."""
@@ -447,6 +447,18 @@ class TimeField(BaseField):
             value = f"2000-01-01T{value}"
 
         return value
+
+
+class DatetimeField(BaseField):
+    """Datetime field."""
+
+    base_component = dmc.DateTimePicker
+
+    def model_post_init(self, _context):
+        """Add defaults for date input."""
+        super().model_post_init(_context)
+        self.input_kwargs.setdefault("valueFormat", "YYYY-MM-DD HH:mm")
+        # self.input_kwargs.setdefault("withSeconds", True)
 
 
 class SelectField(BaseField):

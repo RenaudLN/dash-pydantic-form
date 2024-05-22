@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2024-05-22
+### Added
+- fields.Datetime leveraging dmc.DateTimePicker
+  NOTE: the PM times are not working atm but a fix is incoming, workaround is to wrap the app with a DatesProvider with timezone=UTC
+- ModelForm container_kwargs to pass kwargs to the wrapping Div
+
+### Changed
+- fields.Date now leverages dmc.DateInput to allow manually typing the date
+- EditableTable now allows to stop editing on click outside
+
 ## [0.1.8] - 2024-05-20
 ### Added
 - ModelForm container_kwargs argument

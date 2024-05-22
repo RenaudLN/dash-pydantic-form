@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Literal, get_origin
 
@@ -16,6 +16,7 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
     float: fields.Number,
     bool: fields.Checkbox,
     date: fields.Date,
+    datetime: fields.Datetime,
     time: fields.Time,
     list: fields.MultiSelect,
     Literal: fields.Select,
