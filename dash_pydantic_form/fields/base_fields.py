@@ -624,7 +624,6 @@ class SelectField(BaseField):
                 (x for x in data if (x.get("value") if isinstance(x, dict) else getattr(x, "value", None)) == value),
                 None,
             )
-            print(option)
             label = (
                 option.get("label")
                 if isinstance(option, dict)
