@@ -105,6 +105,7 @@ class ModelForm(html.Div):
         discriminator: str | None = None,
         excluded_fields: list[str] | None = None,
         container_kwargs: dict | None = None,
+        read_only: bool | None = None,
     ) -> None:
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
@@ -123,6 +124,7 @@ class ModelForm(html.Div):
             fields_repr=fields_repr,
             excluded_fields=excluded_fields,
             discriminator=discriminator,
+            read_only=read_only,
         )
 
         if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
@@ -189,15 +191,18 @@ class ModelForm(html.Div):
         fields_repr: dict[str, dict | BaseField],
         excluded_fields: list[str],
         discriminator: str | None,
+        read_only: bool | None,
     ) -> dict[str, Component]:
         """Render each field in the form."""
         from dash_pydantic_form.fields import get_default_repr
 
         field_inputs = {}
-        more_kwargs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
             if field_name in (excluded_fields or []):
                 continue
+            more_kwargs = {}
+            if read_only is not None:
+                more_kwargs["read_only"] = read_only
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:

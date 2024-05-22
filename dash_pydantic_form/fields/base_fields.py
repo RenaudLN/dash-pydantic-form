@@ -18,6 +18,7 @@ from pydantic.types import annotated_types
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.utils import (
     SEP,
+    Type,
     get_all_subclasses,
     get_fullpath,
     get_model_value,
@@ -84,6 +85,7 @@ class BaseField(BaseModel):
         description="Arguments to be passed to the underlying rendered component.",
     )
     field_id_meta: str | None = Field(default=None, description="Optional str to be set in the field id's 'meta' key.")
+    read_only: bool = Field(default=False, description="Read only field.")
 
     @classmethod
     def __pydantic_init_subclass__(cls):
@@ -183,24 +185,29 @@ class BaseField(BaseModel):
         if not self.base_component:
             raise NotImplementedError("This is an abstract class.")
 
+        value = self.get_value(item, field, parent)
+
+        if self.read_only:
+            return self._render_read_only(value, field, field_info)
+
         id_ = (common_ids.checked_field if self.base_component in CHECKED_COMPONENTS else common_ids.value_field)(
             aio_id, form_id, field, parent, meta=self.field_id_meta
         )
         value_kwarg = (
             {
-                "checked": self.get_value(item, field, parent),
+                "checked": value,
                 "label": self.get_title(field_info, field_name=field),
             }
             if self.base_component in CHECKED_COMPONENTS
             else (
                 {
                     "label": self.get_title(field_info, field_name=field),
-                    "value": self.get_value(item, field, parent),
+                    "value": value,
                     "description": self.get_description(field_info),
                     "required": self.is_required(field_info),
                 }
                 if self.base_component not in NO_LABEL_COMPONENTS
-                else {"value": self.get_value(item, field, parent)}
+                else {"value": value}
             )
         )
 
@@ -237,6 +244,53 @@ class BaseField(BaseModel):
             + [component],
             gap=0,
         )
+
+    def _render_read_only(self, value: Any, field: str, field_info: FieldInfo):
+        """Render a read only field."""
+        title = self.get_title(field_info, field_name=field)
+        description = self.get_description(field_info)
+
+        outputs = dmc.Stack(
+            (title is not None) * [dmc.Text(title, size="sm", mt=3, mb=5, fw=500, lh=1.55)]
+            + (title is not None and description is not None)
+            * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
+            gap=0,
+        )
+
+        value_repr = self._get_value_repr(value, field_info)
+
+        outputs.children.append(
+            dmc.Paper(
+                value_repr,
+                withBorder=True,
+                radius="sm",
+                p="0.375rem 0.75rem",
+                style={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "gap": "0.5rem",
+                    "borderColor": "color-mix(in srgb, var(--mantine-color-default-border), transparent 70%)",
+                },
+            )
+        )
+
+        return outputs
+
+    @staticmethod
+    def _get_value_repr(value: Any, field_info: FieldInfo):
+        val_type = Type.classify(field_info.annotation)
+        value_repr = str(value)
+        if val_type == Type.SCALAR:
+            if isinstance(value, bool):
+                value_repr = "✅" if value else "❌"
+            if isinstance(value, Enum):
+                value_repr = value.name
+            if value is None:
+                value_repr = "-"
+        elif val_type == Type.SCALAR_LIST:
+            value_repr = [dmc.Badge(str(val), variant="light", radius="sm", tt="unset") for val in value]
+
+        return value_repr
 
     @staticmethod
     def _get_dependent_field_and_parent(dependent_field: str, parent: str):
@@ -512,16 +566,13 @@ class SelectField(BaseField):
     def _get_data_list(
         self,
         non_null_annotation: type,
-        item: BaseModel | None = None,
-        field: str | None = None,
-        parent: str | None = None,
         **kwargs,
     ) -> list[dict]:
         """Get list of possible values from annotation."""
-        data = self._get_data_list_recursive(non_null_annotation, item=item, field=field, parent=parent, **kwargs)
+        data = self._get_data_list_recursive(non_null_annotation, **kwargs)
         return data
 
-    def _get_data_list_recursive(self, non_null_annotation: type, **_kwargs) -> list:
+    def _get_data_list_recursive(self, non_null_annotation: type, **kwargs) -> list:
         """Get list of possible values from annotation recursively."""
         data = []
         # if the annotation is a union of types, recursively calls this function on each type.
@@ -536,7 +587,7 @@ class SelectField(BaseField):
         elif get_origin(non_null_annotation) == list:
             annotation_args = get_args(non_null_annotation)
             if len(annotation_args) == 1:
-                return self._get_data_list_recursive(annotation_args[0], **_kwargs)
+                return self._get_data_list_recursive(annotation_args[0], **kwargs)
         elif get_origin(non_null_annotation) == Literal:
             data = list(get_args(non_null_annotation))
         elif isinstance(non_null_annotation, EnumMeta):
@@ -561,6 +612,30 @@ class SelectField(BaseField):
         return {
             "data": self.data_getter() if self.data_getter else self.input_kwargs.get("data", self._get_data(**kwargs))
         }
+
+    def _get_value_repr(self, value: Any, field_info: FieldInfo):
+        value_repr = super()._get_value_repr(value, field_info)
+        data = self._get_data(field_info)
+
+        def _get_label(value, data, value_repr):
+            if isinstance(value, Enum):
+                value = value.value
+            option = next(
+                (x for x in data if (x.get("value") if isinstance(x, dict) else getattr(x, "value", None)) == value),
+                None,
+            )
+            label = (
+                option.get("label")
+                if isinstance(option, dict)
+                else getattr(option, "label", getattr(option, "children", None))
+            )
+            return label if label is not None else value_repr
+
+        if Type.classify(field_info.annotation) == Type.SCALAR:
+            return _get_label(value, data, value_repr)
+        if Type.classify(field_info.annotation) == Type.SCALAR_LIST:
+            return [dmc.Badge(_get_label(x, data, value_repr), radius="sm", variant="light", tt="unset") for x in value]
+        return value_repr
 
 
 class MultiSelectField(SelectField):

@@ -37,7 +37,7 @@ class EditableTableField(BaseField):
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
-    rows_editable: bool = Field(default=True, description="Whether to allow editing rows.")
+    rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
 
@@ -70,6 +70,10 @@ class EditableTableField(BaseField):
         field_info: FieldInfo | None = None,
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
+        if self.read_only:
+            self.rows_editable = False
+            self.with_upload = False
+
         value = self.get_value(item, field, parent) or []
         template: type[BaseModel] = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
@@ -244,11 +248,11 @@ class EditableTableField(BaseField):
                             field_repr=get_field_repr(field_name),
                             field_info=template.model_fields[field_name],
                             required_field=field_name in required_fields,
-                            editable=self.rows_editable,
+                            editable=not self.read_only,
                         )
                         for field_name in template.model_fields
                     ],
-                    defaultColDef={"editable": True, "resizable": True, "sortable": True, "filter": True},
+                    defaultColDef={"editable": not self.read_only, "resizable": True, "sortable": True, "filter": True},
                     rowData=value,
                     columnSize="responsiveSizeToFit",
                     style={"height": self.table_height},
@@ -256,6 +260,8 @@ class EditableTableField(BaseField):
                         "singleClickEdit": True,
                         "rowSelection": "multiple",
                         "stopEditingWhenCellsLoseFocus": True,
+                        "suppressRowHoverHighlight": self.read_only,
+                        "suppressRowClickSelection": self.read_only,
                     },
                     className="ag-theme-alpine ag-themed overflowing-ag-grid",
                 ),
@@ -268,7 +274,8 @@ class EditableTableField(BaseField):
                     style={"display": "none"},
                 ),
                 html.Div(id=self.ids.notification_wrapper(aio_id, form_id, field, parent=parent)),
-            ],
+            ]
+            * (not self.read_only),
             style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 
