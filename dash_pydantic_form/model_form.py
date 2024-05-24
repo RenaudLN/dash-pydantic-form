@@ -76,6 +76,9 @@ class ModelForm(html.Div):
         List of field names to exclude from the form altogether, optional.
     container_kwargs: dict | None
         Additional kwargs to pass to the containing div.
+    read_only: bool | None
+        Whether the form should be read only.
+        True/False set all the fields to read only or not. None keeps the field setting.
     debounce_inputs: int | None
         Debounce inputs in milliseconds. Only works with DMC components that can be debounced.
     """
