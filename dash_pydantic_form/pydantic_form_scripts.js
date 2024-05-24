@@ -271,7 +271,7 @@ dash_clientside.pydf = {
     return dash_clientside.no_update
   },
   displayErrors: (errors, ids) => {
-    if (!errors) return Array(ids.length).fill(dash_clientside.no_update)
+    if (!errors) return Array(ids.length).fill(null)
 
     return ids.map(id => {
       const fullPath = id.parent ? `${id.parent}:${id.field}` : id.field
