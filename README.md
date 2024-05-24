@@ -4,6 +4,8 @@ This package allows users to quickly create forms with Plotly Dash based on pyda
 
 See the full docs at [dash-pydantic-form docs](https://pydf-docs.onrender.com).
 
+Check out a full self-standing example app in [usage.py](usage.py).
+
 ## Getting started
 
 Install with pip
