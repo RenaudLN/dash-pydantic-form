@@ -126,6 +126,27 @@ dagfuncs.selectRequiredCell = (params) => (
 ).map(o => o.value).includes(params.value) ? "" : "required_cell"
 
 
+function waitForElem(id) {
+  return new Promise(resolve => {
+      if (document.getElementById(id)) {
+          return resolve(document.getElementById(id));
+      }
+
+      const observer = new MutationObserver(mutations => {
+          if (document.getElementById(id)) {
+              observer.disconnect();
+              resolve(document.getElementById(id));
+          }
+      });
+
+      // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
+      observer.observe(document.body, {
+          childList: true,
+          subtree: true
+      });
+  });
+}
+
 
 window.dash_clientside = window.dash_clientside || {}
 dash_clientside.pydf = {
@@ -214,13 +235,15 @@ dash_clientside.pydf = {
   },
   stepsClickListener: (id) => {
     const strId = JSON.stringify(id, Object.keys(id).sort())
-    const steps = document.getElementById(strId).children[0].children
-    for (let i = 0; i < steps.length; i++) {
-        const child = steps[i]
-        child.addEventListener("click", event => {
-            dash_clientside.set_props(id, {active: i})
-        })
-    }
+    waitForElem(strId).then((elem) => {
+      const steps = elem.children[0].children
+      for (let i = 0; i < steps.length; i++) {
+          const child = steps[i]
+          child.addEventListener("click", event => {
+              dash_clientside.set_props(id, {active: i})
+          })
+      }
+    })
 
     return dash_clientside.no_update
   },

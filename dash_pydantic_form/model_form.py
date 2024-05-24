@@ -442,6 +442,7 @@ class ModelForm(html.Div):
         **kwargs,
     ):
         """Render the form sections as steps."""
+        additional_steps = additional_steps or []
         stepper_styles = deep_merge(
             {
                 "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 2rem"},
@@ -467,7 +468,8 @@ class ModelForm(html.Div):
                 )
                 for section in sections.sections
             ]
-            + (additional_steps or []),
+            + additional_steps,
+            **kwargs,
         )
 
         return [
@@ -492,7 +494,7 @@ class ModelForm(html.Div):
                         ],
                         style={
                             "position": "absolute",
-                            "top": f"calc({70 * (len(sections.sections) + len(additional_steps or []))}px + 1rem)",
+                            "top": f"calc({78 * (len(sections.sections) + len(additional_steps))}px + 1rem)",
                         },
                     ),
                     dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id, path)),
