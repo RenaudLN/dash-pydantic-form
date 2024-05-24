@@ -76,6 +76,8 @@ class ModelForm(html.Div):
         List of field names to exclude from the form altogether, optional.
     container_kwargs: dict | None
         Additional kwargs to pass to the containing div.
+    debounce_inputs: int | None
+        Debounce inputs in milliseconds. Only works with DMC components that can be debounced.
     """
 
     class ids:
@@ -83,6 +85,7 @@ class ModelForm(html.Div):
 
         form = partial(form_base_id, "_pydf-form")
         main = partial(form_base_id, "_pydf-main")
+        errors = partial(form_base_id, "_pydf-errors")
         accordion = partial(form_base_id, "_pydf-accordion")
         tabs = partial(form_base_id, "_pydf-tabs")
         steps = partial(form_base_id, "_pydf-steps")
@@ -106,6 +109,7 @@ class ModelForm(html.Div):
         excluded_fields: list[str] | None = None,
         container_kwargs: dict | None = None,
         read_only: bool | None = None,
+        debounce_inputs: int | None = None,
     ) -> None:
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
@@ -125,6 +129,7 @@ class ModelForm(html.Div):
             excluded_fields=excluded_fields,
             discriminator=discriminator,
             read_only=read_only,
+            debounce_inputs=debounce_inputs,
         )
 
         if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
@@ -151,7 +156,7 @@ class ModelForm(html.Div):
             **(
                 {
                     "id": self.ids.form(aio_id, form_id, path),
-                    "data-entersubmits": submit_on_enter,
+                    "data-submitonenter": submit_on_enter,
                     "style": {"containerType": "inline-size"},
                 }
                 if not path
@@ -192,6 +197,7 @@ class ModelForm(html.Div):
         excluded_fields: list[str],
         discriminator: str | None,
         read_only: bool | None,
+        debounce_inputs: int | None,
     ) -> dict[str, Component]:
         """Render each field in the form."""
         from dash_pydantic_form.fields import get_default_repr
@@ -203,6 +209,8 @@ class ModelForm(html.Div):
             more_kwargs = {}
             if read_only is not None:
                 more_kwargs["read_only"] = read_only
+            if debounce_inputs is not None:
+                more_kwargs["debounce"] = debounce_inputs
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:
@@ -214,8 +222,8 @@ class ModelForm(html.Div):
                     field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
                 else:
                     field_repr = fields_repr[field_name]
-                    for key, val in more_kwargs.items():
-                        setattr(field_repr, key, val)
+                    if more_kwargs:
+                        field_repr = field_repr.__class__(**(field_repr.model_dump() | more_kwargs))
             else:
                 field_repr = get_default_repr(field_info, **more_kwargs)
 
@@ -294,6 +302,7 @@ class ModelForm(html.Div):
         children = []
         if not path:
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(data=str(item.__class__), id=cls.ids.model_store(aio_id, form_id)))
 
         fields_repr_dicts = (
@@ -539,7 +548,14 @@ clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="listenToSubmit"),
     Output(ModelForm.ids.form(MATCH, MATCH), "id"),
     Input(ModelForm.ids.form(MATCH, MATCH), "id"),
-    State(ModelForm.ids.form(MATCH, MATCH), "data-entersubmits"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-submitonenter"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="displayErrors"),
+    Output(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "error"),
+    Input(ModelForm.ids.errors(MATCH, MATCH), "data"),
+    State(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "id"),
 )
 
 

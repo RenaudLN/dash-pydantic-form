@@ -64,6 +64,9 @@ class ModelListField(BaseField):
         super().model_post_init(_context)
         if self.fields_repr is None:
             self.fields_repr = {}
+        if self.read_only:
+            self.items_deletable = False
+            self.items_creatable = False
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -296,10 +299,6 @@ class ModelListField(BaseField):
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
         from dash_pydantic_form.fields import get_default_repr
-
-        if self.read_only:
-            self.items_deletable = False
-            self.items_creatable = False
 
         value: list = self.get_value(item, field, parent) or []
 

@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2024-05-24
+### Added
+- Allow passing errors to the form to add to inputs, use `Output(ModelForm.ids.errors(MATCH, MATCH), "data")`
+- `debounce_inputs` ModelForm argument allowing to debounce all debounce-able fields at once
+- Allow passing `input_kwargs` via extra arguments to the field_repr's init
+
 ## [0.1.11] - 2024-05-23
 ### Added
 - read_only option on the ModelForm to simply dislpay the values

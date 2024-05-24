@@ -45,7 +45,7 @@ class Metadata(BaseModel):
     """Metadata model."""
 
     languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
-    siblings: int | None = Field(title="Siblings", default=None)
+    siblings: int | None = Field(title="Siblings", default=None, ge=0)
 
 
 class Pet(BaseModel):
@@ -78,8 +78,8 @@ class WorkOffice(BaseModel):
 class Employee(BaseModel):
     """Employee model."""
 
-    name: str = Field(title="Name", description="Name of the employee")
-    age: int = Field(title="Age", description="Age of the employee, starting from their birth")
+    name: str = Field(title="Name", description="Name of the employee", min_length=2)
+    age: int = Field(title="Age", description="Age of the employee, starting from their birth", ge=18)
     mini_bio: str | None = Field(title="Mini bio", description="Short bio of the employee", default=None)
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
@@ -132,10 +132,13 @@ app.layout = dmc.MantineProvider(
                             mb="1rem",
                         ),
                         ModelForm(
-                            # Employee,
-                            bob,
+                            Employee,
+                            # bob,
                             AIO_ID,
                             FORM_ID,
+                            # read_only=True,
+                            # submit_on_enter=True,
+                            # debounce_inputs=200,
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
                                 "mini_bio": fields.Markdown(),
@@ -182,7 +185,6 @@ app.layout = dmc.MantineProvider(
                                 ],
                                 render="accordion",
                             ),
-                            # read_only=True,
                         ),
                     ],
                     pt="1rem",
@@ -205,7 +207,9 @@ app.layout = dmc.MantineProvider(
 
 @callback(
     Output(ids.form_dependent_id("output", MATCH, MATCH), "children"),
+    Output(ModelForm.ids.errors(MATCH, MATCH), "data"),
     Input(ModelForm.ids.main(MATCH, MATCH), "data"),
+    prevent_initial_call=True,
 )
 def display(form_data):
     """Display form data."""
@@ -217,6 +221,7 @@ def display(form_data):
             ),
         ]
     )
+    errors = None
     try:
         Employee.model_validate(form_data)
     except ValidationError as e:
@@ -235,8 +240,10 @@ def display(form_data):
                 ),
             ]
         )
+        errors = None
+        errors = {":".join([str(x) for x in error["loc"]]): error["msg"] for error in e.errors()}
 
-    return children
+    return children, errors
 
 
 clientside_callback(

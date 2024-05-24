@@ -50,6 +50,9 @@ class EditableTableField(BaseField):
             self.fields_repr = {}
         if self.column_defs_overrides is None:
             self.column_defs_overrides = {}
+        if self.read_only:
+            self.rows_editable = False
+            self.with_upload = False
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -70,10 +73,6 @@ class EditableTableField(BaseField):
         field_info: FieldInfo | None = None,
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
-        if self.read_only:
-            self.rows_editable = False
-            self.with_upload = False
-
         value = self.get_value(item, field, parent) or []
         template: type[BaseModel] = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):

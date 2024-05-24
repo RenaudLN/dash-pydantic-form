@@ -420,11 +420,6 @@ class TextField(BaseField):
 
     base_component = dmc.TextInput
 
-    def model_post_init(self, _context):
-        """Add defaults for text input."""
-        super().model_post_init(_context)
-        self.input_kwargs.setdefault("debounce", 200)
-
 
 class TextareaField(TextField):
     """Textarea field."""
