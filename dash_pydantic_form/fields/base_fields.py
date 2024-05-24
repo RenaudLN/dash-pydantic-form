@@ -1,4 +1,6 @@
+import inspect
 import json
+import logging
 import os
 from collections.abc import Callable
 from datetime import time
@@ -11,7 +13,7 @@ from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 
@@ -82,10 +84,15 @@ class BaseField(BaseModel):
     )
     input_kwargs: dict | None = Field(
         default=None,
-        description="Arguments to be passed to the underlying rendered component.",
+        description=(
+            "Arguments to be passed to the underlying rendered component. "
+            "NOTE: these are updated with extra arguments passed to the field."
+        ),
     )
     field_id_meta: str | None = Field(default=None, description="Optional str to be set in the field id's 'meta' key.")
     read_only: bool = Field(default=False, description="Read only field.")
+
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     def __pydantic_init_subclass__(cls):
@@ -105,6 +112,16 @@ class BaseField(BaseModel):
             self.n_cols = 4 if self.full_width else 2
         if self.input_kwargs is None:
             self.input_kwargs = {}
+        if self.model_extra:
+            self.input_kwargs.update(self.model_extra)
+        if self.base_component:
+            valid_input_kwargs = {
+                k: v for k, v in self.input_kwargs.items() if k in inspect.signature(self.base_component).parameters
+            }
+            ignored_kwargs = set(self.input_kwargs) - set(valid_input_kwargs)
+            self.input_kwargs = valid_input_kwargs
+            if ignored_kwargs:
+                logging.warning("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
         if self.field_id_meta is None:
             self.field_id_meta = ""
 

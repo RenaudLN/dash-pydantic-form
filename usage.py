@@ -4,7 +4,8 @@ from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import MATCH, Dash, Input, Output, _dash_renderer, callback
+from dash import MATCH, Dash, Input, Output, _dash_renderer, callback, clientside_callback
+from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormSection, ModelForm, Sections, fields, ids
@@ -55,6 +56,10 @@ class Pet(BaseModel):
     dob: date | None = Field(title="Date of birth", description="Date of birth of the pet", default=None)
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
+    def __str__(self) -> str:
+        """String representation."""
+        return str(self.name)
+
 
 class HomeOffice(BaseModel):
     """Home office model."""
@@ -83,26 +88,56 @@ class Employee(BaseModel):
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
 
 
-bob = Employee(name="Bob", age=30, joined="2020-01-01", office="au", pet={"species": "cat"})
+bob = Employee(
+    name="Bob",
+    age=30,
+    joined="2020-01-01",
+    mini_bio="### Birth\nSomething something\n\n### Education\nCollege",
+    office="au",
+    metadata={"languages": ["fr", "en"], "siblings": 2},
+    pets=[{"name": "Rex", "species": "cat"}],
+    location={
+        "type": "home_office",
+        "has_workstation": True,
+    },
+)
 
 
 AIO_ID = "home"
 FORM_ID = "Bob"
 
 app.layout = dmc.MantineProvider(
-    # defaultColorScheme="dark",
+    id="mantine-provider",
+    defaultColorScheme="auto",
     children=dmc.AppShell(
         [
             dmc.AppShellMain(
                 dmc.Container(
                     [
-                        dmc.Title("Dash Pydantic form", mb="1rem", order=3),
+                        dmc.Group(
+                            [
+                                dmc.Title("Dash Pydantic form", order=3),
+                                dmc.Switch(
+                                    offLabel=DashIconify(icon="radix-icons:moon", height=18),
+                                    onLabel=DashIconify(icon="radix-icons:sun", height=18),
+                                    size="md",
+                                    color="yellow",
+                                    persistence=True,
+                                    checked=True,
+                                    id="scheme-switch",
+                                ),
+                            ],
+                            align="center",
+                            justify="space-between",
+                            mb="1rem",
+                        ),
                         ModelForm(
-                            Employee,
-                            # bob,
+                            # Employee,
+                            bob,
                             AIO_ID,
                             FORM_ID,
                             fields_repr={
+                                "name": {"placeholder": "Enter your name"},
                                 "mini_bio": fields.Markdown(),
                                 "office": fields.RadioItems(
                                     options_labels={"au": "Australia", "fr": "France"},
@@ -147,6 +182,7 @@ app.layout = dmc.MantineProvider(
                                 ],
                                 render="accordion",
                             ),
+                            # read_only=True,
                         ),
                     ],
                     pt="1rem",
@@ -163,7 +199,7 @@ app.layout = dmc.MantineProvider(
             ),
         ],
         aside={"width": 350},
-    )
+    ),
 )
 
 
@@ -201,6 +237,14 @@ def display(form_data):
         )
 
     return children
+
+
+clientside_callback(
+    """(isLightMode) => isLightMode ? 'light' : 'dark'""",
+    Output("mantine-provider", "forceColorScheme"),
+    Input("scheme-switch", "checked"),
+    prevent_initial_callback=True,
+)
 
 
 if __name__ == "__main__":

@@ -31,14 +31,14 @@ def get_default_repr(field_info: FieldInfo, **kwargs) -> BaseField:
     ann = get_non_null_annotation(field_info.annotation)
     type_ = Type.classify(field_info.annotation, discriminator=field_info.discriminator)
 
-    if type_ == Type.SCALAR:
-        return DEFAULT_FIELDS_REPR.get(ann, DEFAULT_REPR)(**kwargs)
-
     if type_ in [Type.MODEL, Type.DISCRIMINATED_MODEL]:
         return fields.Model(**kwargs)
 
     if type_ == Type.MODEL_LIST:
         return fields.ModelList(**kwargs)
+
+    if type_ == Type.SCALAR and ann in DEFAULT_FIELDS_REPR:
+        return DEFAULT_FIELDS_REPR.get(ann, DEFAULT_REPR)(**kwargs)
 
     # Test for type origin
     origin = get_origin(ann)
