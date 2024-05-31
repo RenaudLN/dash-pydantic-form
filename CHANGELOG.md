@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] - 2024-06-02
+### Fixed
+- Better handling of ids on the model list when deleting items in the middle of the list.
+
 ## [0.1.14] - 2024-06-01
 ### Added
 - List of scalar barebone working, defaulting to the right input for str, numbers, datetimes.

@@ -1,4 +1,5 @@
-import json
+import re
+import uuid
 from collections.abc import Callable
 from functools import partial
 from typing import Literal
@@ -28,6 +29,7 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_section import Sections
 from dash_pydantic_form.utils import (
+    Type,
     get_fullpath,
     get_model_cls,
     get_subitem_cls,
@@ -104,7 +106,7 @@ class ModelListField(BaseField):
 
         new_parent = get_fullpath(parent, field, index)
         return dmc.AccordionItem(
-            value=f"{index}",
+            value=uuid.uuid4().hex,
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[
@@ -356,6 +358,12 @@ class ModelListField(BaseField):
         from dash_pydantic_form import ModelForm
         from dash_pydantic_form.fields import get_default_repr
 
+        type_ = Type.classify(field_info.annotation, field_info.discriminator)
+        if type_ == Type.MODEL_LIST and self.render_type == "scalar":
+            raise ValueError("Cannot render model list as scalar")
+        if type_ != Type.MODEL_LIST and self.render_type != "scalar":
+            raise ValueError("Cannot render non model list as non scalar")
+
         value: list = self.get_value(item, field, parent) or []
 
         class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
@@ -515,13 +523,13 @@ class ModelListField(BaseField):
                 dcc.Store(
                     data={
                         "model": str(item.__class__),
-                        "i_list": list(range(1, len(value) + 1)),
+                        "n_items": len(value),
                         "sections": self.sections.model_dump(mode="json") if self.sections else None,
                         "fields_repr": fields_repr_dicts,
                         "items_deletable": self.items_deletable,
                         "render_type": self.render_type,
                         "read_only": self.read_only,
-                        "input_kwargs": json.dumps(self.input_kwargs),
+                        "input_kwargs": self.input_kwargs,
                     },
                     id=self.ids.model_store(aio_id, form_id, field, parent=parent),
                 ),
@@ -562,7 +570,7 @@ class ModelListField(BaseField):
         parent = ctx.triggered_id["parent"]
 
         model_name: str = model_data["model"]
-        i_list: list[int] = model_data["i_list"]
+        n_items: list[int] = model_data["n_items"]
         fields_repr: dict[str, BaseField] = {
             k: BaseField.from_dict(v) for k, v in (model_data["fields_repr"] or {}).items()
         }
@@ -570,11 +578,10 @@ class ModelListField(BaseField):
         items_deletable = model_data["items_deletable"]
         render_type = model_data["render_type"]
         read_only = model_data["read_only"]
-        input_kwargs = json.loads(model_data["input_kwargs"])
+        input_kwargs = model_data["input_kwargs"]
 
-        i = max(i_list) if i_list else 0
-        i_list.append(i + 1)
-        model_data["i_list"] = i_list
+        i = n_items
+        model_data["n_items"] = n_items + 1
         item = get_model_cls(model_name).model_construct()
 
         new_item = ModelListField.render_type_item_mapper(render_type)(
@@ -603,23 +610,28 @@ class ModelListField(BaseField):
         Output(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
         Output(ids.model_store(MATCH, MATCH, MATCH, MATCH), "data", allow_duplicate=True),
         Input(ids.delete(MATCH, MATCH, MATCH, MATCH, ALL), "n_clicks"),
-        State(ids.model_store(MATCH, MATCH, MATCH, MATCH), "data"),
+        State(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
         prevent_initial_call=True,
     )
-    def delete_item(n_clicks: int, model_data: tuple[str, int]):
+    def delete_item(n_clicks: list[int], current: list):
         """Delete a model from the list."""
         if not any(n_clicks):
             return no_update, no_update
 
-        i_list = model_data["i_list"]
         i = ctx.triggered_id["meta"]
-        update_items = Patch()
-        del update_items[i_list.index(i + 1)]
 
-        update_index = Patch()
-        update_index["i_list"].remove(i + 1)
+        if i == len(current) - 1:
+            new_children = current[:-1]
+        else:
+            new_children = current[:i] + [
+                update_ids_after_delete(child, get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"]))
+                for child in current[i + 1 :]
+            ]
 
-        return update_items, update_index
+        data_update = Patch()
+        data_update["n_items"] = len(new_children)
+
+        return new_children, data_update
 
     # Open a model list modal when editing an item
     clientside_callback(
@@ -651,3 +663,21 @@ class ModelListField(BaseField):
         Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
     )
+
+
+def update_ids_after_delete(child: dict, path: str):
+    """Update the ids of the child dict after deleting an item."""
+    for key, val in child.items():
+        if key == "id" and isinstance(val, dict) and "parent" in val:
+            val["parent"] = re.sub(f"{path}:(\d+)", lambda m: f"{path}:{int(m.group(1)) - 1}", val["parent"])
+            if val["parent"] == path and isinstance(val.get("field"), int):
+                val["field"] -= 1
+            if get_fullpath(val["parent"], val.get("field")) == path and isinstance(val.get("meta"), int):
+                val["meta"] -= 1
+        elif isinstance(val, dict):
+            update_ids_after_delete(val, path)
+        elif isinstance(val, list):
+            for item in val:
+                update_ids_after_delete(item, path)
+
+    return child
