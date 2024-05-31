@@ -304,7 +304,7 @@ class BaseField(BaseModel):
                 value_repr = value.name
             if value is None:
                 value_repr = "-"
-        elif val_type == Type.SCALAR_LIST:
+        elif val_type in [Type.SCALAR_LIST, Type.LITERAL_LIST]:
             value_repr = [dmc.Badge(str(val), variant="light", radius="sm", tt="unset") for val in value]
 
         return value_repr
