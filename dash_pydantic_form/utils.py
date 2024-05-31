@@ -15,22 +15,25 @@ class Type(Enum):
     """Types of fields."""
 
     SCALAR = "scalar"
+    LITERAL = "literal"
     MODEL = "model"
     DISCRIMINATED_MODEL = "discriminated_model"
     MODEL_LIST = "model_list"
-    SCALAR_LIST = "scalar_list"
     UNKNOWN = "unknown"
+    SCALAR_LIST = "scalar_list"
+    LITERAL_LIST = "literal_list"
+    UNKOWN_LIST = "unknown_list"
 
     @classmethod
     def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911
         """Classify a value as a field type."""
         annotation = get_non_null_annotation(annotation)
 
-        if is_subclass(annotation, str | Number | bool | date | time | Enum):
+        if is_subclass(annotation, str | Number | bool | date | time):
             return cls.SCALAR
 
-        if get_origin(annotation) == Literal:
-            return cls.SCALAR
+        if (get_origin(annotation) == Literal) | is_subclass(annotation, Enum):
+            return cls.LITERAL
 
         if is_subclass(annotation, BaseModel):
             return cls.MODEL
@@ -44,10 +47,12 @@ class Type(Enum):
         if get_origin(annotation) == list and not depth:
             ann_args = get_args(annotation)
             if not ann_args:
-                return cls.SCALAR_LIST
+                return cls.UNKOWN_LIST
             args_type = Type.classify(ann_args[0], depth=1)
             if args_type == Type.SCALAR:
                 return cls.SCALAR_LIST
+            if args_type == Type.LITERAL:
+                return cls.LITERAL_LIST
             if args_type == Type.MODEL:
                 return cls.MODEL_LIST
 

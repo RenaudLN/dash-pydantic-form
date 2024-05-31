@@ -26,15 +26,23 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
 DEFAULT_REPR = fields.Json
 
 
-def get_default_repr(field_info: FieldInfo, **kwargs) -> BaseField:
+def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:
     """Get default field representation."""
-    ann = get_non_null_annotation(field_info.annotation)
-    type_ = Type.classify(field_info.annotation, discriminator=field_info.discriminator)
+    if field_info is not None:
+        ann = get_non_null_annotation(field_info.annotation)
+        type_ = Type.classify(field_info.annotation, discriminator=field_info.discriminator)
+    else:
+        if annotation is None:
+            raise ValueError("Either field_info or annotation must be provided")
+        ann = annotation
+        type_ = Type.classify(ann)
 
     if type_ in [Type.MODEL, Type.DISCRIMINATED_MODEL]:
         return fields.Model(**kwargs)
 
-    if type_ == Type.MODEL_LIST:
+    if type_ in [Type.MODEL_LIST, Type.SCALAR_LIST]:
+        if type_ == Type.SCALAR_LIST:
+            kwargs.update(render_type="scalar")
         return fields.ModelList(**kwargs)
 
     if type_ == Type.SCALAR and ann in DEFAULT_FIELDS_REPR:

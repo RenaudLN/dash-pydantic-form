@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from functools import partial
 from typing import Literal
@@ -46,7 +47,7 @@ class ModelListField(BaseField):
     * items_creatable, whether new items can be created (bool, default True)
     """
 
-    render_type: Literal["accordion", "modal", "list"] = Field(
+    render_type: Literal["accordion", "modal", "list", "scalar"] = Field(
         default="accordion", description="How to render the list of items, one  of 'accordion', 'modal', 'list'."
     )
     fields_repr: dict[str, dict | BaseField] | None = Field(
@@ -275,6 +276,60 @@ class ModelListField(BaseField):
             className="pydf-model-list-modal-item",
         )
 
+    @classmethod
+    def scalar_item(  # noqa: PLR0913
+        cls,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        index: int,
+        items_deletable: bool = True,
+        read_only: bool | None = None,
+        input_kwargs: dict,
+        **_kwargs,
+    ):
+        """Create an item with for a scalar list."""
+        from dash_pydantic_form.fields import get_default_repr
+
+        scalar_cls = get_subitem_cls(item.__class__, get_fullpath(parent, field, index))
+        field_repr = get_default_repr(
+            None,
+            annotation=scalar_cls,
+            read_only=read_only,
+            title="",
+            input_kwargs=input_kwargs,
+        )
+        return dmc.Group(
+            [
+                field_repr.render(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    field=index,
+                    parent=get_fullpath(parent, field),
+                    field_info=FieldInfo.from_annotation(scalar_cls),
+                )
+            ]
+            + items_deletable
+            * [
+                dmc.ActionIcon(
+                    DashIconify(icon="carbon:close", height=16),
+                    color="red",
+                    variant="light",
+                    size="sm",
+                    mt="0.375rem",
+                    id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                ),
+            ],
+            gap="0.5rem",
+            align="top",
+            className="pydf-model-list-list-item",
+            wrap="none",
+        )
+
     def _contents_renderer(self, renderer_type: str) -> Callable:
         """Create a renderer for the model list field."""
         raise NotImplementedError(
@@ -283,9 +338,9 @@ class ModelListField(BaseField):
         )
 
     @classmethod
-    def render_type_item_mapper(cls) -> dict[str, Callable]:
+    def render_type_item_mapper(cls, render_type: str) -> dict[str, Callable]:
         """Mapping between render type and renderer function."""
-        return {"accordion": cls.accordion_item, "list": cls.list_item, "modal": cls.modal_item}
+        return getattr(cls, f"{render_type}_item")
 
     def _render(  # noqa: PLR0913
         self,
@@ -298,6 +353,7 @@ class ModelListField(BaseField):
         field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
+        from dash_pydantic_form import ModelForm
         from dash_pydantic_form.fields import get_default_repr
 
         value: list = self.get_value(item, field, parent) or []
@@ -355,6 +411,27 @@ class ModelListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                    )
+                    for i, _ in enumerate(value)
+                ],
+                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
+                className=class_name,
+            )
+        elif self.render_type == "scalar":
+            contents = ModelForm.grid(
+                [
+                    self.scalar_item(
+                        item=item,
+                        aio_id=aio_id,
+                        form_id=form_id,
+                        field=field,
+                        parent=parent,
+                        index=i,
+                        fields_repr=self.fields_repr,
+                        sections=self.sections,
+                        items_deletable=self.items_deletable,
+                        read_only=self.read_only,
+                        input_kwargs=self.input_kwargs,
                     )
                     for i, _ in enumerate(value)
                 ],
@@ -444,6 +521,7 @@ class ModelListField(BaseField):
                         "items_deletable": self.items_deletable,
                         "render_type": self.render_type,
                         "read_only": self.read_only,
+                        "input_kwargs": json.dumps(self.input_kwargs),
                     },
                     id=self.ids.model_store(aio_id, form_id, field, parent=parent),
                 ),
@@ -492,13 +570,14 @@ class ModelListField(BaseField):
         items_deletable = model_data["items_deletable"]
         render_type = model_data["render_type"]
         read_only = model_data["read_only"]
+        input_kwargs = json.loads(model_data["input_kwargs"])
 
         i = max(i_list) if i_list else 0
         i_list.append(i + 1)
         model_data["i_list"] = i_list
         item = get_model_cls(model_name).model_construct()
 
-        new_item = ModelListField.render_type_item_mapper()[render_type](
+        new_item = ModelListField.render_type_item_mapper(render_type)(
             item=item,
             aio_id=aio_id,
             form_id=form_id,
@@ -511,6 +590,7 @@ class ModelListField(BaseField):
             sections=sections,
             items_deletable=items_deletable,
             read_only=read_only,
+            input_kwargs=input_kwargs,
         )
         if i == 0:
             update = [new_item]

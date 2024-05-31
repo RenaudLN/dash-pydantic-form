@@ -158,7 +158,11 @@ dash_clientside.pydf = {
         let pointer = acc
         parts.forEach((part, i) => {
             if (i === parts.length - 1) {
-                pointer[part] = val.value
+                if (Array.isArray(pointer)) {
+                    pointer.push(val.value)
+                } else {
+                  pointer[part] = val.value
+                }
             } else {
                 const prt = /^\d+$/.test(part) ? Number(part) : part
                 if (!pointer[prt]) {

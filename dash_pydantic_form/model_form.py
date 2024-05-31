@@ -336,7 +336,7 @@ class ModelForm(html.Div):
     @classmethod
     def grid(cls, children: Children, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(children, className="pydantic-form-grid", **kwargs)
+        return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913

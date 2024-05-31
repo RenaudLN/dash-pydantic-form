@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] - 2024-06-01
+### Added
+- List of scalar barebone working, defaulting to the right input for str, numbers, datetimes.
+
 ## [0.1.12] - 2024-05-24
 ### Added
 - Allow passing errors to the form to add to inputs, use `Output(ModelForm.ids.errors(MATCH, MATCH), "data")`

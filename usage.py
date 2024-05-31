@@ -86,6 +86,9 @@ class Employee(BaseModel):
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
+    jobs: list[str] = Field(
+        title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
+    )
 
 
 bob = Employee(
@@ -100,6 +103,7 @@ bob = Employee(
         "type": "home_office",
         "has_workstation": True,
     },
+    jobs=["Engineer", "Lawyer"],
 )
 
 
@@ -132,8 +136,8 @@ app.layout = dmc.MantineProvider(
                             mb="1rem",
                         ),
                         ModelForm(
-                            Employee,
-                            # bob,
+                            # Employee,
+                            bob,
                             AIO_ID,
                             FORM_ID,
                             # read_only=True,
@@ -172,6 +176,7 @@ app.layout = dmc.MantineProvider(
                                         )
                                     },
                                 },
+                                "jobs": {"placeholder": "A job name"},
                             },
                             sections=Sections(
                                 sections=[
@@ -181,7 +186,7 @@ app.layout = dmc.MantineProvider(
                                         fields=["office", "joined", "location", "metadata"],
                                         default_open=True,
                                     ),
-                                    FormSection(name="Other", fields=["pets"], default_open=True),
+                                    FormSection(name="Other", fields=["pets", "jobs"], default_open=True),
                                 ],
                                 render="accordion",
                             ),
