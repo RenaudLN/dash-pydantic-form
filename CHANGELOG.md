@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.18] - 2024-06-01
 ### Fixed
+- Rm unused dependency flatdict
+
+## [0.1.18] - 2024-06-01
+### Fixed
 - Issue with ModelList accordion render whereby AccordionItems have the same value
 - Issue with scalar list whereby React hydration was messing things, fixed by adding a unique key
 

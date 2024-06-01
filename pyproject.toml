@@ -15,7 +15,6 @@ dependencies = [
     "dash_ag_grid",
     "pandas",
     "pydantic==2.*",
-    "flatdict",
 ]
 
 [project.optional-dependencies]
