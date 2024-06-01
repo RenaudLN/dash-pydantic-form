@@ -134,10 +134,11 @@ class ModelListField(BaseField):
                 dmc.ActionIcon(
                     DashIconify(icon="carbon:trash-can", height=16),
                     color="red",
-                    style={"position": "absolute", "top": "0.375rem", "right": "2.5rem"},
+                    style={"position": "absolute", "top": "0.5rem", "right": "2.5rem"},
                     variant="light",
                     size="sm",
                     id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                    className="pydf-model-list-accordion-item-delete",
                 ),
             ],
         )
@@ -232,6 +233,7 @@ class ModelListField(BaseField):
                                 variant="light",
                                 size="sm",
                                 id=cls.ids.edit(aio_id, form_id, "", parent=new_parent),
+                                className="pydf-model-list-modal-item-btn",
                             ),
                         ]
                         + items_deletable
@@ -242,9 +244,10 @@ class ModelListField(BaseField):
                                 variant="light",
                                 size="sm",
                                 id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                                className="pydf-model-list-modal-item-btn",
                             ),
                         ],
-                        gap="0.25rem",
+                        gap="0.5rem",
                     ),
                     dmc.Modal(
                         [
@@ -277,7 +280,7 @@ class ModelListField(BaseField):
                 align="top",
             ),
             withBorder=True,
-            radius="md",
+            radius="sm",
             p="xs",
             className="pydf-model-list-modal-item",
         )
@@ -330,11 +333,12 @@ class ModelListField(BaseField):
                     size="sm",
                     mt="0.375rem",
                     id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                    className="pydf-model-list-scalar-item-delete",
                 ),
             ],
-            gap="0.5rem",
+            gap=0,
             align="top",
-            className="pydf-model-list-list-item",
+            className="pydf-model-list-scalar-item",
             wrap="none",
         )
 
@@ -361,7 +365,6 @@ class ModelListField(BaseField):
         field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
-        from dash_pydantic_form import ModelForm
         from dash_pydantic_form.fields import get_default_repr
 
         type_ = Type.classify(field_info.annotation, field_info.discriminator)
@@ -432,7 +435,7 @@ class ModelListField(BaseField):
                 className=class_name,
             )
         elif self.render_type == "scalar":
-            contents = ModelForm.grid(
+            contents = html.Div(
                 [
                     self.scalar_item(
                         item=item,
@@ -451,6 +454,13 @@ class ModelListField(BaseField):
                 ],
                 id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
                 className=class_name,
+                style={
+                    "display": "grid",
+                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                    "gap": "0.5rem",
+                    "overflow": "hidden",
+                    "alignItems": "top",
+                },
             )
         elif self.render_type == "modal":
             contents = html.Div(
@@ -473,7 +483,7 @@ class ModelListField(BaseField):
                 id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
                 style={
                     "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
+                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
                     "gap": "0.5rem",
                     "overflow": "hidden",
                 },
@@ -514,13 +524,11 @@ class ModelListField(BaseField):
                             * self.is_required(field_info),
                             size="sm",
                             mt=3,
-                            mb=5,
                             fw=500,
                             lh=1.55,
                         )
                     ]
-                    + (bool(title) and bool(description))
-                    * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
+                    + (bool(title) and bool(description)) * [dmc.Text(description, size="xs", c="dimmed", lh=1.2)],
                     gap=0,
                 )
             ]
@@ -554,7 +562,7 @@ class ModelListField(BaseField):
                 ),
             ],
             style={"gridColumn": "span var(--col-4-4)"},
-            gap="sm",
+            gap="0.5rem",
             mt="sm",
         )
 

@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.15] - 2024-06-02
+## [0.1.16] - 2024-06-01
+### Changed
+- Improved ModelList styling.
+
+## [0.1.15] - 2024-06-01
 ### Fixed
 - Better handling of ids on the model list when deleting items in the middle of the list.
 

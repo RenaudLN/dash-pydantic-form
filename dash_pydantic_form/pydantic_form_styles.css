@@ -76,3 +76,44 @@
     right: 0.25rem;
     color: var(--mantine-color-gray-5);
 }
+
+.pydf-model-list-accordion-item {
+    & .pydf-model-list-accordion-item-delete {
+        opacity: 0;
+        transition: opacity 100ms;
+        cursor: pointer;
+    }
+    &:hover .pydf-model-list-accordion-item-delete,
+    &:has(*:focus) .pydf-model-list-accordion-item-delete,
+    &:has(*:active) .pydf-model-list-accordion-item-delete {
+        opacity: 1;
+    }
+}
+
+.pydf-model-list-modal-item {
+    & .pydf-model-list-modal-item-btn {
+        opacity: 0;
+        transition: opacity 100ms;
+        cursor: pointer;
+    }
+    &:hover .pydf-model-list-modal-item-btn,
+    &:has(*:focus) .pydf-model-list-modal-item-btn,
+    &:has(*:active) .pydf-model-list-modal-item-btn {
+        opacity: 1;
+    }
+}
+
+.pydf-model-list-scalar-item {
+    & .pydf-model-list-scalar-item-delete {
+        --ai-size: 0 !important;
+        overflow: hidden;
+        transition: width 100ms;
+        cursor: pointer;
+    }
+    &:hover .pydf-model-list-scalar-item-delete,
+    &:has(*:focus) .pydf-model-list-scalar-item-delete,
+    &:has(*:active) .pydf-model-list-scalar-item-delete {
+        --ai-size: var(--ai-size-sm) !important;
+        margin-left: 0.25rem;
+    }
+}
