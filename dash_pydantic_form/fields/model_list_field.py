@@ -105,7 +105,9 @@ class ModelListField(BaseField):
 
         new_parent = get_fullpath(parent, field, index)
         return dmc.AccordionItem(
-            value=uuid.uuid4().hex,
+            # Give a random unique value to the item, prepended by uuid: so that the callback
+            # to add new items works
+            value="uuid:" + uuid.uuid4().hex,
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[

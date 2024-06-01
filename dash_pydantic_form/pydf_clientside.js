@@ -156,8 +156,9 @@ dash_clientside.pydf = {
       dash_clientside.callback_context.triggered_id.parent,
       dash_clientside.callback_context.triggered_id.field,
     )
-    const templateCopy = JSON.parse(template)
-    return [...current, updateModelListIds(templateCopy, path, current.length)]
+    const templateCopy = updateModelListIds(JSON.parse(template), path, current.length)
+    templateCopy.props.key = uuid4()
+    return [...current, templateCopy]
   },
   deleteFromList: (trigger, current) => {
     // return dash_clientside.no_update
@@ -177,6 +178,12 @@ const getFullpath = (...args) => {
   return args.filter(x => x != null && x !== "").join(":")
 }
 
+const uuid4 = () => {
+  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+    (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+  );
+}
+
 const updateModelListIds = (child, path, newIdx) => {
   if (typeof child !== 'object' || child === null) return child
   Object.entries(child).forEach(([key, val]) => {
@@ -190,6 +197,8 @@ const updateModelListIds = (child, path, newIdx) => {
       }
     } else if (key === "title" && typeof val === "string") {
       child[key] = val.replace(new RegExp(`${path}:(\\d+)`), `${path}:${newIdx}`)
+    } else if (typeof val === "string" && val.startsWith("uuid:")) {
+      child[key] = `uuid:${uuid4()}`
     } else if (typeof val === "object") {
       updateModelListIds(val, path, newIdx)
     } else if (Array.isArray(val)) {
