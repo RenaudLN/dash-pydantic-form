@@ -1,4 +1,3 @@
-import re
 import uuid
 from collections.abc import Callable
 from functools import partial
@@ -11,17 +10,14 @@ from dash import (
     ClientsideFunction,
     Input,
     Output,
-    Patch,
     State,
-    callback,
     clientside_callback,
-    ctx,
     dcc,
     html,
-    no_update,
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
+from plotly.io.json import to_json_plotly
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 
@@ -31,7 +27,6 @@ from dash_pydantic_form.form_section import Sections
 from dash_pydantic_form.utils import (
     Type,
     get_fullpath,
-    get_model_cls,
     get_subitem_cls,
 )
 
@@ -86,7 +81,7 @@ class ModelListField(BaseField):
         modal_parent_text = partial(common_ids.field_dependent_id, "_pydf-model-list-field-modal-text")
         modal_save = partial(common_ids.field_dependent_id, "_pydf-model-list-field-modal-save")
         add = partial(common_ids.field_dependent_id, "_pydf-model-list-field-add")
-        model_store = partial(common_ids.field_dependent_id, "_pydf-model-list-field-model-store")
+        template_store = partial(common_ids.field_dependent_id, "_pydf-model-list-field-template-store")
 
     @classmethod
     def accordion_item(  # noqa: PLR0913
@@ -365,8 +360,6 @@ class ModelListField(BaseField):
         field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
-        from dash_pydantic_form.fields import get_default_repr
-
         type_ = Type.classify(field_info.annotation, field_info.discriminator)
         if type_ == Type.MODEL_LIST and self.render_type == "scalar":
             raise ValueError("Cannot render model list as scalar")
@@ -492,22 +485,25 @@ class ModelListField(BaseField):
         else:
             contents = self._contents_renderer(self.render_type)
 
+        # Create a template item to be used clientside when adding new items
+        template = self.render_type_item_mapper(self.render_type)(
+            item=item.__class__.model_construct(),
+            aio_id=aio_id,
+            form_id=form_id,
+            field=field,
+            parent=parent,
+            index=0,
+            value="-",
+            opened=True,
+            fields_repr=self.fields_repr,
+            sections=self.sections,
+            items_deletable=self.items_deletable,
+            read_only=self.read_only,
+            input_kwargs=self.input_kwargs,
+        )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 
-        subitem_cls = get_subitem_cls(item, get_fullpath(parent, field, "0"))
-        fields_repr_dicts = (
-            {
-                field_name: (
-                    get_default_repr(subitem_cls.model_fields[field_name], **field_repr)
-                    if isinstance(field_repr, dict)
-                    else field_repr
-                ).to_dict()
-                for field_name, field_repr in self.fields_repr.items()
-            }
-            if self.fields_repr
-            else None
-        )
         return dmc.Stack(
             bool(title)
             * [
@@ -535,17 +531,7 @@ class ModelListField(BaseField):
             + [
                 contents,
                 dcc.Store(
-                    data={
-                        "model": str(item.__class__),
-                        "n_items": len(value),
-                        "sections": self.sections.model_dump(mode="json") if self.sections else None,
-                        "fields_repr": fields_repr_dicts,
-                        "items_deletable": self.items_deletable,
-                        "render_type": self.render_type,
-                        "read_only": self.read_only,
-                        "input_kwargs": self.input_kwargs,
-                    },
-                    id=self.ids.model_store(aio_id, form_id, field, parent=parent),
+                    data=to_json_plotly(template), id=self.ids.template_store(aio_id, form_id, field, parent=parent)
                 ),
             ]
             + self.items_creatable
@@ -566,86 +552,22 @@ class ModelListField(BaseField):
             mt="sm",
         )
 
-    @callback(
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="addToList"),
         Output(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
-        Output(ids.model_store(MATCH, MATCH, MATCH, MATCH), "data", allow_duplicate=True),
         Input(ids.add(MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        State(ids.model_store(MATCH, MATCH, MATCH, MATCH), "data"),
+        State(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+        State(ids.template_store(MATCH, MATCH, MATCH, MATCH), "data"),
         prevent_initial_call=True,
     )
-    def add_item(n_clicks: int, model_data: tuple[str, int]):
-        """Add a new model to the list."""
-        if not n_clicks:
-            return no_update, no_update
 
-        aio_id = ctx.triggered_id["aio_id"]
-        field = ctx.triggered_id["field"]
-        form_id = ctx.triggered_id["form_id"]
-        parent = ctx.triggered_id["parent"]
-
-        model_name: str = model_data["model"]
-        n_items: list[int] = model_data["n_items"]
-        fields_repr: dict[str, BaseField] = {
-            k: BaseField.from_dict(v) for k, v in (model_data["fields_repr"] or {}).items()
-        }
-        sections = Sections(**model_data["sections"]) if model_data["sections"] else None
-        items_deletable = model_data["items_deletable"]
-        render_type = model_data["render_type"]
-        read_only = model_data["read_only"]
-        input_kwargs = model_data["input_kwargs"]
-
-        i = n_items
-        model_data["n_items"] = n_items + 1
-        item = get_model_cls(model_name).model_construct()
-
-        new_item = ModelListField.render_type_item_mapper(render_type)(
-            item=item,
-            aio_id=aio_id,
-            form_id=form_id,
-            field=field,
-            parent=parent,
-            index=i,
-            value=f"# {i + 1}",
-            opened=True,
-            fields_repr=fields_repr,
-            sections=sections,
-            items_deletable=items_deletable,
-            read_only=read_only,
-            input_kwargs=input_kwargs,
-        )
-        if i == 0:
-            update = [new_item]
-        else:
-            update = Patch()
-            update.append(new_item)
-        return update, model_data
-
-    @callback(
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="deleteFromList"),
         Output(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
-        Output(ids.model_store(MATCH, MATCH, MATCH, MATCH), "data", allow_duplicate=True),
         Input(ids.delete(MATCH, MATCH, MATCH, MATCH, ALL), "n_clicks"),
         State(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
         prevent_initial_call=True,
     )
-    def delete_item(n_clicks: list[int], current: list):
-        """Delete a model from the list."""
-        if not any(n_clicks):
-            return no_update, no_update
-
-        i = ctx.triggered_id["meta"]
-
-        if i == len(current) - 1:
-            new_children = current[:-1]
-        else:
-            new_children = current[:i] + [
-                update_ids_after_delete(child, get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"]))
-                for child in current[i + 1 :]
-            ]
-
-        data_update = Patch()
-        data_update["n_items"] = len(new_children)
-
-        return new_children, data_update
 
     # Open a model list modal when editing an item
     clientside_callback(
@@ -677,21 +599,3 @@ class ModelListField(BaseField):
         Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
     )
-
-
-def update_ids_after_delete(child: dict, path: str):
-    """Update the ids of the child dict after deleting an item."""
-    for key, val in child.items():
-        if key == "id" and isinstance(val, dict) and "parent" in val:
-            val["parent"] = re.sub(f"{path}:(\d+)", lambda m: f"{path}:{int(m.group(1)) - 1}", val["parent"])
-            if val["parent"] == path and isinstance(val.get("field"), int):
-                val["field"] -= 1
-            if get_fullpath(val["parent"], val.get("field")) == path and isinstance(val.get("meta"), int):
-                val["meta"] -= 1
-        elif isinstance(val, dict):
-            update_ids_after_delete(val, path)
-        elif isinstance(val, list):
-            for item in val:
-                update_ids_after_delete(item, path)
-
-    return child

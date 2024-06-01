@@ -1,130 +1,4 @@
-var dag = (window.dashAgGridComponentFunctions =
-  window.dashAgGridComponentFunctions || {});
-
-var dagfuncs = (window.dashAgGridFunctions = window.dashAgGridFunctions || {});
-
-dag.PydfDeleteButton = (props) => {
-  const onClick = () => {
-    props.api.applyTransaction({ remove: [props.node.data], async: false });
-  };
-  return React.createElement(
-    window.dash_mantine_components.ActionIcon,
-    { onClick, color: "gray", variant: "subtle" },
-    React.createElement(window.dash_iconify.DashIconify, {
-      icon: "carbon:close",
-      height: 16,
-    })
-  );
-};
-
-dag.PydfCheckbox = (props) => {
-  const { setData, data } = props;
-  const onClick = () => {
-    if (!("checked" in event.target)) {
-      const checked = !event.target.children[0].checked;
-      const colId = props.column.colId;
-      props.node.setDataValue(colId, checked);
-    }
-  };
-  const checkedHandler = () => {
-    // update grid data
-    const checked = event.target.checked;
-    const colId = props.column.colId;
-    props.node.setDataValue(colId, checked);
-    // update cellRendererData prop so it can be used to trigger a callback
-    setData(checked);
-  };
-  return React.createElement(
-    "div",
-    { onClick: onClick },
-    React.createElement("input", {
-      type: "checkbox",
-      checked: props.value,
-      onChange: checkedHandler,
-      style: { cursor: "pointer" },
-    })
-  );
-};
-
-dag.PydfOptionsRenderer = (props) => {
-  const label =
-    props.colDef.cellEditorParams.options.find((p) => p.value === props.value)
-      ?.label || "";
-  return React.createElement("span", {}, label);
-};
-
-dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
-  const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = (colDef.cellEditorParams || {});
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-Select-input')
-    : eGridCell.querySelector('.mantine-Select-input');
-    inp.tabIndex = "1";
-    inp.focus();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
-  }, [])
-
-  const setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(value)
-    setTimeout(() => stopEditing(), 1);
-  }
-
-  return React.createElement(window.dash_mantine_components.Select, {
-      setProps,
-      ref,
-      data: options,
-      value: value,
-      clearable: componentProps.clearable || true,
-      searchable: componentProps.searchable || true,
-      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-      allowDeselect: componentProps.allowDeselect || true,
-      style: { width: column.actualWidth },
-  })
-})
-
-dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DateInput-input')
-    : eGridCell.querySelector('.mantine-DateInput-input');
-    inp.focus()
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value || value);
-    setValue(value)
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.DateInput,
-    {
-      ...componentProps,
-      value,
-      returnFocus: true,
-    }
-  );
-});
-
-
-dagfuncs.selectRequiredCell = (params) => (
-  params.colDef.cellEditorParams?.options || []
-).map(o => o.value).includes(params.value) ? "" : "required_cell"
-
+window.dash_clientside = window.dash_clientside || {}
 
 function waitForElem(id) {
   return new Promise(resolve => {
@@ -147,8 +21,6 @@ function waitForElem(id) {
   });
 }
 
-
-window.dash_clientside = window.dash_clientside || {}
 dash_clientside.pydf = {
   getValues: () => {
     const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
@@ -277,5 +149,52 @@ dash_clientside.pydf = {
       const fullPath = id.parent ? `${id.parent}:${id.field}` : id.field
       return errors[fullPath]
     })
+  },
+  addToList: (trigger, current, template) => {
+    if (trigger == null) return dash_clientside.no_update
+    const path = getFullpath(
+      dash_clientside.callback_context.triggered_id.parent,
+      dash_clientside.callback_context.triggered_id.field,
+    )
+    const templateCopy = JSON.parse(template)
+    return [...current, updateModelListIds(templateCopy, path, current.length)]
+  },
+  deleteFromList: (trigger, current) => {
+    // return dash_clientside.no_update
+    if (trigger.every(t => t == null)) return dash_clientside.no_update
+    const idx = dash_clientside.callback_context.triggered_id.meta
+    const path = getFullpath(
+      dash_clientside.callback_context.triggered_id.parent,
+      dash_clientside.callback_context.triggered_id.field,
+    )
+    const newChildren = current.filter((_, i) => i !== idx)
+    return newChildren.map((child, i) => updateModelListIds(child, path, i))
   }
+}
+
+// Return a : separated string of the args
+const getFullpath = (...args) => {
+  return args.filter(x => x != null && x !== "").join(":")
+}
+
+const updateModelListIds = (child, path, newIdx) => {
+  if (typeof child !== 'object' || child === null) return child
+  Object.entries(child).forEach(([key, val]) => {
+    if (key === "id" && typeof val === "object" && val.parent != null) {
+      val.parent = val.parent.replace(new RegExp(`${path}:(\\d+)`), `${path}:${newIdx}`)
+      if (val.parent === path && typeof val.field === "number") {
+        val.field = newIdx
+      }
+      if (getFullpath(val.parent, val.field) === path && typeof val.meta === "number") {
+        val.meta = newIdx
+      }
+    } else if (key === "title" && typeof val === "string") {
+      child[key] = val.replace(new RegExp(`${path}:(\\d+)`), `${path}:${newIdx}`)
+    } else if (typeof val === "object") {
+      updateModelListIds(val, path, newIdx)
+    } else if (Array.isArray(val)) {
+      val.forEach(item => updateModelListIds(item, path, newIdx))
+    }
+  })
+  return child
 }

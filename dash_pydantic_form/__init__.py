@@ -11,13 +11,17 @@ BaseModel.to_plotly_json = lambda self: self.model_dump(mode="json")
 
 _css_dist = [
     {
-        "relative_package_path": "pydantic_form_styles.css",
+        "relative_package_path": "pydf_styles.css",
         "namespace": "dash_pydantic_form",
     },
 ]
 _js_dist = [
     {
-        "relative_package_path": "pydantic_form_scripts.js",
+        "relative_package_path": "pydf_clientside.js",
+        "namespace": "dash_pydantic_form",
+    },
+    {
+        "relative_package_path": "pydf_aggrid.js",
         "namespace": "dash_pydantic_form",
     },
 ]
