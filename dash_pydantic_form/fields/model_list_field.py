@@ -50,7 +50,11 @@ class ModelListField(BaseField):
     """
 
     render_type: Literal["accordion", "modal", "list", "scalar"] = Field(
-        default="accordion", description="How to render the list of items, one  of 'accordion', 'modal', 'list'."
+        default="accordion",
+        description=(
+            "How to render the list of items. One  of 'accordion', 'modal', 'list' for a list of models. "
+            "Should be set to 'scalar' for a list of scalars."
+        ),
     )
     fields_repr: dict[str, dict | BaseField] | None = Field(
         default=None,
@@ -304,17 +308,19 @@ class ModelListField(BaseField):
             title="",
             input_kwargs=input_kwargs,
         )
+        child = field_repr.render(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            field=index,
+            parent=get_fullpath(parent, field),
+            field_info=FieldInfo.from_annotation(scalar_cls),
+        )
+        if not child.style:
+            child.style = {}
+        child.style |= {"flex": 1}
         return dmc.Group(
-            [
-                field_repr.render(
-                    item=item,
-                    aio_id=aio_id,
-                    form_id=form_id,
-                    field=index,
-                    parent=get_fullpath(parent, field),
-                    field_info=FieldInfo.from_annotation(scalar_cls),
-                )
-            ]
+            [child]
             + items_deletable
             * [
                 dmc.ActionIcon(
