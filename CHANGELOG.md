@@ -6,7 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.18] - 2024-06-01
+## [0.2.0] - 2024-06-16
+### Added
+- Dict field to allow dict[str, scalar] and dict[str, model] field types
+
+### Changed
+- Renamed ModelList to List as it allows to do scalar lists as well. ModelList is kept for backwards compatibility
+
+## [0.1.19] - 2024-06-01
 ### Fixed
 - Rm unused dependency flatdict
 

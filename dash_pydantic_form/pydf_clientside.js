@@ -24,17 +24,30 @@ function waitForElem(id) {
 dash_clientside.pydf = {
   getValues: () => {
     const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
+    const dictItemKeys = dash_clientside.callback_context.inputs_list[2].reduce((current, x) => {
+      current[`${x.id.parent}:${x.id.field}:${x.id.meta}`.replace(/^:/, "")] = x.value
+      return current
+    }, {})
     const formData = inputs.reduce((acc, val) => {
         const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
         const parts = key.split(":")
         let pointer = acc
+        const matchingDictKeys = Object.keys(dictItemKeys)
+          .filter(k => key.startsWith(k))
+          .sort((a, b) => b.split(":").length - a.split(":").length)
+        const [nthPart, newKey] = matchingDictKeys.length > 0
+          ? [matchingDictKeys[0].split(":").length, dictItemKeys[matchingDictKeys[0]]]
+          : [null, null]
         parts.forEach((part, i) => {
+            if (i + 1 === nthPart) {
+              part = newKey || part
+            }
             if (i === parts.length - 1) {
               pointer[part] = val.value
             } else {
-                const prt = /^\d+$/.test(part) ? Number(part) : part
+                const prt = i + 1 !== nthPart && /^\d+$/.test(part) ? Number(part) : part
                 if (!pointer[prt]) {
-                    pointer[prt] = /^\d+$/.test(parts[i + 1]) ? [] : {}
+                    pointer[prt] = i + 2 !== nthPart && /^\d+$/.test(parts[i + 1]) ? [] : {}
                 }
                 pointer = pointer[prt]
             }

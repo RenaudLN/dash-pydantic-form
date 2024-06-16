@@ -26,7 +26,7 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
 DEFAULT_REPR = fields.Json
 
 
-def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:
+def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:  # noqa: PLR0911
     """Get default field representation."""
     if field_info is not None:
         ann = get_non_null_annotation(field_info.annotation)
@@ -43,7 +43,12 @@ def get_default_repr(field_info: FieldInfo | None, annotation: type | None = Non
     if type_ in [Type.MODEL_LIST, Type.SCALAR_LIST]:
         if type_ == Type.SCALAR_LIST:
             kwargs.update(render_type="scalar")
-        return fields.ModelList(**kwargs)
+        return fields.List(**kwargs)
+
+    if type_ in [Type.MODEL_DICT, Type.SCALAR_DICT, Type.LITERAL_DICT]:
+        if type_ in [Type.SCALAR_DICT, Type.LITERAL_DICT]:
+            kwargs.update(render_type="scalar")
+        return fields.Dict(**kwargs)
 
     if type_ == Type.SCALAR and ann in DEFAULT_FIELDS_REPR:
         return DEFAULT_FIELDS_REPR.get(ann, DEFAULT_REPR)(**kwargs)

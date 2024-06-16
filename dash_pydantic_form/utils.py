@@ -17,15 +17,19 @@ class Type(Enum):
     SCALAR = "scalar"
     LITERAL = "literal"
     MODEL = "model"
+    UNKNOWN = "unknown"
     DISCRIMINATED_MODEL = "discriminated_model"
     MODEL_LIST = "model_list"
-    UNKNOWN = "unknown"
     SCALAR_LIST = "scalar_list"
     LITERAL_LIST = "literal_list"
     UNKOWN_LIST = "unknown_list"
+    MODEL_DICT = "model_dict"
+    SCALAR_DICT = "scalar_dict"
+    LITERAL_DICT = "literal_dict"
+    UNKOWN_DICT = "unkown_dict"
 
     @classmethod
-    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911
+    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911, PLR0912
         """Classify a value as a field type."""
         annotation = get_non_null_annotation(annotation)
 
@@ -55,6 +59,20 @@ class Type(Enum):
                 return cls.LITERAL_LIST
             if args_type == Type.MODEL:
                 return cls.MODEL_LIST
+            return cls.UNKOWN_LIST
+
+        if get_origin(annotation) == dict and not depth:
+            ann_args = get_args(annotation)
+            if not ann_args:
+                return cls.UNKOWN_DICT
+            args_type = Type.classify(ann_args[1], depth=1)
+            if args_type == Type.SCALAR:
+                return cls.SCALAR_DICT
+            if args_type == Type.LITERAL:
+                return cls.LITERAL_DICT
+            if args_type == Type.MODEL:
+                return cls.MODEL_DICT
+            return cls.UNKOWN_DICT
 
         return cls.UNKNOWN
 
@@ -96,7 +114,7 @@ def get_non_null_annotation(annotation: type[Any]) -> type[Any]:
     return annotation
 
 
-def get_model_value(item: BaseModel, field: str, parent: str, allow_default: bool = True):
+def get_model_value(item: BaseModel, field: str, parent: str, allow_default: bool = True):  # noqa: PLR0911
     """Get the value of a model (parent, field) pair.
 
     Parameters
@@ -111,7 +129,12 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         Allow to return the default value, when the object has been created with model_construct.
     """
     try:
-        return get_subitem(item, parent)[field]
+        subitem = get_subitem(item, parent)
+        if isinstance(subitem, BaseModel):
+            return subitem.model_dump(mode="json")[field]
+        if isinstance(subitem, dict) and isinstance(field, int):
+            return list(subitem.values())[field]
+        return subitem[field]
     except:
         if allow_default:
             subitem_cls = get_subitem_cls(item.__class__, parent)
@@ -143,6 +166,8 @@ def get_subitem(item: BaseModel, parent: str) -> BaseModel:
     if len(path) == 1:
         if isinstance(item, BaseModel):
             return getattr(item, first_part)
+        if isinstance(item, dict) and isinstance(first_part, int):
+            return list(item.values())[first_part]
         return item[first_part]
 
     return get_subitem(getattr(item, first_part), SEP.join(path[1:]))
@@ -170,9 +195,14 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
         second_part = int(second_part)
 
     first_annotation = get_non_null_annotation(model.model_fields[first_part].annotation)
-    if get_non_null_annotation(get_origin(first_annotation)) == list and isinstance(second_part, int):
+    if get_origin(first_annotation) == list and isinstance(second_part, int) and get_args(first_annotation):
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[0]),
+            SEP.join(path[2:]),
+        )
+    if get_origin(first_annotation) == dict and isinstance(second_part, int) and get_args(first_annotation):
+        return get_subitem_cls(
+            get_non_null_annotation(get_args(first_annotation)[1]),
             SEP.join(path[2:]),
         )
     return get_subitem_cls(first_annotation, SEP.join(path[1:]))

@@ -121,7 +121,8 @@ Based on DMC:
 Custom:
 * EditableTable
 * Model
-* ModelList
+* List
+* Dict
 
 ## Creating sections
 
@@ -171,7 +172,7 @@ Dash pydantic form also handles lists of nested models with the possibility to a
 
 Let's say we now want to record the employee's pets
 
-### 1. ModelList
+### 1. List
 
 This creates a list of sub-forms each of which can take similar arguments as a ModelForm (fields_repr, sections).
 
@@ -191,7 +192,7 @@ form = ModelForm(
     aio_id="employees",
     form_id="new_employee",
     fields_repr={
-        "pets": fields.ModelList(
+        "pets": fields.List(
             fields_repr={
                 "species": {"options_labels": {"cat": "Cat", "dog": "Dog"}}
             },
@@ -202,7 +203,7 @@ form = ModelForm(
 )
 ```
 
-![ModelList](images/model-list.png)
+![List](images/model-list.png)
 
 ### 2. EditableTable
 

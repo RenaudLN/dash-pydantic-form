@@ -16,10 +16,14 @@ from .base_fields import SwitchField as Switch
 from .base_fields import TextareaField as Textarea
 from .base_fields import TextField as Text
 from .base_fields import TimeField as Time
+from .dict_field import DictField as Dict
 from .editabletable_field import EditableTableField as EditableTable
+from .list_field import ListField as List
 from .markdown_field import MarkdownField as Markdown
 from .model_field import ModelField as Model
-from .model_list_field import ModelListField as ModelList
+
+# Backwards compatibility
+ModelList = List
 
 __all__ = [
     "Checkbox",
@@ -27,8 +31,10 @@ __all__ = [
     "Color",
     "Date",
     "Datetime",
+    "Dict",
     "EditableTable",
     "Json",
+    "List",
     "Markdown",
     "Model",
     "ModelList",

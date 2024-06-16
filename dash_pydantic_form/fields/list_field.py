@@ -31,8 +31,8 @@ from dash_pydantic_form.utils import (
 )
 
 
-class ModelListField(BaseField):
-    """Model list field, used for list of nested BaseModel.
+class ListField(BaseField):
+    """List field, used for list of nested models or scalars.
 
     Optional attributes:
     * render_type (one of 'accordion', 'modal', 'list', default 'accordion')
@@ -73,15 +73,15 @@ class ModelListField(BaseField):
     class ids(BaseField.ids):
         """Model list field ids."""
 
-        wrapper = partial(common_ids.field_dependent_id, "_pydf-model-list-field-wrapper")
-        delete = partial(common_ids.field_dependent_id, "_pydf-model-list-field-delete")
-        edit = partial(common_ids.field_dependent_id, "_pydf-model-list-field-edit")
-        modal = partial(common_ids.field_dependent_id, "_pydf-model-list-field-modal")
-        accordion_parent_text = partial(common_ids.field_dependent_id, "_pydf-model-list-field-accordion-text")
-        modal_parent_text = partial(common_ids.field_dependent_id, "_pydf-model-list-field-modal-text")
-        modal_save = partial(common_ids.field_dependent_id, "_pydf-model-list-field-modal-save")
-        add = partial(common_ids.field_dependent_id, "_pydf-model-list-field-add")
-        template_store = partial(common_ids.field_dependent_id, "_pydf-model-list-field-template-store")
+        wrapper = partial(common_ids.field_dependent_id, "_pydf-list-field-wrapper")
+        delete = partial(common_ids.field_dependent_id, "_pydf-list-field-delete")
+        edit = partial(common_ids.field_dependent_id, "_pydf-list-field-edit")
+        modal = partial(common_ids.field_dependent_id, "_pydf-list-field-modal")
+        accordion_parent_text = partial(common_ids.field_dependent_id, "_pydf-list-field-accordion-text")
+        modal_parent_text = partial(common_ids.field_dependent_id, "_pydf-list-field-modal-text")
+        modal_save = partial(common_ids.field_dependent_id, "_pydf-list-field-modal-save")
+        add = partial(common_ids.field_dependent_id, "_pydf-list-field-add")
+        template_store = partial(common_ids.field_dependent_id, "_pydf-list-field-template-store")
 
     @classmethod
     def accordion_item(  # noqa: PLR0913
@@ -112,7 +112,25 @@ class ModelListField(BaseField):
             className="pydf-model-list-accordion-item",
             children=[
                 dmc.AccordionControl(
-                    dmc.Text(str(value), id=cls.ids.accordion_parent_text(aio_id, form_id, "", parent=new_parent))
+                    [dmc.Text(str(value), id=cls.ids.accordion_parent_text(aio_id, form_id, "", parent=new_parent))]
+                    + items_deletable
+                    * [
+                        dmc.ActionIcon(
+                            DashIconify(icon="carbon:trash-can", height=16),
+                            color="red",
+                            style={
+                                "position": "absolute",
+                                "top": "50%",
+                                "transform": "translateY(-50%)",
+                                "right": "2.5rem",
+                            },
+                            variant="light",
+                            size="sm",
+                            id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                            className="pydf-model-list-accordion-item-delete",
+                        ),
+                    ],
+                    pos="relative",
                 ),
                 dmc.AccordionPanel(
                     ModelForm(
@@ -124,18 +142,6 @@ class ModelListField(BaseField):
                         sections=sections,
                         read_only=read_only,
                     ),
-                ),
-            ]
-            + items_deletable
-            * [
-                dmc.ActionIcon(
-                    DashIconify(icon="carbon:trash-can", height=16),
-                    color="red",
-                    style={"position": "absolute", "top": "0.5rem", "right": "2.5rem"},
-                    variant="light",
-                    size="sm",
-                    id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
-                    className="pydf-model-list-accordion-item-delete",
                 ),
             ],
         )
@@ -295,18 +301,14 @@ class ModelListField(BaseField):
         items_deletable: bool = True,
         read_only: bool | None = None,
         input_kwargs: dict,
-        **_kwargs,
+        **kwargs,
     ):
-        """Create an item with for a scalar list."""
+        """Create an item for a scalar list."""
         from dash_pydantic_form.fields import get_default_repr
 
         scalar_cls = get_subitem_cls(item.__class__, get_fullpath(parent, field, index))
         field_repr = get_default_repr(
-            None,
-            annotation=scalar_cls,
-            read_only=read_only,
-            title="",
-            input_kwargs=input_kwargs,
+            None, annotation=scalar_cls, read_only=read_only, title="", input_kwargs=input_kwargs, **kwargs
         )
         child = field_repr.render(
             item=item,
@@ -318,7 +320,7 @@ class ModelListField(BaseField):
         )
         if not child.style:
             child.style = {}
-        child.style |= {"flex": 1}
+        child.style |= {"flex": "1 1 60%"}
         return dmc.Group(
             [child]
             + items_deletable

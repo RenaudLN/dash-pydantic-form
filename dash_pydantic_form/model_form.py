@@ -545,6 +545,7 @@ clientside_callback(
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
     Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
+    Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
 )
 
 clientside_callback(
