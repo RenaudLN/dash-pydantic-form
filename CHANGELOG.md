@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2024-06-17
+### Fixed
+- Added missing scalar option for fields.Dict
+- Fixed issue with updating modal text in fields.Dict
+
 ## [0.2.0] - 2024-06-16
 ### Added
 - Dict field to allow dict[str, scalar] and dict[str, model] field types

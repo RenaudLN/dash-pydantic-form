@@ -100,8 +100,17 @@ dash_clientside.pydf = {
   sync: x => x,
   syncTrue: x => !!x,
   syncFalse: x => !x,
-  updateModalTitle: (val) => {
-    return val != null ? Array(2).fill(String(val)) : Array(2).fill(dash_clientside.no_update)
+  updateModalTitle: (val, id) => {
+    const out = val != null ? String(val) : dash_clientside.no_update
+    try {
+      dash_clientside.set_props(
+        {...id, component: "_pydf-list-field-modal-text"},
+        {"children": out}
+      )
+    } catch (e) {
+      //
+    }
+    return out
   },
   updateAccordionTitle: (val) => {
     return val != null ? String(val) : dash_clientside.no_update

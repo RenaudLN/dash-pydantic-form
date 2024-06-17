@@ -592,9 +592,9 @@ class ListField(BaseField):
     # Update the modal title and list item to match the name field of the item (if it exists)
     clientside_callback(
         ClientsideFunction(namespace="pydf", function_name="updateModalTitle"),
-        Output(ids.modal_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Output(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "title"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
+        State(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "id"),
     )
 
     # Update the accordion title to match the name field of the item (if it exists)

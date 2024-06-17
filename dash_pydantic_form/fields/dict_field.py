@@ -19,7 +19,7 @@ from dash_pydantic_form.utils import Type
 class DictField(ListField):
     """Dict field for dict of models or scalars."""
 
-    render_type: Literal["accordion", "modal"] = "accordion"
+    render_type: Literal["accordion", "modal", "scalar"] = "accordion"
 
     class ids(ListField.ids):
         """Dict field ids."""
