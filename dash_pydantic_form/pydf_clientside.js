@@ -28,8 +28,12 @@ dash_clientside.pydf = {
       current[`${x.id.parent}:${x.id.field}:${x.id.meta}`.replace(/^:/, "")] = x.value
       return current
     }, {})
+    const hiddenPaths = dash_clientside.callback_context.inputs_list[3]
+      .filter(x => x.value.display == "none")
+      .map(x => x.id.meta.split("|")[0])
     const formData = inputs.reduce((acc, val) => {
         const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
+        if (hiddenPaths.some(p => key.startsWith(p))) return acc
         const parts = key.split(":")
         let pointer = acc
         const matchingDictKeys = Object.keys(dictItemKeys)

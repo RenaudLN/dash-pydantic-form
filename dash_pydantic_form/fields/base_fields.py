@@ -16,6 +16,7 @@ from dash.development.base_component import Component
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
+from pydantic_core import PydanticUndefined
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.utils import (
@@ -165,6 +166,12 @@ class BaseField(BaseModel):
 
         if visible is None or visible is True:
             return html.Div(inputs, style={"gridColumn": f"span var(--col-{self.n_cols}-4)"}, title=title)
+
+        if field_info.default == PydanticUndefined and field_info.default_factory is None:
+            logging.warning(
+                "Conditional visibility is set on a field without default value, "
+                "this will likely lead to validation errors."
+            )
 
         if visible is False:
             return html.Div(inputs, style={"display": "none"}, title=title)
@@ -352,10 +359,7 @@ class BaseField(BaseModel):
             current_value = current_value.value
         if os.getenv("DEBUG"):
             keyword = "Visible" if index == 0 else "   AND"
-            title += (
-                f"\n{keyword}: {dependent_parent + ('.' if dependent_parent else '') + dependent_field}"
-                f" {operator} {expected_value}"
-            )
+            title += f"\n{keyword}: {get_fullpath(dependent_parent , dependent_field)}" f" {operator} {expected_value}"
 
         inputs = html.Div(
             inputs,
@@ -364,7 +368,7 @@ class BaseField(BaseModel):
                 form_id,
                 dependent_field,
                 parent=dependent_parent,
-                meta=f"{parent}.{field}|{operator}|{json.dumps(expected_value)}",
+                meta=f"{get_fullpath(parent, field)}|{operator}|{json.dumps(expected_value)}",
             ),
             style={
                 "display": None if self.check_visibility(current_value, operator, expected_value) else "none",

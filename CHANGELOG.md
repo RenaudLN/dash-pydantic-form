@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.0] - 2024-06-25
+### Changed
+- Hidden fields (from conditional visibility) are not returned in form data
+
 ### Added
 - New `from_form_data` function allowing to use default values on validation error.
 - Added `from_form_data` and `get_model_cls` to the main dash_pydantic_form namespace.

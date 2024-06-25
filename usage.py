@@ -160,9 +160,9 @@ app.layout = dmc.MantineProvider(
                                                 "sp": "Spanish",
                                                 "cn": "Chinese",
                                             },
-                                            visible=("_root_:office", "==", "au"),
                                         ),
                                     },
+                                    "visible": ("_root_:office", "==", "au"),
                                 },
                                 "pets": fields.EditableTable(
                                     fields_repr={
