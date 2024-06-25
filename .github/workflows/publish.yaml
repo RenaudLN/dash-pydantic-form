@@ -45,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install build twine
+          pip install build twine "importlib_metadata<8"
 
       - name: Build and Publish package
         run: |
