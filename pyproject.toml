@@ -24,7 +24,8 @@ dev = [
 ]
 
 [project.urls]
-Source= "https://github.com/RenaudLN/dash-pydantic-form"
+Homepage = "https://pydf-docs.onrender.com"
+Source = "https://github.com/RenaudLN/dash-pydantic-form"
 
 [build-system]
 build-backend = "setuptools.build_meta"
