@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2024-06-25
+### Fixed
+- Fixed an issue in get_subitem that didn't get the right value for list of scalars
+
 ## [0.2.1] - 2024-06-17
 ### Fixed
 - Added missing scalar option for fields.Dict
