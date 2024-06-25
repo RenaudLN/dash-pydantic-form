@@ -1,7 +1,7 @@
 import json
 from datetime import date
 from enum import Enum
-from typing import Literal
+from typing import List, Literal, Optional
 
 import dash_mantine_components as dmc
 from dash import MATCH, Dash, Input, Output, _dash_renderer, callback, clientside_callback
@@ -75,6 +75,20 @@ class WorkOffice(BaseModel):
     commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
 
 
+class Branch(BaseModel):
+    name: Literal["West", "North", "East", "South"] = "West"
+
+
+class Department(BaseModel):
+    name: str
+    sub_departments: List[str]
+
+
+class Colleagues(BaseModel):
+    department: List[Department]
+    branch: Branch = Branch()
+
+
 class Employee(BaseModel):
     """Employee model."""
 
@@ -89,6 +103,7 @@ class Employee(BaseModel):
     jobs: list[str] = Field(
         title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
     )
+    colleagues: Optional[Colleagues] = None
 
 
 bob = Employee(
@@ -104,6 +119,7 @@ bob = Employee(
         "has_workstation": True,
     },
     jobs=["Engineer", "Lawyer"],
+    colleagues={"department": [{"name": "Engineering", "sub_departments": ["Frontend", "Backend"]}]},
 )
 
 
@@ -186,7 +202,7 @@ app.layout = dmc.MantineProvider(
                                         fields=["office", "joined", "location", "metadata"],
                                         default_open=True,
                                     ),
-                                    FormSection(name="Other", fields=["pets", "jobs"], default_open=True),
+                                    FormSection(name="Other", fields=["pets", "jobs", "colleagues"], default_open=True),
                                 ],
                                 render="accordion",
                             ),

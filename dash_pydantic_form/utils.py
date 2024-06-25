@@ -149,7 +149,7 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         raise
 
 
-def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
+def get_subitem(item: BaseModel, parent: str) -> BaseModel:
     """Get the subitem of a model at a given parent.
 
     e.g., get_subitem(person, "au_metadata") = AUMetadata(param1=True, param2=False)
@@ -163,17 +163,17 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
     if isinstance(first_part, str) and first_part.isdigit():
         first_part = int(first_part)
 
-    if isinstance(item, BaseModel):
-        next_item = getattr(item, first_part)
-    elif isinstance(item, dict) and isinstance(first_part, int):
-        next_item = list(item.values())[first_part]
-    else:
-        next_item = item[first_part]
-
     if len(path) == 1:
-        return next_item
+        if isinstance(item, BaseModel):
+            return getattr(item, first_part)
+        if isinstance(item, dict) and isinstance(first_part, int):
+            return list(item.values())[first_part]
+        return item[first_part]
 
-    return get_subitem(next_item, SEP.join(path[1:]))
+    if isinstance(item, list) and isinstance(first_part, int):
+        return get_subitem(item[first_part], SEP.join(path[1:]))
+
+    return get_subitem(getattr(item, first_part), SEP.join(path[1:]))
 
 
 def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
