@@ -149,7 +149,7 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         raise
 
 
-def get_subitem(item: BaseModel, parent: str) -> BaseModel:
+def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
     """Get the subitem of a model at a given parent.
 
     e.g., get_subitem(person, "au_metadata") = AUMetadata(param1=True, param2=False)
