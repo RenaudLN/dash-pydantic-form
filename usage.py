@@ -4,11 +4,12 @@ from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import MATCH, Dash, Input, Output, _dash_renderer, callback, clientside_callback
+from dash import MATCH, Dash, Input, Output, State, _dash_renderer, callback, clientside_callback
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
-from dash_pydantic_form import FormSection, ModelForm, Sections, fields, ids
+from dash_pydantic_form import FormSection, ModelForm, Sections, fields, from_form_data, get_model_cls, ids
+from dash_pydantic_form.utils import SEP
 
 _dash_renderer._set_react_version("18.2.0")
 app = Dash(
@@ -214,9 +215,10 @@ app.layout = dmc.MantineProvider(
     Output(ids.form_dependent_id("output", MATCH, MATCH), "children"),
     Output(ModelForm.ids.errors(MATCH, MATCH), "data"),
     Input(ModelForm.ids.main(MATCH, MATCH), "data"),
+    State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
     prevent_initial_call=True,
 )
-def display(form_data):
+def display(form_data, model_name):
     """Display form data."""
     children = dmc.Stack(
         [
@@ -228,7 +230,9 @@ def display(form_data):
     )
     errors = None
     try:
-        Employee.model_validate(form_data)
+        model_cls = get_model_cls(model_name)
+        item = from_form_data(form_data, model_cls)
+        children.children[1].children = item.model_dump_json(indent=2)
     except ValidationError as e:
         children.children.extend(
             [
@@ -236,7 +240,7 @@ def display(form_data):
                 dmc.List(
                     [
                         dmc.ListItem(
-                            [".".join([str(x) for x in error["loc"]]), f" : {error['msg']}, got {error['input']}"],
+                            [SEP.join([str(x) for x in error["loc"]]), f" : {error['msg']}, got {error['input']}"],
                         )
                         for error in e.errors()
                     ],
@@ -246,7 +250,7 @@ def display(form_data):
             ]
         )
         errors = None
-        errors = {":".join([str(x) for x in error["loc"]]): error["msg"] for error in e.errors()}
+        errors = {SEP.join([str(x) for x in error["loc"]]): error["msg"] for error in e.errors()}
 
     return children, errors
 

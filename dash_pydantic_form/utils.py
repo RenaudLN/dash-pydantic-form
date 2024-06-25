@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from datetime import date, time
 from enum import Enum
@@ -5,7 +6,7 @@ from numbers import Number
 from types import UnionType
 from typing import Any, Literal, Union, get_args, get_origin
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, ValidationError, create_model
 from pydantic_core import PydanticUndefined
 
 SEP = ":"
@@ -295,3 +296,43 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
 
     return data_model.model_construct(**updated)
+
+
+def from_form_data(data: dict, data_model: type[BaseModel]):
+    """Construct a model from form data, allowing to use default values when validation of a field fails."""
+    try:
+        return data_model.model_validate(data)
+    except ValidationError as exc:
+        data_with_defaults = deepcopy(data)
+        defaulted_fields = []
+        for error in exc.errors():
+            path_parts = [str(x) for x in error["loc"]]
+            for i in range(len(path_parts), 0, -1):
+                parts_extract = path_parts[:i]
+                path = SEP.join(parts_extract)
+                field = get_subitem_cls(data_model, SEP.join(parts_extract[:-1])).model_fields[parts_extract[-1]]
+                if field.default != PydanticUndefined:
+                    set_at_path(data_with_defaults, path, field.default)
+                    defaulted_fields.append(path)
+                    break
+                if field.default_factory is not None:
+                    set_at_path(data_with_defaults, path, field.default_factory())
+                    defaulted_fields.append(path)
+                    break
+
+        if defaulted_fields:
+            logging.info(
+                "Could not validate the following fields: %s for %s, using default values instead.",
+                defaulted_fields,
+                data_model.__name__,
+            )
+        return data_model.model_validate(data_with_defaults)
+
+
+def set_at_path(data: dict, path: str, value: Any):
+    """Set a value at a path in a dictionary."""
+    parts = path.split(SEP)
+    pointer = data
+    for part in parts[:-1]:
+        pointer = pointer.get(part, pointer[int(part)])
+    pointer[parts[-1]] = value
