@@ -13,7 +13,7 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.fields.list_field import ListField
 from dash_pydantic_form.form_section import Sections
-from dash_pydantic_form.utils import Type
+from dash_pydantic_form.utils import Type, get_fullpath
 
 
 class DictField(ListField):
@@ -275,7 +275,7 @@ class DictField(ListField):
             form_id=form_id,
             field=field,
             parent=parent,
-            index=0,
+            index="{{" + get_fullpath(parent, field).replace(":", "|") + "}}",
             value="-",
             opened=True,
             fields_repr=self.fields_repr,

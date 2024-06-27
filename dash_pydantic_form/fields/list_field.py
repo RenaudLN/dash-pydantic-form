@@ -496,7 +496,7 @@ class ListField(BaseField):
             form_id=form_id,
             field=field,
             parent=parent,
-            index=0,
+            index="{{" + get_fullpath(parent, field).replace(":", "|") + "}}",
             value="-",
             opened=True,
             fields_repr=self.fields_repr,

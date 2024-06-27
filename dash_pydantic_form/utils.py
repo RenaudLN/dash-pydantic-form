@@ -1,4 +1,5 @@
 import logging
+import re
 from copy import deepcopy
 from datetime import date, time
 from enum import Enum
@@ -177,6 +178,11 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
     return get_subitem(next_item, SEP.join(path[1:]))
 
 
+def is_idx_template(val: str):
+    """Check if a string is an index template."""
+    return bool(re.findall(r"^\{\{[\w|\{\}]+\}\}$", val))
+
+
 def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
     """Get the subitem class of a model at a given parent.
 
@@ -199,12 +205,20 @@ def get_subitem_cls(model: type[BaseModel], parent: str) -> type[BaseModel]:
         second_part = int(second_part)
 
     first_annotation = get_non_null_annotation(model.model_fields[first_part].annotation)
-    if get_origin(first_annotation) == list and isinstance(second_part, int) and get_args(first_annotation):
+    if (
+        get_origin(first_annotation) == list
+        and (isinstance(second_part, int) or is_idx_template(second_part))
+        and get_args(first_annotation)
+    ):
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[0]),
             SEP.join(path[2:]),
         )
-    if get_origin(first_annotation) == dict and isinstance(second_part, int) and get_args(first_annotation):
+    if (
+        get_origin(first_annotation) == dict
+        and (isinstance(second_part, int) or is_idx_template(second_part))
+        and get_args(first_annotation)
+    ):
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[1]),
             SEP.join(path[2:]),
@@ -239,9 +253,9 @@ def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, 
     return out, all_vals
 
 
-def get_fullpath(*parts):
+def get_fullpath(*parts, sep: str = SEP):
     """Creates the full path of a field from its name and parent."""
-    return SEP.join([str(p) for p in parts]).strip(SEP)
+    return sep.join([str(p) for p in parts]).strip(sep)
 
 
 def get_all_subclasses(cls: type):
@@ -310,7 +324,10 @@ def from_form_data(data: dict, data_model: type[BaseModel]):
             for i in range(len(path_parts), 0, -1):
                 parts_extract = path_parts[:i]
                 path = SEP.join(parts_extract)
-                field = get_subitem_cls(data_model, SEP.join(parts_extract[:-1])).model_fields[parts_extract[-1]]
+                failing_model = get_subitem_cls(data_model, SEP.join(parts_extract[:-1]))
+                if not is_subclass(failing_model, BaseModel):
+                    continue
+                field = failing_model.model_fields[parts_extract[-1]]
                 if field.default != PydanticUndefined:
                     set_at_path(data_with_defaults, path, field.default)
                     defaulted_fields.append(path)

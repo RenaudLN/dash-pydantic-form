@@ -181,15 +181,15 @@ dash_clientside.pydf = {
     const path = getFullpath(
       dash_clientside.callback_context.triggered_id.parent,
       dash_clientside.callback_context.triggered_id.field,
-    )
-    const templateCopy = updateModelListIds(JSON.parse(template), path, current.length)
+    ).replaceAll(":", "|")
+    const templateCopy = JSON.parse(template.replaceAll(`{{${path}}}`, String(current.length)))
     templateCopy.props.key = uuid4()
     return [...current, templateCopy]
   },
   deleteFromList: (trigger, current) => {
     // return dash_clientside.no_update
     if (trigger.every(t => t == null)) return dash_clientside.no_update
-    const idx = dash_clientside.callback_context.triggered_id.meta
+    const idx = Number(dash_clientside.callback_context.triggered_id.meta)
     const path = getFullpath(
       dash_clientside.callback_context.triggered_id.parent,
       dash_clientside.callback_context.triggered_id.field,
@@ -215,10 +215,10 @@ const updateModelListIds = (child, path, newIdx) => {
   Object.entries(child).forEach(([key, val]) => {
     if (key === "id" && typeof val === "object" && val.parent != null) {
       val.parent = val.parent.replace(new RegExp(`${path}:(\\d+)`), `${path}:${newIdx}`)
-      if (val.parent === path && typeof val.field === "number") {
+      if (val.parent === path && /\d+/.test(String(val.field))) {
         val.field = newIdx
       }
-      if (getFullpath(val.parent, val.field) === path && typeof val.meta === "number") {
+      if (getFullpath(val.parent, val.field) === path && /\d+/.test(String(val.meta))) {
         val.meta = newIdx
       }
     } else if (key === "title" && typeof val === "string") {

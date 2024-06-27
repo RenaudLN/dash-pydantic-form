@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2024-06-27
+### Fixed
+- Fixed issues with list fields not updating ids properly
+- Fixed from_form_data issue
+
 ## [0.3.0] - 2024-06-25
 ### Changed
 - Hidden fields (from conditional visibility) are not returned in form data
