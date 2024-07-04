@@ -133,7 +133,7 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
     try:
         subitem = get_subitem(item, parent)
         if isinstance(subitem, BaseModel):
-            return subitem.model_dump(mode="json")[field]
+            return subitem[field]
         if isinstance(subitem, dict) and isinstance(field, int):
             return list(subitem.values())[field]
         return subitem[field]
