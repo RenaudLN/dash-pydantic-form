@@ -1,3 +1,4 @@
+from enum import Enum
 from importlib.metadata import version
 
 from pydantic import BaseModel
@@ -9,6 +10,7 @@ from dash_pydantic_form.utils import from_form_data, get_model_cls
 
 BaseModel.__getitem__ = lambda self, key: self.__dict__.get(key)
 BaseModel.to_plotly_json = lambda self: self.model_dump(mode="json")
+Enum.to_plotly_json = lambda self: self.value
 
 _css_dist = [
     {

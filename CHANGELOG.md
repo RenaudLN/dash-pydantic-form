@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2024-07-05
+### Fixed
+- remove the need to model_dump("json") in get_model_value which was breaking the fields.List item name str render
+
 ## [0.3.1] - 2024-06-27
 ### Fixed
 - Fixed issues with list fields not updating ids properly
