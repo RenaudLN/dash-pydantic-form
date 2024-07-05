@@ -8,7 +8,7 @@ from dash import MATCH, Dash, Input, Output, State, _dash_renderer, callback, cl
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
-from dash_pydantic_form import FormSection, ModelForm, Sections, fields, from_form_data, get_model_cls, ids
+from dash_pydantic_form import FormSection, ModelForm, Sections, fields, get_model_cls, ids
 from dash_pydantic_form.utils import SEP
 
 _dash_renderer._set_react_version("18.2.0")
@@ -231,7 +231,7 @@ def display(form_data, model_name):
     errors = None
     try:
         model_cls = get_model_cls(model_name)
-        item = from_form_data(form_data, model_cls)
+        item = model_cls.model_validate(form_data)
         children.children[1].children = item.model_dump_json(indent=2)
     except ValidationError as e:
         children.children.extend(

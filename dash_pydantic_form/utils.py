@@ -324,7 +324,10 @@ def from_form_data(data: dict, data_model: type[BaseModel]):
             for i in range(len(path_parts), 0, -1):
                 parts_extract = path_parts[:i]
                 path = SEP.join(parts_extract)
-                failing_model = get_subitem_cls(data_model, SEP.join(parts_extract[:-1]))
+                try:
+                    failing_model = get_subitem_cls(data_model, SEP.join(parts_extract[:-1]))
+                except AttributeError:
+                    continue
                 if not is_subclass(failing_model, BaseModel):
                     continue
                 field = failing_model.model_fields[parts_extract[-1]]
