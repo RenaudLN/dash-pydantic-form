@@ -33,6 +33,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install chromedriver
+        uses: nanasess/setup-chromedriver@v2
+        with:
+          chromedriver-version: '126.0.6478.126'
+
       - name: Install Python based on pyproject.toml
         uses: actions/setup-python@v5
         with:
