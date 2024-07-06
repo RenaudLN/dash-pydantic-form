@@ -27,9 +27,27 @@ jobs:
         env:
           RUFF_FORMAT: github
 
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Python based on pyproject.toml
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+          cache: pip
+
+      - name: Run Tests
+        run: |
+          pip install --upgrade pip
+          pip install .[dev] --no-cache-dir
+          pytest -v tests/* --junitxml=test-reports/report.xml
+
   publish:
     runs-on: ubuntu-latest
-    needs: [pre-commit]
+    needs: [pre-commit, run-tests]
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     permissions:
       contents: read
