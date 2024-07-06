@@ -6,6 +6,7 @@ from typing import Literal
 import dash_mantine_components as dmc
 from dash import Dash, _dash_renderer
 from pydantic import BaseModel, Field
+from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ModelForm, ids
 from tests.utils import check_elem_values, check_ids_exist, get_field_ids
@@ -79,7 +80,7 @@ def test_0002_basic_form_in_browser(dash_duo):
     dash_duo.start_server(app)
     for fid, val in zip(get_field_ids(Basic, aio_id, form_id), item.model_dump(mode="json").values(), strict=True):
         str_id = json.dumps(fid, sort_keys=True).replace(" ", "").replace('"', r"\"")
-        elem = dash_duo.driver.find_element_by_id(str_id)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
         if ids.value_field.args[0] in str_id:
             assert elem.get_property("value") == str(val)
         else:
