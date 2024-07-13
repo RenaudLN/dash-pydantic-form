@@ -62,11 +62,27 @@ class Pet(BaseModel):
         return str(self.name)
 
 
+class Desk(BaseModel):
+    """Desk model."""
+
+    height: int = Field(title="Height", description="Height of the desk", ge=0)
+    material: str = Field(title="Material", description="Material of the desk")
+
+
+class WorkStation(BaseModel):
+    """Work station model."""
+
+    has_desk: bool = Field(title="Has desk")
+    has_monitor: bool = Field(title="Has monitor")
+    desk: Desk | None = Field(title="Desk", default=None)
+
+
 class HomeOffice(BaseModel):
     """Home office model."""
 
     type: Literal["home_office"]
     has_workstation: bool = Field(title="Has workstation", description="Does the employee have a suitable workstation")
+    workstation: WorkStation | None = Field(title="Workstation", default=None)
 
 
 class WorkOffice(BaseModel):
@@ -174,7 +190,11 @@ app.layout = dmc.MantineProvider(
                                     "fields_repr": {
                                         "type": fields.RadioItems(
                                             options_labels={"home_office": "Home", "work_office": "Work"}
-                                        )
+                                        ),
+                                        "workstation": {
+                                            "visible": ("has_workstation", "==", True),
+                                            "fields_repr": {"desk": {"visible": ("has_desk", "==", True)}},
+                                        },
                                     },
                                 },
                                 "jobs": {"placeholder": "A job name"},

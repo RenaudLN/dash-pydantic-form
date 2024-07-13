@@ -1,7 +1,9 @@
 import json
+from typing import Any
 
 from dash.development.base_component import Component
 from pydantic import BaseModel
+from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ids
 from dash_pydantic_form.utils import get_non_null_annotation
@@ -45,3 +47,35 @@ def get_field_ids(model: type[BaseModel], aio_id: str, form_id: str, fields: lis
         if fields is None or field_name in fields:
             base_id = ids.checked_field if get_non_null_annotation(field_info.annotation) is bool else ids.value_field
             yield base_id(aio_id, form_id, field_name, **id_kwargs)
+
+
+def stringify_id(id: dict):
+    """Stringify dict id to use with selenium."""
+    if isinstance(id, str):
+        return id
+    return json.dumps(id, sort_keys=True).replace(" ", "").replace('"', r"\"")
+
+
+def set_input(dash_duo, id: str | dict, value: Any):
+    """Set input value."""
+    str_id = stringify_id(id)
+    elem = dash_duo.driver.find_element(By.ID, str_id)
+    elem.clear()
+    elem.send_keys(str(value))
+
+
+def set_select(dash_duo, id: str | dict, value: str):
+    """Set select value."""
+    str_id = stringify_id(id)
+    dash_duo.driver.find_element(By.ID, str_id).click()
+    dash_duo.driver.find_element(
+        By.CSS_SELECTOR, f"[aria-labelledby='{str_id}-label'] [role='option'][value='{value}']"
+    ).click()
+
+
+def set_checkbox(dash_duo, id: str | dict, value: bool):
+    """Set checkbox value."""
+    str_id = stringify_id(id)
+    elem = dash_duo.driver.find_element(By.ID, str_id)
+    if elem.get_property("checked") != value:
+        elem.click()

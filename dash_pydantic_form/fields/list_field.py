@@ -306,7 +306,7 @@ class ListField(BaseField):
         """Create an item for a scalar list."""
         from dash_pydantic_form.fields import get_default_repr
 
-        scalar_cls = get_subitem_cls(item.__class__, get_fullpath(parent, field, index))
+        scalar_cls = get_subitem_cls(item.__class__, get_fullpath(parent, field, index), item=item)
         field_repr = get_default_repr(
             None, annotation=scalar_cls, read_only=read_only, title="", input_kwargs=input_kwargs, **kwargs
         )

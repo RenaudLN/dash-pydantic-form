@@ -488,8 +488,16 @@ class CheckboxField(BaseField):
 
     base_component = dmc.Checkbox
 
+    @classmethod
+    def get_value(cls, item: BaseModel, field: str, parent: str) -> Any:
+        """Handle the fact dmc.TimeInput uses datetime rather than plain time."""
+        value = super().get_value(item, field, parent)
+        if value is None:
+            value = False
+        return value
 
-class SwitchField(BaseField):
+
+class SwitchField(CheckboxField):
     """Switch field."""
 
     base_component = dmc.Switch
