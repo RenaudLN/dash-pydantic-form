@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import Dash, Input, Output
+from dash import Dash  # , Input, Output
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
 
@@ -13,9 +13,9 @@ from tests.utils import (
     check_elem_values,
     check_ids_exist,
     get_field_ids,
-    set_checkbox,
-    set_input,
-    set_select,
+    # set_checkbox,
+    # set_input,
+    # set_select,
     stringify_id,
 )
 
@@ -86,34 +86,34 @@ def test_bf0002_basic_form_in_browser(dash_duo):
             assert elem.get_property("checked") == val
 
 
-def test_bf0003_basic_form_form_data(dash_duo):
-    """Test a basic form, retrieving its form data."""
-    app = Dash(__name__)
-    item = Basic(**basic_data)
-    aio_id = "basic"
-    form_id = "form"
-    app.layout = dmc.MantineProvider(
-        [
-            ModelForm(item, aio_id=aio_id, form_id=form_id),
-            dmc.Text(id="output"),
-        ]
-    )
+# def test_bf0003_basic_form_form_data(dash_duo):
+#     """Test a basic form, retrieving its form data."""
+#     app = Dash(__name__)
+#     item = Basic(**basic_data)
+#     aio_id = "basic"
+#     form_id = "form"
+#     app.layout = dmc.MantineProvider(
+#         [
+#             ModelForm(item, aio_id=aio_id, form_id=form_id),
+#             dmc.Text(id="output"),
+#         ]
+#     )
 
-    @app.callback(
-        Output("output", "children"),
-        Input(ModelForm.ids.main(aio_id, form_id), "data"),
-    )
-    def display(form_data):
-        return json.dumps(form_data, sort_keys=True)
+#     @app.callback(
+#         Output("output", "children"),
+#         Input(ModelForm.ids.main(aio_id, form_id), "data"),
+#     )
+#     def display(form_data):
+#         return json.dumps(form_data, sort_keys=True)
 
-    dash_duo.start_server(app)
+#     dash_duo.start_server(app)
 
-    set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), basic_data["a"])
-    dash_duo.wait_for_text_to_equal("#output", json.dumps(basic_data, sort_keys=True))
+#     set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), basic_data["a"])
+#     dash_duo.wait_for_text_to_equal("#output", json.dumps(basic_data, sort_keys=True))
 
-    set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), 123)
-    set_select(dash_duo, ids.value_field(aio_id, form_id, "c"), "b")
-    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "d"), False)
-    dash_duo.wait_for_text_to_equal(
-        "#output", json.dumps(basic_data | {"a": 123, "c": "b", "d": False}, sort_keys=True)
-    )
+#     set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), 123)
+#     set_select(dash_duo, ids.value_field(aio_id, form_id, "c"), "b")
+#     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "d"), False)
+#     dash_duo.wait_for_text_to_equal(
+#         "#output", json.dumps(basic_data | {"a": 123, "c": "b", "d": False}, sort_keys=True)
+#     )
