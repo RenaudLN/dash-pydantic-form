@@ -12,9 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Checkbox and switch now have a default of False rather than None
-
-### Added
-- New regression tests
+- Changed warning to debug log about ignored args
 
 ## [0.3.2] - 2024-07-05
 ### Fixed

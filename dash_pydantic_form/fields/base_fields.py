@@ -122,7 +122,7 @@ class BaseField(BaseModel):
             ignored_kwargs = set(self.input_kwargs) - set(valid_input_kwargs)
             self.input_kwargs = valid_input_kwargs
             if ignored_kwargs:
-                logging.warning("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
+                logging.debug("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
         if self.field_id_meta is None:
             self.field_id_meta = ""
 
