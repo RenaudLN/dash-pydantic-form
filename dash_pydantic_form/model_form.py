@@ -173,7 +173,7 @@ class ModelForm(html.Div):
         *, item: BaseModel, path: str, discriminator: str
     ) -> tuple[type[BaseModel], tuple]:
         """Get the subitem of a model at a given parent, handling type unions."""
-        subitem_cls = get_subitem_cls(item.__class__, path)
+        subitem_cls = get_subitem_cls(item.__class__, path, item=item)
 
         # Handle type unions
         disc_vals = None
@@ -316,6 +316,7 @@ class ModelForm(html.Div):
                     else field_repr
                 ).to_dict()
                 for field_name, field_repr in fields_repr.items()
+                if field_name in subitem_cls.model_fields
             }
             if fields_repr
             else None

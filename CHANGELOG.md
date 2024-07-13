@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.3.3] - 2024-07-13
+### Fixed
+- Discriminated unions can now have nested models within them
+- Discriminated unions can now be part of nested models
+
+### Changed
+- Checkbox and switch now have a default of False rather than None
+- Changed warning to debug log about ignored args
 
 ## [0.3.2] - 2024-07-05
 ### Fixed
