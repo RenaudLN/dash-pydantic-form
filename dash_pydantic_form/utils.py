@@ -206,15 +206,15 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
 
     field_info = model.model_fields[first_part]
     first_annotation = get_non_null_annotation(field_info.annotation)
+    subitem = get_subitem(item, first_part) if item is not None else None
     if Type.classify(first_annotation, field_info.discriminator) == Type.DISCRIMINATED_MODEL:
         if not item:
             raise TypeError("Discriminated models with nesting need passing item data to be displayed")
-        subitem = get_subitem(item, first_part)
         discriminator_value = None if subitem is None else getattr(subitem, field_info.discriminator, None)
         subitem_cls, _ = handle_discriminated(
             item.__class__, path, first_annotation, field_info.discriminator, discriminator_value
         )
-        return get_subitem_cls(subitem_cls, SEP.join(path[1:]), item=item)
+        return get_subitem_cls(subitem_cls, SEP.join(path[1:]), item=subitem)
     if (
         get_origin(first_annotation) is list
         and (isinstance(second_part, int) or is_idx_template(second_part))
@@ -223,7 +223,7 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[0]),
             SEP.join(path[2:]),
-            item=item,
+            item=subitem,
         )
     if (
         get_origin(first_annotation) is dict
@@ -233,9 +233,9 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[1]),
             SEP.join(path[2:]),
-            item=item,
+            item=subitem,
         )
-    return get_subitem_cls(first_annotation, SEP.join(path[1:]), item=item)
+    return get_subitem_cls(first_annotation, SEP.join(path[1:]), item=subitem)
 
 
 def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, disc_field: str, disc_val: Any):

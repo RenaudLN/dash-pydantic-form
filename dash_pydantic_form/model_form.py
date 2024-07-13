@@ -316,6 +316,7 @@ class ModelForm(html.Div):
                     else field_repr
                 ).to_dict()
                 for field_name, field_repr in fields_repr.items()
+                if field_name in subitem_cls.model_fields
             }
             if fields_repr
             else None

@@ -42,13 +42,6 @@ class Species(Enum):
     DOG = "dog"
 
 
-class Metadata(BaseModel):
-    """Metadata model."""
-
-    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
-    siblings: int | None = Field(title="Siblings", default=None, ge=0)
-
-
 class Pet(BaseModel):
     """Pet model."""
 
@@ -92,6 +85,14 @@ class WorkOffice(BaseModel):
     commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
 
 
+class Metadata(BaseModel):
+    """Metadata model."""
+
+    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
+    siblings: int | None = Field(title="Siblings", default=None, ge=0)
+    location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
+
+
 class Employee(BaseModel):
     """Employee model."""
 
@@ -101,7 +102,6 @@ class Employee(BaseModel):
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(title="Office", description="Office of the employee")
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
-    location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
         title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
@@ -114,12 +114,12 @@ bob = Employee(
     joined="2020-01-01",
     mini_bio="### Birth\nSomething something\n\n### Education\nCollege",
     office="au",
-    metadata={"languages": ["fr", "en"], "siblings": 2},
-    pets=[{"name": "Rex", "species": "cat"}],
-    location={
-        "type": "home_office",
-        "has_workstation": True,
+    metadata={
+        "languages": ["fr", "en"],
+        "siblings": 2,
+        "location": {"type": "home_office", "has_workstation": True},
     },
+    pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
 )
 
@@ -177,6 +177,17 @@ app.layout = dmc.MantineProvider(
                                                 "cn": "Chinese",
                                             },
                                         ),
+                                        "location": {
+                                            "fields_repr": {
+                                                "type": fields.RadioItems(
+                                                    options_labels={"home_office": "Home", "work_office": "Work"}
+                                                ),
+                                                "workstation": {
+                                                    "visible": ("has_workstation", "==", True),
+                                                    "fields_repr": {"desk": {"visible": ("has_desk", "==", True)}},
+                                                },
+                                            },
+                                        },
                                     },
                                     "visible": ("_root_:office", "==", "au"),
                                 },
@@ -186,17 +197,6 @@ app.layout = dmc.MantineProvider(
                                     },
                                     table_height=200,
                                 ),
-                                "location": {
-                                    "fields_repr": {
-                                        "type": fields.RadioItems(
-                                            options_labels={"home_office": "Home", "work_office": "Work"}
-                                        ),
-                                        "workstation": {
-                                            "visible": ("has_workstation", "==", True),
-                                            "fields_repr": {"desk": {"visible": ("has_desk", "==", True)}},
-                                        },
-                                    },
-                                },
                                 "jobs": {"placeholder": "A job name"},
                             },
                             sections=Sections(
