@@ -41,7 +41,7 @@ class Basic(BaseModel):
 basic_data = {"a": 1, "b": "foo", "c": "a", "d": True, "e": "B", "f": "2022-01-01"}
 
 
-def test_0001_basic_form():
+def test_bf0001_basic_form():
     """Test a basic form."""
     aio_id = "basic"
     form_id = "form"
@@ -62,9 +62,9 @@ def test_0001_basic_form():
     )
 
 
-def test_0002_basic_form_in_browser(dash_duo):
+def test_bf0002_basic_form_in_browser(dash_duo):
     """Test a basic form in browser."""
-    app = Dash("0002")
+    app = Dash(__name__)
     item = Basic(**basic_data)
     aio_id = "basic"
     form_id = "form"
@@ -80,9 +80,9 @@ def test_0002_basic_form_in_browser(dash_duo):
             assert elem.get_property("checked") == val
 
 
-def test_0003_basic_form_form_data(dash_duo):
+def test_bf0003_basic_form_form_data(dash_duo):
     """Test a basic form, retrieving its form data."""
-    app = Dash("0003")
+    app = Dash(__name__)
     item = Basic(**basic_data)
     aio_id = "basic"
     form_id = "form"

@@ -27,6 +27,13 @@ def check_ids_exist(component: Component, ids: list[str | dict]):
         raise ValueError(f"Could not find ids: {ids_not_found}")
 
 
+def check_ids_absent(component: Component, ids: list[str | dict]):
+    """Check if ids are absent in a component tree."""
+    ids_found, _ = find_ids(component, ids)
+    if ids_found:
+        raise ValueError(f"Found ids: {ids_found}")
+
+
 def check_elem_values(component: Component, expected: dict):
     """Check if elements in a component tree have the expected values."""
     mismatched_values = {}
