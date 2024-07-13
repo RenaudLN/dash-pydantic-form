@@ -47,7 +47,13 @@ def test_bf0001_basic_form():
     form_id = "form"
     form = ModelForm(Basic, aio_id=aio_id, form_id=form_id)
     check_ids_exist(form, list(get_field_ids(Basic, aio_id, form_id)))
-    check_elem_values(form, {json.dumps(fid): None for fid in get_field_ids(Basic, aio_id, form_id)})
+    check_elem_values(
+        form,
+        {
+            json.dumps(fid): None if fid["component"] == ids.value_field.args[0] else False
+            for fid in get_field_ids(Basic, aio_id, form_id)
+        },
+    )
 
     assert list(basic_data) == list(Basic.model_fields)
     item = Basic(**basic_data)
