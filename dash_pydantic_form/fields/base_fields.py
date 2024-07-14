@@ -610,7 +610,7 @@ class SelectField(BaseField):
                 )
             )
 
-        elif get_origin(non_null_annotation) == list:
+        elif get_origin(non_null_annotation) is list:
             annotation_args = get_args(non_null_annotation)
             if len(annotation_args) == 1:
                 return self._get_data_list_recursive(annotation_args[0], **kwargs)

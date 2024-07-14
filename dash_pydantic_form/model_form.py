@@ -575,6 +575,7 @@ clientside_callback(
 )
 def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict):
     """Update discriminated form."""
+    print("HERE! updating discriminated")
     path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
     parts = path.split(SEP)
     # Update the form data with the new value as it wouldn't have been updated yet
