@@ -9,7 +9,7 @@ PYDF_CALLBACK_MAP = {}
 
 
 @pytest.fixture(scope="session", autouse=True)
-def set_react_18():
+def init_test_session():
     """Set react version to 18.2.0 to work with DMC."""
     _dash_renderer._set_react_version("18.2.0")
     global PYDF_CALLBACK_LIST, PYDF_CALLBACK_MAP  # noqa: PLW0603
@@ -18,7 +18,7 @@ def set_react_18():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def reload_pydf():
+def reset_callbacks():
     """Reload dash pydantic form to add the callbacks."""
     dash._callback.GLOBAL_CALLBACK_LIST = deepcopy(PYDF_CALLBACK_LIST)
     dash._callback.GLOBAL_CALLBACK_MAP = deepcopy(PYDF_CALLBACK_MAP)
