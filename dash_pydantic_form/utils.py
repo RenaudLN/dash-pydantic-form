@@ -206,7 +206,10 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
 
     field_info = model.model_fields[first_part]
     first_annotation = get_non_null_annotation(field_info.annotation)
-    subitem = get_subitem(item, first_part) if item is not None else None
+    try:
+        subitem = get_subitem(item, first_part) if item is not None else None
+    except:  # noqa: E722
+        subitem = None
     if Type.classify(first_annotation, field_info.discriminator) == Type.DISCRIMINATED_MODEL:
         if not item:
             raise TypeError("Discriminated models with nesting need passing item data to be displayed")
