@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2024-07-19
+### Fixed
+- Nested dict fields were not working and are fixed with added tests
+
 ## [0.3.4] - 2024-07-14
 ### Fixed
 - Minor fix for list fields iwht recent discriminated union fixes

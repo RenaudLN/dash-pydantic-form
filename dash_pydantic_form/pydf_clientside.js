@@ -36,22 +36,23 @@ dash_clientside.pydf = {
         if (hiddenPaths.some(p => key.startsWith(p))) return acc
         const parts = key.split(":")
         let pointer = acc
-        const matchingDictKeys = Object.keys(dictItemKeys)
-          .filter(k => key.startsWith(k))
-          .sort((a, b) => b.split(":").length - a.split(":").length)
-        const [nthPart, newKey] = matchingDictKeys.length > 0
-          ? [matchingDictKeys[0].split(":").length, dictItemKeys[matchingDictKeys[0]]]
-          : [null, null]
+        const matchingDictKeys = Object.fromEntries(
+          Object.entries(dictItemKeys)
+          .filter(entry => key.startsWith(entry[0]))
+          .map(([k, v]) => [k.split(":").length, v])
+        )
         parts.forEach((part, i) => {
-            if (i + 1 === nthPart) {
-              part = newKey || part
+            // Update the list key if it is a dict entry
+            const nextMatch = Number(Object.keys(matchingDictKeys).sort().filter(x => x >= i + 1)[0] || -1)
+            if (i + 1 == nextMatch) {
+              part = matchingDictKeys[i + 1] || part
             }
             if (i === parts.length - 1) {
               pointer[part] = val.value
             } else {
-                const prt = i + 1 !== nthPart && /^\d+$/.test(part) ? Number(part) : part
+                const prt = i + 1 !== nextMatch && /^\d+$/.test(part) ? Number(part) : part
                 if (!pointer[prt]) {
-                    pointer[prt] = i + 2 !== nthPart && /^\d+$/.test(parts[i + 1]) ? [] : {}
+                    pointer[prt] = i + 2 !== nextMatch && /^\d+$/.test(parts[i + 1]) ? [] : {}
                 }
                 pointer = pointer[prt]
             }
