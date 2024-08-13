@@ -292,6 +292,7 @@ class EditableTableField(BaseField):
 
         if isinstance(field_repr, dict):
             field_repr = get_default_repr(field_info, **field_repr)
+
         # Column_def no matter the type
         column_def = {
             "editable": editable,
@@ -360,6 +361,9 @@ class EditableTableField(BaseField):
 
         if isinstance(field_info, CheckboxField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
+
+        if get_non_null_annotation(field_info.annotation) in [int, float]:
+            column_def.update({"filter": "agNumberColumnFilter"})
 
         if get_non_null_annotation(field_info.annotation) == date:
             column_def.update(
