@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2024-08-14
+### Added
+- Date an number columns have the proper filter in the editable table
+
+### Fixed
+- Filtering the editable table does not remove the data from the form
+
 ## [0.3.5] - 2024-07-19
 ### Fixed
 - Nested dict fields were not working and are fixed with added tests
