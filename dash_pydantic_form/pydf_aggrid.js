@@ -124,3 +124,19 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []
 ).map(o => o.value).includes(params.value) ? "" : "required_cell"
+
+dagfuncs.PydfDateComparator = (filterLocalDateAtMidnight, cellValue) => {
+  const dateAsString = cellValue;
+  if (dateAsString == null) return -1;
+  const dateParts = dateAsString.split('-');
+  const cellDate = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+  if (filterLocalDateAtMidnight.getTime() === cellDate.getTime()) {
+    return 0;
+  }
+  if (cellDate < filterLocalDateAtMidnight) {
+    return -1;
+  }
+  if (cellDate > filterLocalDateAtMidnight) {
+    return 1;
+  }
+};

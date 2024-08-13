@@ -367,6 +367,8 @@ class EditableTableField(BaseField):
                     "cellEditor": {"function": "PydfDatePicker"},
                     "cellEditorPopup": False,
                     "cellEditorParams": field_repr.input_kwargs,
+                    "filter": "agDateColumnFilter",
+                    "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },
             )
 
