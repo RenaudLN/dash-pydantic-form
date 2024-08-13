@@ -383,7 +383,6 @@ class EditableTableField(BaseField):
         ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "virtualRowData"),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "cellValueChanged"),
         prevent_initial_call=True,
     )

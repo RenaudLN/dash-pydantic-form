@@ -5,7 +5,7 @@ var dagfuncs = (window.dashAgGridFunctions = window.dashAgGridFunctions || {});
 
 dag.PydfDeleteButton = (props) => {
   const onClick = () => {
-    props.api.applyTransaction({ remove: [props.node.data], async: false });
+    props.api.applyTransactionAsync({ remove: [props.node.data] });
   };
   return React.createElement(
     window.dash_mantine_components.ActionIcon,
