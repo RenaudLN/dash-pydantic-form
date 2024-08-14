@@ -292,6 +292,7 @@ class EditableTableField(BaseField):
 
         if isinstance(field_repr, dict):
             field_repr = get_default_repr(field_info, **field_repr)
+
         # Column_def no matter the type
         column_def = {
             "editable": editable,
@@ -361,12 +362,17 @@ class EditableTableField(BaseField):
         if isinstance(field_info, CheckboxField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
 
+        if get_non_null_annotation(field_info.annotation) in [int, float]:
+            column_def.update({"filter": "agNumberColumnFilter"})
+
         if get_non_null_annotation(field_info.annotation) == date:
             column_def.update(
                 {
                     "cellEditor": {"function": "PydfDatePicker"},
                     "cellEditorPopup": False,
                     "cellEditorParams": field_repr.input_kwargs,
+                    "filter": "agDateColumnFilter",
+                    "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },
             )
 
@@ -381,7 +387,6 @@ class EditableTableField(BaseField):
         ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "virtualRowData"),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "cellValueChanged"),
         prevent_initial_call=True,
     )

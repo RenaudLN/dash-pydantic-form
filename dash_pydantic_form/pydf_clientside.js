@@ -120,17 +120,8 @@ dash_clientside.pydf = {
   updateAccordionTitle: (val) => {
     return val != null ? String(val) : dash_clientside.no_update
   },
-  syncTableJson: (rowData, virtualRowData) => {
-    let val = rowData
-    if (
-        dash_clientside.callback_context.triggered.map(
-            x => x.prop_id.split(".").slice(-1)[0]
-        )
-        .includes("virtualRowData")
-    ) {
-        val = virtualRowData
-    }
-    return val.filter(row => Object.values(row).some(x => x != null))
+  syncTableJson: (rowData) => {
+    return rowData.filter(row => Object.values(row).some(x => x != null))
   },
   stepsClickListener: (id) => {
     const strId = JSON.stringify(id, Object.keys(id).sort())
