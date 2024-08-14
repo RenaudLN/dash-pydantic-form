@@ -175,7 +175,9 @@ dash_clientside.pydf = {
       dash_clientside.callback_context.triggered_id.field,
     ).replaceAll(":", "|")
     const templateCopy = JSON.parse(template.replaceAll(`{{${path}}}`, String(current.length)))
-    templateCopy.props.key = uuid4()
+    if (templateCopy.type == "AccordionItem") {
+      templateCopy.props.value = `uuid:${uuid4()}`
+    }
     return [...current, templateCopy]
   },
   deleteFromList: (trigger, current) => {
