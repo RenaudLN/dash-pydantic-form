@@ -67,28 +67,53 @@ class WorkStation(BaseModel):
 
     has_desk: bool = Field(title="Has desk")
     has_monitor: bool = Field(title="Has monitor")
-    desk: Desk | None = Field(title="Desk", default=None)
+    desk: Desk | None = Field(
+        title="Desk",
+        default=None,
+        json_schema_extra={"repr_kwargs": {"visible": ("has_desk", "==", True)}},
+    )
 
 
 class HomeOffice(BaseModel):
     """Home office model."""
 
-    type: Literal["home_office"]
+    type: Literal["home_office"] = Field(
+        json_schema_extra={
+            "repr_type": "RadioItems",
+            "repr_kwargs": {"options_labels": {"home_office": "Home", "work_office": "Work"}},
+        },
+    )
     has_workstation: bool = Field(title="Has workstation", description="Does the employee have a suitable workstation")
-    workstation: WorkStation | None = Field(title="Workstation", default=None)
+    workstation: WorkStation | None = Field(
+        title="Workstation",
+        default=None,
+        json_schema_extra={"repr_kwargs": {"visible": ("has_workstation", "==", True)}},
+    )
 
 
 class WorkOffice(BaseModel):
     """Work office model."""
 
-    type: Literal["work_office"]
+    type: Literal["work_office"] = Field(
+        json_schema_extra={
+            "repr_type": "RadioItems",
+            "repr_kwargs": {"options_labels": {"home_office": "Home", "work_office": "Work"}},
+        },
+    )
     commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
 
 
 class Metadata(BaseModel):
     """Metadata model."""
 
-    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(title="Languages spoken", default_factory=list)
+    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(
+        title="Languages spoken",
+        default_factory=list,
+        json_schema_extra={
+            "repr_type": "Checklist",
+            "repr_kwargs": {"options_labels": {"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"}},
+        },
+    )
     siblings: int | None = Field(title="Siblings", default=None, ge=0)
     location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
 
@@ -98,9 +123,21 @@ class Employee(BaseModel):
 
     name: str = Field(title="Name", description="Name of the employee", min_length=2)
     age: int = Field(title="Age", description="Age of the employee, starting from their birth", ge=18)
-    mini_bio: str | None = Field(title="Mini bio", description="Short bio of the employee", default=None)
+    mini_bio: str | None = Field(
+        title="Mini bio",
+        description="Short bio of the employee",
+        default=None,
+        json_schema_extra={"repr_type": "Markdown"},
+    )
     joined: date = Field(title="Joined", description="Date when the employee joined the company")
-    office: Office = Field(title="Office", description="Office of the employee")
+    office: Office = Field(
+        title="Office",
+        description="Office of the employee",
+        json_schema_extra={
+            "repr_type": "RadioItems",
+            "repr_kwargs": {"options_labels": {"au": "Australia", "fr": "France", "uk": "United Kingdom"}},
+        },
+    )
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
@@ -162,33 +199,8 @@ app.layout = dmc.MantineProvider(
                             # debounce_inputs=200,
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
-                                "mini_bio": fields.Markdown(),
-                                "office": fields.RadioItems(
-                                    options_labels={"au": "Australia", "fr": "France"},
-                                ),
                                 "metadata": {
                                     "render_type": "accordion",
-                                    "fields_repr": {
-                                        "languages": fields.Checklist(
-                                            options_labels={
-                                                "fr": "French",
-                                                "en": "English",
-                                                "sp": "Spanish",
-                                                "cn": "Chinese",
-                                            },
-                                        ),
-                                        "location": {
-                                            "fields_repr": {
-                                                "type": fields.RadioItems(
-                                                    options_labels={"home_office": "Home", "work_office": "Work"}
-                                                ),
-                                                "workstation": {
-                                                    "visible": ("has_workstation", "==", True),
-                                                    "fields_repr": {"desk": {"visible": ("has_desk", "==", True)}},
-                                                },
-                                            },
-                                        },
-                                    },
                                     "visible": ("_root_:office", "==", "au"),
                                 },
                                 "pets": fields.EditableTable(

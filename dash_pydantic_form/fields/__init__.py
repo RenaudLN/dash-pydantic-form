@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, time
 from enum import Enum
 from typing import Literal, get_origin
@@ -26,9 +27,23 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
 DEFAULT_REPR = fields.Json
 
 
-def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:  # noqa: PLR0911
+def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:  # noqa: PLR0911, PLR0912
     """Get default field representation."""
     if field_info is not None:
+        # Add default repr kwargs
+        if (
+            field_info.json_schema_extra
+            and (repr_kwargs := field_info.json_schema_extra.get("repr_kwargs")) is not None
+        ):
+            kwargs = repr_kwargs | kwargs
+
+        # Use repr_type if provided and exists
+        if field_info.json_schema_extra and (repr_type := field_info.json_schema_extra.get("repr_type")) is not None:
+            repr_cls = getattr(fields, repr_type, None)
+            if repr_cls is not None:
+                return repr_cls(**kwargs)
+            logging.warning("Unknown repr_type: %s", repr_type)
+
         ann = get_non_null_annotation(field_info.annotation)
         type_ = Type.classify(field_info.annotation, discriminator=field_info.discriminator)
     else:

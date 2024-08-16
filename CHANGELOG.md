@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-08-16
+### Added
+- Possibility to set default repr type and kwargs directly in the pydantic model using repr_type and repr_kwargs
+
 ## [0.3.6] - 2024-08-14
 ### Added
 - Date an number columns have the proper filter in the editable table

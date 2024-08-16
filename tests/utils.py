@@ -9,13 +9,13 @@ from dash_pydantic_form import ids
 from dash_pydantic_form.utils import get_non_null_annotation
 
 
-def find_ids(component: Component, ids: list[str | dict]):
+def find_ids(component: Component, ids: list[str | dict], whole_elem: bool = False):
     """Find ids in a component tree."""
     ids_found = []
     ids_not_found = ids
     for elem in component._traverse_ids():
         if elem.id in ids:
-            ids_found.append(elem.id)
+            ids_found.append(elem if whole_elem else elem.id)
             ids_not_found.remove(elem.id)
     return ids_found, ids_not_found
 
