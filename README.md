@@ -92,10 +92,33 @@ form = ModelForm(
         # NOTE: `description` can be set on pydantic fields as well
         "office": fields.RadioItems(description="Wich country office?"),
         # Pass additional props to the default input field
-        "joined": {"input_kwargs": {"maxDate": "2024-01-01"}},
+        "joined": {"maxDate": "2024-01-01"},
     },
 )
 ```
+
+You can also customise inputs by adding arguments to the fields' json_schema_extra if you don't mind mixing data and presentation layers.
+
+```py
+class Employee(BaseModel):
+    first_name: str = Field(title="First name")
+    last_name: str = Field(title="Last name")
+    office: Literal["au", "uk", "us", "fr"] = Field(
+        title="Office",
+        description="Wich country office?",
+        # Use repr_type to change the default field used
+        json_schema_extra={"repr_type": "RadioItems"},
+    )
+    joined: date = Field(
+        title="Employment date",
+        # Use repr_kwargs to pass default keyword arguments to the field
+        json_schema_extra={"repr_kwargs": {"maxDate": "2024-01-01"}},
+    )
+
+form = ModelForm(Employee, aio_id="employees", form_id="new_employee")
+```
+
+Note: You can currently skip the `json_schema_extra=...` and just pass `repr_type=..., repr_kwargs=...` in the field. However, the `**extras` keyword arguments are deprecated on pydantic's `Field` so using `json_schema_extra` is more future-proof.
 
 ### List of current field inputs:
 
@@ -119,10 +142,11 @@ Based on DMC:
 * Time
 
 Custom:
-* EditableTable
-* Model
-* List
 * Dict
+* EditableTable
+* List
+* Markdown
+* Model
 
 ## Creating sections
 

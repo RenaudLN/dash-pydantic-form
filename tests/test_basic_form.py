@@ -129,14 +129,14 @@ def test_bf0005_use_repr_types():
         a: int = Field(title="Field A", repr_kwargs={"placeholder": "Some placeholder"})
         b: Literal["a", "b"] = Field(
             title="Field B",
-            repr_type="RadioItems",
-            repr_kwargs={"options_labels": {"a": "A", "b": "B"}},
+            json_schema_extra={"repr_type": "RadioItems", "repr_kwargs": {"options_labels": {"a": "A", "b": "B"}}},
         )
-        c: bool = Field(title="Field C", repr_type="Switch")
+        c: bool = Field(title="Field C", json_schema_extra={"repr_type": "Switch"})
         d: Literal["fr", "uk"] = Field(
             title="Field D",
-            repr_kwargs={"options_labels": {"fr": "France", "uk": "United Kingdom"}},
+            json_schema_extra={"repr_kwargs": {"options_labels": {"fr": "France", "uk": "United Kingdom"}}},
         )
+        e: str = Field(title="Field E", json_schema_extra={"repr_type": "SomeUnknownType"})
 
     aio_id = "basic"
     form_id = "form"
@@ -171,3 +171,8 @@ def test_bf0005_use_repr_types():
     matches, _ = find_ids(form, [ids.value_field(aio_id, form_id, "d")], whole_elem=True)
     assert len(matches) == 1
     assert matches[0].data == [{"label": "France", "value": "fr"}, {"label": "Grande Bretagne", "value": "uk"}]
+
+    # Unkown repr types get the default
+    matches, _ = find_ids(form, [ids.value_field(aio_id, form_id, "e")], whole_elem=True)
+    assert len(matches) == 1
+    assert isinstance(matches[0], dmc.TextInput)
