@@ -383,7 +383,9 @@ class BaseField(BaseModel):
         """Get the input title."""
         if self.title is not None:
             return self.title or None
-        return field_info.title or field_name.replace("_", " ").title()
+        if field_info.title is not None:
+            return field_info.title
+        return field_name.replace("_", " ").title() if isinstance(field_name, str) else None
 
     def get_description(self, field_info: FieldInfo) -> str:
         """Get the input description."""

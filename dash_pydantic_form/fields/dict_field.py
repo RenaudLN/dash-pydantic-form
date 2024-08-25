@@ -58,12 +58,8 @@ class DictField(ListField):
             read_only=read_only,
             **kwargs,
         )
-        contents.children[0].children[0] = dmc.TextInput(
-            placeholder="Key",
-            id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
-            w="calc(100% - 3.5rem)",
-            leftSection=DashIconify(icon="fe:key"),
-            value=key,
+        contents.children[0].children[0] = cls.key_input(
+            aio_id, form_id, field, parent, index, key=key, read_only=read_only, w="calc(100% - 3.5rem)"
         )
         return contents
 
@@ -101,12 +97,8 @@ class DictField(ListField):
             read_only=read_only,
             **kwargs,
         )
-        contents.children.children[0] = dmc.TextInput(
-            placeholder="Key",
-            id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
-            style={"flex": 1},
-            leftSection=DashIconify(icon="fe:key"),
-            value=key,
+        contents.children.children[0] = cls.key_input(
+            aio_id, form_id, field, parent, index, key=key, read_only=read_only, style={"flex": 1}
         )
         return contents
 
@@ -140,16 +132,42 @@ class DictField(ListField):
             **kwargs,
         )
         contents.children = [
-            dmc.TextInput(
-                placeholder="Key",
-                id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
-                style={"flex": "0 0 30%"},
-                leftSection=DashIconify(icon="fe:key"),
-                value=key,
+            cls.key_input(
+                aio_id, form_id, field, parent, index, key=key, read_only=read_only, style={"flex": "0 0 30%"}
             ),
             dmc.Text(":", pl="0.25rem", pr="0.5rem", fw=500, lh=2),
         ] + contents.children
         return contents
+
+    @classmethod
+    def key_input(  # noqa: PLR0913
+        cls,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        index: int,
+        key: str | None = None,
+        read_only: bool | None = None,
+        **input_kwargs,
+    ):
+        """Create an input for the key of a dict item."""
+        from dash_pydantic_form.fields.base_fields import TextField
+
+        if read_only:
+            renderer = TextField(read_only=read_only)
+            return dmc.Paper(
+                renderer._render_read_only(key, None, FieldInfo()),
+                **input_kwargs,
+            )
+
+        return dmc.TextInput(
+            placeholder="Key",
+            id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
+            leftSection=DashIconify(icon="fe:key"),
+            value=key,
+            **input_kwargs,
+        )
 
     def _render(  # noqa: PLR0913
         self,
