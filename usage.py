@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from typing import Literal
 
@@ -129,7 +129,7 @@ class Employee(BaseModel):
         default=None,
         json_schema_extra={"repr_type": "Markdown"},
     )
-    joined: date = Field(title="Joined", description="Date when the employee joined the company")
+    joined: datetime = Field(title="Joined", description="Date when the employee joined the company")
     office: Office = Field(
         title="Office",
         description="Office of the employee",

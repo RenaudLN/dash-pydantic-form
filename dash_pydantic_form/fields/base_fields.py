@@ -170,7 +170,7 @@ class BaseField(BaseModel):
         if field_info.default == PydanticUndefined and field_info.default_factory is None:
             logging.warning(
                 "Conditional visibility is set on a field without default value, "
-                "this will likely lead to validation errors."
+                f"this will likely lead to validation errors. Field: {get_fullpath(parent, field)}"
             )
 
         if visible is False:
