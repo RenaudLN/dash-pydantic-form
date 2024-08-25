@@ -152,20 +152,12 @@ class DictField(ListField):
         **input_kwargs,
     ):
         """Create an input for the key of a dict item."""
-        from dash_pydantic_form.fields.base_fields import TextField
-
-        if read_only:
-            renderer = TextField(read_only=read_only)
-            return dmc.Paper(
-                renderer._render_read_only(key, None, FieldInfo()),
-                **input_kwargs,
-            )
-
         return dmc.TextInput(
             placeholder="Key",
             id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
             leftSection=DashIconify(icon="fe:key"),
             value=key,
+            readOnly=read_only,
             **input_kwargs,
         )
 

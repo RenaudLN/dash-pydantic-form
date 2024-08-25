@@ -74,7 +74,7 @@ class TableField(BaseField):
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
-        template: type[BaseModel] = get_args(get_non_null_annotation(field_info.annotation))[0]
+        template = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 

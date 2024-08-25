@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pinned dmc >= 0.14.4 for datetime bugfix
 - Renamed `EditableTable` to `Table`, `EditableTable` kept for backwards compatibility and deprecated
 - Deprecation warning message for ModelList and EditableTable
+- Use dmc 0.14.4 `readOnly` wherever possible rather than the custom made read_only renderer
 
 ### Fixed
 - Cannot edit key on Dict fields in read_only mode.

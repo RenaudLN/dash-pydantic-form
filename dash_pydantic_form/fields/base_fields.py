@@ -211,7 +211,11 @@ class BaseField(BaseModel):
 
         value = self.get_value(item, field, parent)
 
-        if self.read_only:
+        if (
+            self.read_only
+            and self.base_component is not None
+            and "readOnly" not in inspect.signature(self.base_component).parameters
+        ):
             return self._render_read_only(value, field, field_info)
 
         id_ = (common_ids.checked_field if self.base_component in CHECKED_COMPONENTS else common_ids.value_field)(
@@ -229,6 +233,7 @@ class BaseField(BaseModel):
                     "value": value,
                     "description": self.get_description(field_info),
                     "required": self.is_required(field_info),
+                    "readOnly": self.read_only,
                 }
                 if self.base_component not in NO_LABEL_COMPONENTS
                 else {"value": value}
