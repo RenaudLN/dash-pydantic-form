@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Pinned dmc >= 0.14.4 for datetime bugfix
+- Renamed `EditableTable` to `Table`, `EditableTable` kept for backwards compatibility and deprecated
+- Deprecation warning message for ModelList and EditableTable
 
 ## [0.4.0] - 2024-08-16
 ### Added

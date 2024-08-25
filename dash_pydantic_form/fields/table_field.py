@@ -29,7 +29,7 @@ from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
 
 
-class EditableTableField(BaseField):
+class TableField(BaseField):
     """Editable table input field attributes and rendering."""
 
     fields_repr: dict[str, dict | BaseField] | None = Field(
@@ -76,7 +76,7 @@ class EditableTableField(BaseField):
         value = self.get_value(item, field, parent) or []
         template: type[BaseModel] = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
-            raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use EditableTable.")
+            raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 
         required_fields = [f for f, f_info in template.model_fields.items() if f_info.is_required()]
         optional_fields = [f for f in template.model_fields if f not in required_fields]

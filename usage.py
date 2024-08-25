@@ -203,7 +203,7 @@ app.layout = dmc.MantineProvider(
                                     "render_type": "accordion",
                                     "visible": ("_root_:office", "==", "au"),
                                 },
-                                "pets": fields.EditableTable(
+                                "pets": fields.Table(
                                     fields_repr={
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },

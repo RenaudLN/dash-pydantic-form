@@ -143,7 +143,7 @@ Based on DMC:
 
 Custom:
 * Dict
-* EditableTable
+* Table
 * List
 * Markdown
 * Model
@@ -229,9 +229,9 @@ form = ModelForm(
 
 ![List](images/model-list.png)
 
-### 2. EditableTable
+### 2. Table
 
-You can also represent the list of sub-models as an ag-grid table with `fields.EditableTable`.
+You can also represent the list of sub-models as an ag-grid table with `fields.Table`.
 
 ```py
 form = ModelForm(
@@ -239,7 +239,7 @@ form = ModelForm(
     aio_id="employees",
     form_id="new_employee",
     fields_repr={
-        "pets": fields.EditableTable(
+        "pets": fields.Table(
             fields_repr={
                 "species": {"options_labels": {"cat": "Cat", "dog": "Dog"}}
             },
@@ -248,7 +248,7 @@ form = ModelForm(
 )
 ```
 
-![EditableTable](images/editable-table.png)
+![Table](images/editable-table.png)
 
 
 ## Make fields conditionnally visible
