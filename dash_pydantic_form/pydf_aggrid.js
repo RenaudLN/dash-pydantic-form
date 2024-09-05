@@ -120,6 +120,71 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   );
 });
 
+dagfuncs.PydfDatetimePicker = React.forwardRef((props, ref) => {
+  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = {...colDef.cellEditorParams};
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DateTimePicker-input')
+    : eGridCell.querySelector('.mantine-DateTimePicker-input');
+    inp.click();
+    colDef.suppressKeyboardEvent = (p) => {
+      return p.editing;
+    };
+  }, []);
+
+  componentProps.setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+    setValue(value)
+  };
+
+
+  return React.createElement(
+    window.dash_mantine_components.DateTimePicker,
+    {
+      ...componentProps,
+      value,
+      popoverProps: {withinPortal: false},
+    }
+  );
+});
+
+dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
+  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = {...colDef.cellEditorParams};
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-TimeInput-input')
+    : eGridCell.querySelector('.mantine-TimeInput-input');
+    inp.focus();
+    colDef.suppressKeyboardEvent = (p) => {
+      return p.editing;
+    };
+  }, []);
+
+  componentProps.setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+    setValue(value)
+  };
+
+
+  return React.createElement(
+    window.dash_mantine_components.TimeInput,
+    {
+      ...componentProps,
+      value,
+    }
+  );
+});
+
 
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []

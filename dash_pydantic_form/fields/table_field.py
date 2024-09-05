@@ -1,7 +1,7 @@
 import base64
 import io
 import uuid
-from datetime import date
+from datetime import date, datetime, time
 from functools import partial
 from typing import get_args
 
@@ -362,14 +362,20 @@ class TableField(BaseField):
         if isinstance(field_info, CheckboxField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
 
-        if get_non_null_annotation(field_info.annotation) in [int, float]:
+        annotation = get_non_null_annotation(field_info.annotation)
+        if annotation in [int, float]:
             column_def.update({"filter": "agNumberColumnFilter"})
 
-        if get_non_null_annotation(field_info.annotation) == date:
+        if annotation in [date, datetime, time]:
+            function_mapper = {
+                date: "PydfDatePicker",
+                datetime: "PydfDatetimePicker",
+                time: "PydfTimePicker",
+            }
             column_def.update(
                 {
-                    "cellEditor": {"function": "PydfDatePicker"},
-                    "cellEditorPopup": False,
+                    "cellEditor": {"function": function_mapper[annotation]},
+                    "cellEditorPopup": annotation is datetime,
                     "cellEditorParams": field_repr.input_kwargs,
                     "filter": "agDateColumnFilter",
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},

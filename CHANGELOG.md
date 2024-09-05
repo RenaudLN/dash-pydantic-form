@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Improved warning log for conditional visibility without default
+- Datetime and time in table field
 
 ### Changed
 - Pinned dmc >= 0.14.4 for datetime bugfix

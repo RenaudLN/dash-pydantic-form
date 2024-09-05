@@ -497,7 +497,7 @@ class CheckboxField(BaseField):
 
     @classmethod
     def get_value(cls, item: BaseModel, field: str, parent: str) -> Any:
-        """Handle the fact dmc.TimeInput uses datetime rather than plain time."""
+        """Default value to False if None."""
         value = super().get_value(item, field, parent)
         if value is None:
             value = False
