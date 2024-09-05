@@ -105,8 +105,8 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   componentProps.setProps = (newProps) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value || value);
-    setValue(value)
+    node.setDataValue(column.colId, newProps.value);
+    setValue(newProps.value)
   };
 
 
@@ -139,7 +139,7 @@ dagfuncs.PydfDatetimePicker = React.forwardRef((props, ref) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
     node.setDataValue(column.colId, newProps.value);
-    setValue(value)
+    setValue(newProps.value)
   };
 
 
@@ -149,6 +149,7 @@ dagfuncs.PydfDatetimePicker = React.forwardRef((props, ref) => {
       ...componentProps,
       value,
       popoverProps: {withinPortal: false},
+      style: { width: column.actualWidth },
     }
   );
 });
@@ -172,7 +173,7 @@ dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
     node.setDataValue(column.colId, newProps.value);
-    setValue(value)
+    setValue(newProps.value)
   };
 
 

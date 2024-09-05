@@ -545,7 +545,6 @@ class DatetimeField(BaseField):
         """Add defaults for date input."""
         super().model_post_init(_context)
         self.input_kwargs.setdefault("valueFormat", "YYYY-MM-DD HH:mm")
-        # self.input_kwargs.setdefault("withSeconds", True)
 
 
 class SelectField(BaseField):
