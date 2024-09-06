@@ -3,11 +3,11 @@ name = "dash-pydantic-form"
 dynamic = ["version"]
 description = "Create Dash forms from pydantic objects"
 authors = [
-    {name = "Renaud Lainé", email = "renaud.laine@enea-consulting.com"},
+    {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
 ]
 readme = "README.md"
 requires-python =  ">=3.10,<3.13"
-license = {text = "Copyright ENEA Australia Pty Ltd - All Rights Reserved. Proprietary and confidential"}
+license = {file = "LICENSE"}
 dependencies = [
     "dash>=2.16",
     "dash_mantine_components>=0.14.4",
