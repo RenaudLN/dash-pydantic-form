@@ -1,6 +1,7 @@
 import json
+from collections.abc import Callable
 from functools import partial
-from typing import Literal
+from typing import ClassVar, Literal
 
 import dash_mantine_components as dmc
 from dash import (
@@ -12,6 +13,7 @@ from dash import (
     callback,
     clientside_callback,
     ctx,
+    dcc,
     no_update,
 )
 from dash.development.base_component import Component
@@ -39,26 +41,52 @@ def side_id(  # noqa: PLR0913
 class TransferListField(BaseField):
     """TransferListField."""
 
+    base_component = None
     full_width = True
 
     titles: tuple[str, str] | None = Field(default=None, description="List titles.")
     search_placeholder: str | None = Field(default=None, description="Search placeholder.")
     show_transfer_all: bool = Field(default=True, description="Show transfer all button.")
     list_height: int = Field(default=200, description="List rows height in pixels.")
-    limit: int | None = Field(default=None, description="Max number of items to display.")
+    max_items: int = Field(default=0, description="Max number of items to display.")
     radius: int | str | None = Field(default=None, description="List border-radius.")
     placeholder: str | None = Field(default=None, description="Placeholder text when no item is available.")
     nothing_found: str | None = Field(default=None, description="Text to display when no item is available.")
     transfer_all_matching_filters: bool = Field(default=True, description="Transfer all when filters match.")
     options_labels: dict | None = Field(default=None, description="Label for the options list.")
+    data_getter: str = Field(description="Data getter name, needs to have been registered with register_data_getter.")
+
+    getters: ClassVar[dict[str, Callable[[str | None, int | None], list[str]]]] = {}
 
     class ids:
         """TransferListField ids."""
 
         search = partial(side_id, "__trl-search-input")
-        transfer = partial(side_id, "__trl-transfer-input")
-        transfer_all = partial(side_id, "__trl-transfer-all-input")
-        checklist = partial(side_id, "__trl-checklist-input")
+        transfer = partial(side_id, "__trl-transfer-button")
+        transfer_tooltip = partial(side_id, "__trl-transfer-tooltip")
+        transfer_all = partial(side_id, "__trl-transfer-all-button")
+        transfer_all_tooltip = partial(side_id, "__trl-transfer-all-tooltip")
+        checklist = partial(side_id, "__trl-checklist")
+
+    @classmethod
+    def register_data_getter(
+        cls,
+        data_getter: Callable[[str | None, int | None], list[str]],
+        name: str | None = None,
+    ):
+        """Register a data_getter."""
+        cls.getters[name or str(data_getter)] = data_getter
+
+    @classmethod
+    def get_data(cls, data_getter: str, value: list, search: str | None = None, max_items: int | None = None) -> dict:
+        """Retrieve data from Literal annotation if data is not present in input_kwargs."""
+        getter = cls.getters[data_getter]
+        search_data = getter(search, max_items + len(value) if max_items else max_items)
+        data = [x for x in search_data if x not in value]
+        if max_items:
+            data = data[:max_items]
+
+        return data
 
     def _render(  # noqa: PLR0913
         self,
@@ -70,7 +98,8 @@ class TransferListField(BaseField):
         parent: str = "",
         field_info: FieldInfo | None = None,  # noqa: ARG002
     ) -> Component:
-        value = self.get_value(item, field, parent) or [[], []]
+        value = self.get_value(item, field, parent) or []
+        data_left = self.get_data(self.data_getter, value, search=None, max_items=self.max_items)
         id_data = {"aio_id": aio_id, "form_id": form_id, "field": field, "parent": parent, "meta": ""}
         return dmc.SimpleGrid(
             [
@@ -90,7 +119,7 @@ class TransferListField(BaseField):
                                     gap=0,
                                 ),
                                 self.checklist(
-                                    id_data, "left", value[0], self.list_height, self.limit, self.options_labels
+                                    id_data, "left", data_left, self.list_height, self.max_items, self.options_labels
                                 ),
                             ],
                             radius=self.radius,
@@ -116,9 +145,7 @@ class TransferListField(BaseField):
                                     style={"alignItems": "initial"},
                                     gap=0,
                                 ),
-                                self.checklist(
-                                    id_data, "right", value[1], self.list_height, self.limit, self.options_labels
-                                ),
+                                self.checklist(id_data, "right", value, self.list_height, None, self.options_labels),
                             ],
                             radius=self.radius,
                             withBorder=True,
@@ -136,6 +163,8 @@ class TransferListField(BaseField):
                     **{
                         "data-placeholder": json.dumps(self.placeholder),
                         "data-nothingfound": json.dumps(self.nothing_found),
+                        "data-getter": self.data_getter,
+                        "data-maxitems": self.max_items,
                         "data-transferallmatchingfilters": json.dumps(self.transfer_all_matching_filters),
                     },
                 ),
@@ -174,7 +203,7 @@ class TransferListField(BaseField):
         side: Literal["left", "right"],
         value: list[dict],
         list_height: int,
-        limit: int = None,
+        max_items: int | None = None,
         options_labels: dict | None = None,
     ):
         """Checklist in a scrollarea for each list of the transfer.
@@ -183,18 +212,34 @@ class TransferListField(BaseField):
         :param side: list side
         :param value: list value, list of dicts with keys label and value
         :param list_height: height of the checklist
-        :param limit: limit the number of items displayed in the checklist
+        :param max_items: the max number of items displayed in the checklist
         """
-        if limit:
-            value = value[:limit]
-        return dmc.ScrollArea(
-            dmc.CheckboxGroup(
-                [cls.checkbox(val, options_labels) for val in value],
-                py="0.25rem",
-                id=cls.ids.checklist(**id_data, side=side),
+        if max_items:
+            value = value[:max_items]
+        return dcc.Loading(
+            dmc.ScrollArea(
+                dmc.CheckboxGroup(
+                    [cls.checkbox(val, options_labels) for val in value]
+                    + (
+                        [
+                            dmc.Text(
+                                f"Showing first {max_items} items, refine your search for more...",
+                                size="xs",
+                                c="dimmed",
+                                p="0.25rem 0.5rem",
+                            )
+                        ]
+                        if max_items and len(value) == max_items
+                        else []
+                    ),
+                    py="0.25rem",
+                    id=cls.ids.checklist(**id_data, side=side),
+                ),
+                style={"height": list_height},
+                px="0.25rem",
             ),
-            style={"height": list_height},
-            px="0.25rem",
+            custom_spinner=dmc.Loader(),
+            delay_show=500,
         )
 
     @classmethod
@@ -228,19 +273,23 @@ class TransferListField(BaseField):
         :param side: list side
         """
         icon_side = "left" if side == "right" else "right"
-        return dmc.Paper(
-            dmc.UnstyledButton(
-                DashIconify(icon=f"uiw:d-arrow-{icon_side}", height=12),
-                style={"height": 34, "width": 34, "display": "grid", "placeContent": "center"},
-                id=cls.ids.transfer_all(**id_data, side=side),
+        return dmc.Tooltip(
+            dmc.Paper(
+                dmc.UnstyledButton(
+                    DashIconify(icon=f"uiw:d-arrow-{icon_side}", height=12),
+                    style={"height": 34, "width": 34, "display": "grid", "placeContent": "center"},
+                    id=cls.ids.transfer_all(**id_data, side=side),
+                ),
+                withBorder=True,
+                radius=0,
+                style={
+                    "borderTop": "none",
+                    "borderLeft": "none",
+                    "borderRight": "none",
+                },
             ),
-            withBorder=True,
-            radius=0,
-            style={
-                "borderTop": "none",
-                "borderLeft": "none",
-                "borderRight": "none",
-            },
+            label="Transfer all",
+            id=cls.ids.transfer_all_tooltip(**id_data, side=side),
         )
 
     @classmethod
@@ -252,17 +301,21 @@ class TransferListField(BaseField):
         :param show_transfer_all: whether the transfer all button is visible (impacts border style)
         """
         icon_side = "left" if side == "right" else "right"
-        return dmc.Paper(
-            dmc.UnstyledButton(
-                DashIconify(icon=f"uiw:{icon_side}", height=12),
-                style={"height": 34, "width": 34, "display": "grid", "placeContent": "center"},
-                id=cls.ids.transfer(**id_data, side=side),
+        return dmc.Tooltip(
+            dmc.Paper(
+                dmc.UnstyledButton(
+                    DashIconify(icon=f"uiw:{icon_side}", height=12),
+                    style={"height": 34, "width": 34, "display": "grid", "placeContent": "center"},
+                    id=cls.ids.transfer(**id_data, side=side),
+                ),
+                withBorder=True,
+                radius=0,
+                style={"borderTop": "none"}
+                | ({"borderRight": "none"} if not show_transfer_all and side == "right" else {})
+                | ({"borderLeft": "none"} if not show_transfer_all and side == "left" else {}),
             ),
-            withBorder=True,
-            radius=0,
-            style={"borderTop": "none"}
-            | ({"borderRight": "none"} if not show_transfer_all and side == "right" else {})
-            | ({"borderLeft": "none"} if not show_transfer_all and side == "left" else {}),
+            label="Transfer selected",
+            id=cls.ids.transfer_tooltip(**id_data, side=side),
         )
 
 
@@ -273,27 +326,41 @@ class TransferListField(BaseField):
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "value"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-nothingfound"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-placeholder"),
+    State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
+    State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
     State(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "value"),
     prevent_initial_call=True,
 )
-def filter_checklist(
+def filter_checklist(  # noqa: PLR0913
     search: str,
-    values: list[list[dict]],
+    value: list,
     nothing_found: str,
     placeholder: str,
+    data_getter: str,
+    max_items: int,
     selection: list[str],
 ):
     """Filter the list on search."""
     if not ctx.triggered_id:
         return no_update, no_update
 
-    value = values[0] if ctx.triggered_id["side"] == "left" else values[1]
-    filtered = [v for v in value if not search or search.lower() in v["label"].lower()]
+    if ctx.triggered_id["side"] == "left":
+        filtered = TransferListField.get_data(data_getter, value, search=search, max_items=max_items)
+    else:
+        filtered = [x for x in value if not search or search.lower() in x.lower()]
     children = None
-    filtered_values = [f["value"] for f in filtered]
-    updated_selection = [s for s in (selection or []) if s in filtered_values]
+    updated_selection = [s for s in (selection or []) if s in filtered]
     if filtered:
         children = [TransferListField.checkbox(val) for val in filtered]
+        if max_items and len(filtered) == max_items:
+            children += [
+                dmc.Text(
+                    f"Showing first {max_items} items, refine your search for more...",
+                    size="xs",
+                    c="dimmed",
+                    p="0.25rem 0.5rem",
+                )
+            ]
     elif search and nothing_found:
         children = dmc.Text(json.loads(nothing_found), p="0.5rem", c="dimmed")
     elif not search and placeholder:
@@ -313,76 +380,91 @@ def filter_checklist(
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "value"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-placeholder"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-transferallmatchingfilters"),
+    State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
+    State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
     prevent_initial_call=True,
 )
 def transfer_values(  # noqa: PLR0913
-    trigger1: list[int],
-    trigger2: list[int],
-    selection: list[list[str]],
-    search: list[str],
-    current_value: list[list[dict]],
+    trigger1: tuple[int, int],
+    trigger2: tuple[int, int],
+    selection: tuple[list[str], list[str]],
+    search: tuple[str, str],
+    current_value: list[str],
     placeholder: str,
     transfer_matching: str,
+    data_getter: str,
+    max_items: int,
 ):
     """Transfer items from one list to the other."""
     if not (ctx.triggered_id and (any(trigger1) or any(trigger2))):
-        return no_update, no_update, no_update, no_update
+        return no_update
 
     side = ctx.triggered_id["side"]
+    search_ = search[0] if side == "left" else search[1]
     # Transfer selected items when clicking the transfer button
     if ctx.triggered_id["component"] == TransferListField.ids.transfer("", "", "", "", "", "")["component"]:
         transferred = selection[0] if side == "left" else selection[1]
     # Transfer all items when clicking the transfer all button
-    elif json.loads(transfer_matching):
+    elif search_ and json.loads(transfer_matching):
         # Filter out items that don't match the search if transfer_matching is set
-        search_ = search[0 if side == "left" else 1]
-        transferred = [
-            v["value"]
-            for v in current_value[0 if side == "left" else 1]
-            if not search_ or search_.lower() in v["label"].lower()
-        ]
+        if side == "left":
+            transferred = TransferListField.get_data(data_getter, current_value, search=search_, max_items=0)
+        else:
+            transferred = [x for x in current_value if search_.lower() in x.lower()]
     else:
-        transferred = [v["value"] for v in current_value[0 if side == "left" else 1]]
+        transferred = (
+            current_value
+            if side == "right"
+            else TransferListField.get_data(data_getter, current_value, search=None, max_items=max_items)
+        )
 
     if not transferred:
-        return no_update, [no_update] * 2, [no_update] * 2, [no_update] * 2
+        return no_update
 
     # Update the value
-    if side == "left":
-        new_value = [
-            [v for v in current_value[0] if v["value"] not in transferred],
-            current_value[1] + [v for v in current_value[0] if v["value"] in transferred],
-        ]
-    else:
-        new_value = [
-            current_value[0] + [v for v in current_value[1] if v["value"] in transferred],
-            [v for v in current_value[1] if v["value"] not in transferred],
-        ]
+    new_value = current_value + transferred if side == "left" else [v for v in current_value if v not in transferred]
+
+    data_left = TransferListField.get_data(data_getter, new_value, search=search[0], max_items=max_items)
 
     # Create the new checkboxes or placeholder texts
     placeholder = json.loads(placeholder)
     new_children = [
-        [TransferListField.checkbox(v) for v in new_value[0]]
-        if new_value[0]
+        (
+            [TransferListField.checkbox(v) for v in data_left]
+            + (
+                [
+                    dmc.Text(
+                        f"Showing first {max_items} items, refine your search for more...",
+                        size="xs",
+                        c="dimmed",
+                        p="0.25rem 0.5rem",
+                    )
+                ]
+                if max_items and len(data_left) == max_items
+                else []
+            )
+        )
+        if data_left
         else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
-        [TransferListField.checkbox(v) for v in new_value[1]]
-        if new_value[1]
+        [TransferListField.checkbox(v) for v in new_value if not search[1] or search[1].lower() in v.lower()]
+        if new_value
         else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
     ]
 
-    return new_value, new_children, [[]] * 2, [""] * 2
+    return new_value, new_children, [[]] * 2, [no_update] * 2
 
 
 # Gray out the transfer button when nothing is selected
 clientside_callback(
     """(selection, style) => {
-        return {
+        return [{
             ...style,
             color: !!selection.length ? null : "gray",
             cursor: !!selection.length ? "pointer" : "default",
-        }
+        }, !selection.length]
     }""",
     Output(TransferListField.ids.transfer(MATCH, MATCH, MATCH, MATCH, "", MATCH), "style"),
+    Output(TransferListField.ids.transfer_tooltip(MATCH, MATCH, MATCH, MATCH, "", MATCH), "disabled"),
     Input(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "value"),
     State(TransferListField.ids.transfer(MATCH, MATCH, MATCH, MATCH, "", MATCH), "style"),
 )
@@ -392,13 +474,14 @@ clientside_callback(
 clientside_callback(
     """(filtered, style) => {
         const disabled = !filtered || !filtered.length
-        return {
+        return [{
             ...style,
             color: !disabled ? null : "gray",
             cursor: !disabled ? "pointer" : "default",
-        }
+        }, disabled]
     }""",
     Output(TransferListField.ids.transfer_all(MATCH, MATCH, MATCH, MATCH, "", MATCH), "style"),
+    Output(TransferListField.ids.transfer_all_tooltip(MATCH, MATCH, MATCH, MATCH, "", MATCH), "disabled"),
     Input(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "children"),
     State(TransferListField.ids.transfer_all(MATCH, MATCH, MATCH, MATCH, "", MATCH), "style"),
 )
