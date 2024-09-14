@@ -76,6 +76,11 @@ class ModelForm(html.Div):
         List of field names to exclude from the form altogether, optional.
     container_kwargs: dict | None
         Additional kwargs to pass to the containing div.
+    read_only: bool | None
+        Whether the form should be read only.
+        True/False set all the fields to read only or not. None keeps the field setting.
+    debounce_inputs: int | None
+        Debounce inputs in milliseconds. Only works with DMC components that can be debounced.
     """
 
     class ids:
@@ -83,6 +88,7 @@ class ModelForm(html.Div):
 
         form = partial(form_base_id, "_pydf-form")
         main = partial(form_base_id, "_pydf-main")
+        errors = partial(form_base_id, "_pydf-errors")
         accordion = partial(form_base_id, "_pydf-accordion")
         tabs = partial(form_base_id, "_pydf-tabs")
         steps = partial(form_base_id, "_pydf-steps")
@@ -105,16 +111,69 @@ class ModelForm(html.Div):
         discriminator: str | None = None,
         excluded_fields: list[str] | None = None,
         container_kwargs: dict | None = None,
+        read_only: bool | None = None,
+        debounce_inputs: int | None = None,
     ) -> None:
-        from dash_pydantic_form.fields import get_default_repr
-
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
                 item = item.model_construct()
 
         fields_repr = fields_repr or {}
-        field_inputs = {}
-        subitem_cls = get_subitem_cls(item.__class__, path)
+
+        subitem_cls, disc_vals = self.get_discriminated_subitem_cls(item=item, path=path, discriminator=discriminator)
+        field_inputs = self.render_fields(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            path=path,
+            subitem_cls=subitem_cls,
+            disc_vals=disc_vals,
+            fields_repr=fields_repr,
+            excluded_fields=excluded_fields,
+            discriminator=discriminator,
+            read_only=read_only,
+            debounce_inputs=debounce_inputs,
+        )
+
+        if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
+            children = [self.grid(list(field_inputs.values()))]
+        else:
+            children = self.handle_sections(
+                field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
+            )
+
+        children.extend(
+            self.get_meta_children(
+                subitem_cls=subitem_cls,
+                fields_repr=fields_repr,
+                sections=sections,
+                item=item,
+                aio_id=aio_id,
+                form_id=form_id,
+                path=path,
+            )
+        )
+
+        super().__init__(
+            children=children,
+            **(
+                {
+                    "id": self.ids.form(aio_id, form_id, path),
+                    "data-submitonenter": submit_on_enter,
+                    "style": {"containerType": "inline-size"},
+                }
+                if not path
+                else {}
+            ),
+            **(container_kwargs or {}),
+        )
+
+    @staticmethod
+    def get_discriminated_subitem_cls(
+        *, item: BaseModel, path: str, discriminator: str
+    ) -> tuple[type[BaseModel], tuple]:
+        """Get the subitem of a model at a given parent, handling type unions."""
+        subitem_cls = get_subitem_cls(item.__class__, path, item=item)
 
         # Handle type unions
         disc_vals = None
@@ -126,10 +185,35 @@ class ModelForm(html.Div):
                 item.__class__, path, subitem_cls, discriminator, discriminator_value
             )
 
-        more_kwargs = {}
+        return subitem_cls, disc_vals
+
+    @staticmethod
+    def render_fields(  # noqa: PLR0913
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        path: str,
+        subitem_cls: type[BaseModel],
+        disc_vals: list[str],
+        fields_repr: dict[str, dict | BaseField],
+        excluded_fields: list[str],
+        discriminator: str | None,
+        read_only: bool | None,
+        debounce_inputs: int | None,
+    ) -> dict[str, Component]:
+        """Render each field in the form."""
+        from dash_pydantic_form.fields import get_default_repr
+
+        field_inputs = {}
         for field_name, field_info in subitem_cls.model_fields.items():
             if field_name in (excluded_fields or []):
                 continue
+            more_kwargs = {}
+            if read_only is not None:
+                more_kwargs["read_only"] = read_only
+            if debounce_inputs is not None:
+                more_kwargs["debounce"] = debounce_inputs
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:
@@ -141,8 +225,8 @@ class ModelForm(html.Div):
                     field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
                 else:
                     field_repr = fields_repr[field_name]
-                    for key, val in more_kwargs.items():
-                        setattr(field_repr, key, val)
+                    if more_kwargs:
+                        field_repr = field_repr.__class__(**(field_repr.model_dump() | more_kwargs))
             else:
                 field_repr = get_default_repr(field_info, **more_kwargs)
 
@@ -155,41 +239,74 @@ class ModelForm(html.Div):
                 field_info=field_info,
             )
 
-        if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
-            children = [self.grid(list(field_inputs.values()))]
+        return field_inputs
+
+    @classmethod
+    def handle_sections(  # noqa: PLR0913
+        cls,
+        *,
+        field_inputs: dict[str, Component],
+        sections: Sections,
+        aio_id: str,
+        form_id: str,
+        path: str,
+    ):
+        """Handle the sections."""
+        fields_not_in_sections = set(field_inputs) - set(
+            itertools.chain.from_iterable(s.fields for s in sections.sections)
+        )
+
+        if sections.render == "accordion":
+            render_function = cls.render_accordion_sections
+        elif sections.render == "tabs":
+            render_function = cls.render_tabs_sections
+        elif sections.render == "steps":
+            render_function = cls.render_steps_sections
         else:
-            fields_not_in_sections = set(field_inputs) - set(
-                itertools.chain.from_iterable(s.fields for s in sections.sections)
-            )
+            raise ValueError("Only 'accordion', 'tabs' and 'steps' are supported for `section_render_type`.")
 
-            if sections.render == "accordion":
-                render_function = self.render_accordion_sections
-            elif sections.render == "tabs":
-                render_function = self.render_tabs_sections
-            elif sections.render == "steps":
-                render_function = self.render_steps_sections
-            else:
-                raise ValueError("Only 'accordion', 'tabs' and 'steps' are supported for `section_render_type`.")
+        sections_render = render_function(
+            aio_id=aio_id,
+            form_id=form_id,
+            path=path,
+            field_inputs=field_inputs,
+            sections=sections,
+            **sections.render_kwargs,
+        )
 
-            sections_render = render_function(
-                aio_id=aio_id,
-                form_id=form_id,
-                path=path,
-                field_inputs=field_inputs,
-                sections=sections,
-                **sections.render_kwargs,
-            )
+        if sections.remaining_fields_position == "none" or not fields_not_in_sections:
+            children = sections_render
+        elif sections.remaining_fields_position == "top":
+            children = [
+                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+            ] + sections_render
+        else:
+            children = sections_render + [
+                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+            ]
 
-            if sections.remaining_fields_position == "none" or not fields_not_in_sections:
-                children = sections_render
-            elif sections.remaining_fields_position == "top":
-                children = [
-                    self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
-                ] + sections_render
-            else:
-                children = sections_render + [
-                    self.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
-                ]
+        return children
+
+    @classmethod
+    def get_meta_children(  # noqa: PLR0913
+        cls,
+        *,
+        subitem_cls: type[BaseModel],
+        fields_repr: dict[str, dict | BaseField],
+        sections: Sections | None,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        path: str,
+    ):
+        """Get 'meta' form children used for passing data to callbacks."""
+        from dash_pydantic_form.fields import get_default_repr
+
+        children = []
+        if not path:
+            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
+            children.append(dcc.Store(data=str(item.__class__), id=cls.ids.model_store(aio_id, form_id)))
 
         fields_repr_dicts = (
             {
@@ -199,13 +316,11 @@ class ModelForm(html.Div):
                     else field_repr
                 ).to_dict()
                 for field_name, field_repr in fields_repr.items()
+                if field_name in subitem_cls.model_fields
             }
             if fields_repr
             else None
         )
-        if not path:
-            children.append(dcc.Store(id=self.ids.main(aio_id, form_id)))
-            children.append(dcc.Store(data=str(item.__class__), id=self.ids.model_store(aio_id, form_id)))
 
         children.append(
             dcc.Store(
@@ -213,28 +328,16 @@ class ModelForm(html.Div):
                     "sections": sections.model_dump(mode="json") if sections else None,
                     "fields_repr": fields_repr_dicts,
                 },
-                id=self.ids.form_specs_store(aio_id, form_id, path),
+                id=cls.ids.form_specs_store(aio_id, form_id, path),
             )
         )
 
-        super().__init__(
-            children=children,
-            **(
-                {
-                    "id": self.ids.form(aio_id, form_id, path),
-                    "data-entersubmits": submit_on_enter,
-                    "style": {"containerType": "inline-size"},
-                }
-                if not path
-                else {}
-            ),
-            **(container_kwargs or {}),
-        )
+        return children
 
     @classmethod
     def grid(cls, children: Children, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(children, className="pydantic-form-grid", **kwargs)
+        return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913
@@ -352,6 +455,7 @@ class ModelForm(html.Div):
         **kwargs,
     ):
         """Render the form sections as steps."""
+        additional_steps = additional_steps or []
         stepper_styles = deep_merge(
             {
                 "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 2rem"},
@@ -377,7 +481,8 @@ class ModelForm(html.Div):
                 )
                 for section in sections.sections
             ]
-            + (additional_steps or []),
+            + additional_steps,
+            **kwargs,
         )
 
         return [
@@ -402,7 +507,7 @@ class ModelForm(html.Div):
                         ],
                         style={
                             "position": "absolute",
-                            "top": f"calc({70 * (len(sections.sections) + len(additional_steps or []))}px + 1rem)",
+                            "top": f"calc({78 * (len(sections.sections) + len(additional_steps))}px + 1rem)",
                         },
                     ),
                     dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id, path)),
@@ -441,13 +546,22 @@ clientside_callback(
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
     Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
+    Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
+    Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
 )
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="listenToSubmit"),
     Output(ModelForm.ids.form(MATCH, MATCH), "id"),
     Input(ModelForm.ids.form(MATCH, MATCH), "id"),
-    State(ModelForm.ids.form(MATCH, MATCH), "data-entersubmits"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-submitonenter"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="displayErrors"),
+    Output(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "error"),
+    Input(ModelForm.ids.errors(MATCH, MATCH), "data"),
+    State(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "id"),
 )
 
 

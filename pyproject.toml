@@ -3,29 +3,31 @@ name = "dash-pydantic-form"
 dynamic = ["version"]
 description = "Create Dash forms from pydantic objects"
 authors = [
-    {name = "Renaud Lainé", email = "renaud.laine@enea-consulting.com"},
+    {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
 ]
 readme = "README.md"
 requires-python =  ">=3.10,<3.13"
-license = {text = "Copyright ENEA Australia Pty Ltd - All Rights Reserved. Proprietary and confidential"}
+license = {file = "LICENSE"}
 dependencies = [
-    "dash",
-    "dash_mantine_components>=0.14",
+    "dash>=2.16",
+    "dash_mantine_components>=0.14.4",
     "dash_iconify",
-    "dash_ag_grid",
+    "dash_ag_grid>=31",
     "pandas",
     "pydantic==2.*",
-    "flatdict",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pre-commit",
     "pytest",
+    "dash[testing]",
+    "selenium",
 ]
 
 [project.urls]
-Source= "https://github.com/RenaudLN/dash-pydantic-form"
+Homepage = "https://pydf-docs.onrender.com"
+Source = "https://github.com/RenaudLN/dash-pydantic-form"
 
 [build-system]
 build-backend = "setuptools.build_meta"

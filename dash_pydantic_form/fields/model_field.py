@@ -101,6 +101,7 @@ class ModelField(BaseField):
                                 path=new_parent,
                                 fields_repr=self.fields_repr,
                                 sections=self.sections,
+                                read_only=self.read_only,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -157,6 +158,7 @@ class ModelField(BaseField):
                                     fields_repr=self.fields_repr,
                                     sections=self.sections,
                                     discriminator=field_info.discriminator,
+                                    read_only=self.read_only,
                                 ),
                                 id=self.ids.form_wrapper(
                                     aio_id, form_id, field_info.discriminator or "", parent=get_fullpath(parent, field)

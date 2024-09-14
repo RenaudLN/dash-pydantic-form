@@ -1,7 +1,7 @@
 import base64
 import io
 import uuid
-from datetime import date
+from datetime import date, datetime, time
 from functools import partial
 from typing import get_args
 
@@ -29,7 +29,7 @@ from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
 
 
-class EditableTableField(BaseField):
+class TableField(BaseField):
     """Editable table input field attributes and rendering."""
 
     fields_repr: dict[str, dict | BaseField] | None = Field(
@@ -37,7 +37,7 @@ class EditableTableField(BaseField):
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
-    rows_editable: bool = Field(default=True, description="Whether to allow editing rows.")
+    rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
 
@@ -50,6 +50,9 @@ class EditableTableField(BaseField):
             self.fields_repr = {}
         if self.column_defs_overrides is None:
             self.column_defs_overrides = {}
+        if self.read_only:
+            self.rows_editable = False
+            self.with_upload = False
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -71,9 +74,9 @@ class EditableTableField(BaseField):
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
-        template: type[BaseModel] = get_args(get_non_null_annotation(field_info.annotation))[0]
+        template = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
-            raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use EditableTable.")
+            raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 
         required_fields = [f for f, f_info in template.model_fields.items() if f_info.is_required()]
         optional_fields = [f for f in template.model_fields if f not in required_fields]
@@ -244,19 +247,20 @@ class EditableTableField(BaseField):
                             field_repr=get_field_repr(field_name),
                             field_info=template.model_fields[field_name],
                             required_field=field_name in required_fields,
-                            editable=self.rows_editable,
+                            editable=not self.read_only,
                         )
                         for field_name in template.model_fields
                     ],
-                    defaultColDef={"editable": True, "resizable": True, "sortable": True, "filter": True},
+                    defaultColDef={"editable": not self.read_only, "resizable": True, "sortable": True, "filter": True},
                     rowData=value,
                     columnSize="responsiveSizeToFit",
                     style={"height": self.table_height},
                     dashGridOptions={
                         "singleClickEdit": True,
                         "rowSelection": "multiple",
-                        # Below doesn't work with current datePicker implementation
-                        # "stopEditingWhenCellsLoseFocus": True,
+                        "stopEditingWhenCellsLoseFocus": True,
+                        "suppressRowHoverHighlight": self.read_only,
+                        "suppressRowClickSelection": self.read_only,
                     },
                     className="ag-theme-alpine ag-themed overflowing-ag-grid",
                 ),
@@ -269,7 +273,8 @@ class EditableTableField(BaseField):
                     style={"display": "none"},
                 ),
                 html.Div(id=self.ids.notification_wrapper(aio_id, form_id, field, parent=parent)),
-            ],
+            ]
+            * (not self.read_only),
             style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 
@@ -287,6 +292,7 @@ class EditableTableField(BaseField):
 
         if isinstance(field_repr, dict):
             field_repr = get_default_repr(field_info, **field_repr)
+
         # Column_def no matter the type
         column_def = {
             "editable": editable,
@@ -326,11 +332,12 @@ class EditableTableField(BaseField):
                 }
                 for x in data
             ]
+            params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
             column_def.update(
                 {
                     "cellEditor": {"function": "PydfDropdown"},
                     "cellEditorPopup": False,
-                    "cellEditorParams": {"options": options},
+                    "cellEditorParams": {"options": options, **params},
                     "cellRenderer": "PydfOptionsRenderer",
                     "cellClass": {
                         "function": "selectRequiredCell(params)",
@@ -355,12 +362,23 @@ class EditableTableField(BaseField):
         if isinstance(field_info, CheckboxField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
 
-        if get_non_null_annotation(field_info.annotation) == date:
+        annotation = get_non_null_annotation(field_info.annotation)
+        if annotation in [int, float]:
+            column_def.update({"filter": "agNumberColumnFilter"})
+
+        if annotation in [date, datetime, time]:
+            function_mapper = {
+                date: "PydfDatePicker",
+                datetime: "PydfDatetimePicker",
+                time: "PydfTimePicker",
+            }
             column_def.update(
                 {
-                    "cellEditor": {"function": "PydfDatePicker"},
-                    "cellEditorPopup": False,
+                    "cellEditor": {"function": function_mapper[annotation]},
+                    "cellEditorPopup": annotation is datetime,
                     "cellEditorParams": field_repr.input_kwargs,
+                    "filter": "agDateColumnFilter",
+                    "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },
             )
 
@@ -375,7 +393,6 @@ class EditableTableField(BaseField):
         ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "virtualRowData"),
         Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "cellValueChanged"),
         prevent_initial_call=True,
     )

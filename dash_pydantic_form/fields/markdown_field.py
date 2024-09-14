@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Any
 
 import dash_mantine_components as dmc
 from dash import MATCH, ClientsideFunction, Input, Output, clientside_callback, dcc, html
@@ -32,6 +33,9 @@ class MarkdownField(BaseField):
     ) -> Component:
         """Render the markdown field."""
         value = self.get_value(item, field, parent)
+        if self.read_only:
+            return self._render_read_only(value, field, field_info)
+
         return html.Div(
             [
                 dmc.Textarea(
@@ -51,6 +55,12 @@ class MarkdownField(BaseField):
             ],
             style={"display": "grid", "gap": "1rem", "gridTemplateColumns": "1fr 1fr"},
         )
+
+    @staticmethod
+    def _get_value_repr(value: Any, _field_info: FieldInfo):
+        if value is None:
+            return "-"
+        return dcc.Markdown(value)
 
 
 clientside_callback(

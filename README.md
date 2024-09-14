@@ -4,6 +4,8 @@ This package allows users to quickly create forms with Plotly Dash based on pyda
 
 See the full docs at [dash-pydantic-form docs](https://pydf-docs.onrender.com).
 
+Check out a full self-standing example app in [usage.py](usage.py).
+
 ## Getting started
 
 Install with pip
@@ -90,10 +92,33 @@ form = ModelForm(
         # NOTE: `description` can be set on pydantic fields as well
         "office": fields.RadioItems(description="Wich country office?"),
         # Pass additional props to the default input field
-        "joined": {"input_kwargs": {"maxDate": "2024-01-01"}},
+        "joined": {"maxDate": "2024-01-01"},
     },
 )
 ```
+
+You can also customise inputs by adding arguments to the fields' json_schema_extra if you don't mind mixing data and presentation layers.
+
+```py
+class Employee(BaseModel):
+    first_name: str = Field(title="First name")
+    last_name: str = Field(title="Last name")
+    office: Literal["au", "uk", "us", "fr"] = Field(
+        title="Office",
+        description="Wich country office?",
+        # Use repr_type to change the default field used
+        json_schema_extra={"repr_type": "RadioItems"},
+    )
+    joined: date = Field(
+        title="Employment date",
+        # Use repr_kwargs to pass default keyword arguments to the field
+        json_schema_extra={"repr_kwargs": {"maxDate": "2024-01-01"}},
+    )
+
+form = ModelForm(Employee, aio_id="employees", form_id="new_employee")
+```
+
+Note: You can currently skip the `json_schema_extra=...` and just pass `repr_type=..., repr_kwargs=...` in the field. However, the `**extras` keyword arguments are deprecated on pydantic's `Field` so using `json_schema_extra` is more future-proof.
 
 ### List of current field inputs:
 
@@ -117,9 +142,11 @@ Based on DMC:
 * Time
 
 Custom:
-* EditableTable
+* Dict
+* Table
+* List
+* Markdown
 * Model
-* ModelList
 
 ## Creating sections
 
@@ -169,7 +196,7 @@ Dash pydantic form also handles lists of nested models with the possibility to a
 
 Let's say we now want to record the employee's pets
 
-### 1. ModelList
+### 1. List
 
 This creates a list of sub-forms each of which can take similar arguments as a ModelForm (fields_repr, sections).
 
@@ -189,7 +216,7 @@ form = ModelForm(
     aio_id="employees",
     form_id="new_employee",
     fields_repr={
-        "pets": fields.ModelList(
+        "pets": fields.List(
             fields_repr={
                 "species": {"options_labels": {"cat": "Cat", "dog": "Dog"}}
             },
@@ -200,11 +227,11 @@ form = ModelForm(
 )
 ```
 
-![ModelList](images/model-list.png)
+![List](images/model-list.png)
 
-### 2. EditableTable
+### 2. Table
 
-You can also represent the list of sub-models as an ag-grid table with `fields.EditableTable`.
+You can also represent the list of sub-models as an ag-grid table with `fields.Table`.
 
 ```py
 form = ModelForm(
@@ -212,7 +239,7 @@ form = ModelForm(
     aio_id="employees",
     form_id="new_employee",
     fields_repr={
-        "pets": fields.EditableTable(
+        "pets": fields.Table(
             fields_repr={
                 "species": {"options_labels": {"cat": "Cat", "dog": "Dog"}}
             },
@@ -221,7 +248,7 @@ form = ModelForm(
 )
 ```
 
-![EditableTable](images/editable-table.png)
+![Table](images/editable-table.png)
 
 
 ## Make fields conditionnally visible
