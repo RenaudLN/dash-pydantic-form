@@ -23,6 +23,7 @@ from .list_field import ListField as List
 from .markdown_field import MarkdownField as Markdown
 from .model_field import ModelField as Model
 from .table_field import TableField as Table
+from .transferlist_field import TransferListField as TransferList
 
 
 def deprecated_field_factory(name: str, base_class: type):
@@ -68,4 +69,5 @@ __all__ = [
     "Textarea",
     "Text",
     "Time",
+    "TransferList",
 ]
