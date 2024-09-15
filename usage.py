@@ -140,7 +140,6 @@ class Employee(BaseModel):
     )
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
-    test: list = Field(title="Test", default_factory=lambda: [["a", "b", "c"], []])
     jobs: list[str] = Field(
         title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
     )
@@ -209,11 +208,6 @@ app.layout = dmc.MantineProvider(
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },
                                     table_height=200,
-                                ),
-                                "test": fields.TransferList(
-                                    placeholder="No items",
-                                    nothing_found="Nothing found",
-                                    options_labels={"a": "A", "b": "B", "c": "C"},
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },
