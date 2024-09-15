@@ -147,6 +147,7 @@ Custom:
 * List
 * Markdown
 * Model
+* TransferList
 
 ## Creating sections
 
