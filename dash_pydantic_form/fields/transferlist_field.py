@@ -282,6 +282,7 @@ class TransferListField(BaseField):
                 ),
                 withBorder=True,
                 radius=0,
+                h="100%",
                 style={
                     "borderTop": "none",
                     "borderLeft": "none",
@@ -310,6 +311,7 @@ class TransferListField(BaseField):
                 ),
                 withBorder=True,
                 radius=0,
+                h="100%",
                 style={"borderTop": "none"}
                 | ({"borderRight": "none"} if not show_transfer_all and side == "right" else {})
                 | ({"borderLeft": "none"} if not show_transfer_all and side == "left" else {}),
