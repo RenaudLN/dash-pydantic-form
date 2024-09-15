@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Callable
 from functools import partial
 from typing import ClassVar, Literal
@@ -75,12 +76,21 @@ class TransferListField(BaseField):
         name: str | None = None,
     ):
         """Register a data_getter."""
-        cls.getters[name or str(data_getter)] = data_getter
+        name = name or str(data_getter)
+        if name in cls.getters:
+            logging.warning("Data getter %s already registered for TransferList field.", name)
+        cls.getters[name] = data_getter
 
     @classmethod
     def get_data(cls, data_getter: str, value: list, search: str | None = None, max_items: int | None = None) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
-        getter = cls.getters[data_getter]
+        try:
+            getter = cls.getters[data_getter]
+        except KeyError as exc:
+            logging.error(
+                "Data getter %s could not be found, make sure you register it at the root level.", data_getter
+            )
+            raise exc
         search_data = getter(search, max_items + len(value) if max_items else max_items)
         data = [x for x in search_data if x not in value]
         if max_items:
