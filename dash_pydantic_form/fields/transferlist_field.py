@@ -219,19 +219,7 @@ class TransferListField(BaseField):
         return dcc.Loading(
             dmc.ScrollArea(
                 dmc.CheckboxGroup(
-                    [cls.checkbox(val, options_labels) for val in value]
-                    + (
-                        [
-                            dmc.Text(
-                                f"Showing first {max_items} items, refine your search for more...",
-                                size="xs",
-                                c="dimmed",
-                                p="0.25rem 0.5rem",
-                            )
-                        ]
-                        if max_items and len(value) == max_items
-                        else []
-                    ),
+                    [cls.checkbox(val, options_labels) for val in value] + cls.more_text(max_items, len(value)),
                     py="0.25rem",
                     id=cls.ids.checklist(**id_data, side=side),
                 ),
@@ -320,6 +308,24 @@ class TransferListField(BaseField):
             id=cls.ids.transfer_tooltip(**id_data, side=side),
         )
 
+    @classmethod
+    def more_text(cls, max_items: int, data_length: int):
+        """Text to display when there are more items than max_items."""
+        if not max_items or data_length < max_items:
+            return []
+
+        return [
+            dmc.Text(
+                f"Showing first {max_items} items, refine your search for more...",
+                size="xs",
+                c="dimmed",
+                p="0.25rem 0.5rem",
+                pos="sticky",
+                bottom=0,
+                bg="var(--mantine-color-body)",
+            ),
+        ]
+
 
 @callback(
     Output(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "children"),
@@ -354,15 +360,7 @@ def filter_checklist(  # noqa: PLR0913
     updated_selection = [s for s in (selection or []) if s in filtered]
     if filtered:
         children = [TransferListField.checkbox(val) for val in filtered]
-        if max_items and len(filtered) == max_items:
-            children += [
-                dmc.Text(
-                    f"Showing first {max_items} items, refine your search for more...",
-                    size="xs",
-                    c="dimmed",
-                    p="0.25rem 0.5rem",
-                )
-            ]
+        children += TransferListField.more_text(max_items, len(filtered))
     elif search and nothing_found:
         children = dmc.Text(json.loads(nothing_found), p="0.5rem", c="dimmed")
     elif not search and placeholder:
@@ -431,21 +429,7 @@ def transfer_values(  # noqa: PLR0913
     # Create the new checkboxes or placeholder texts
     placeholder = json.loads(placeholder)
     new_children = [
-        (
-            [TransferListField.checkbox(v) for v in data_left]
-            + (
-                [
-                    dmc.Text(
-                        f"Showing first {max_items} items, refine your search for more...",
-                        size="xs",
-                        c="dimmed",
-                        p="0.25rem 0.5rem",
-                    )
-                ]
-                if max_items and len(data_left) == max_items
-                else []
-            )
-        )
+        ([TransferListField.checkbox(v) for v in data_left] + TransferListField.more_text(max_items, len(data_left)))
         if data_left
         else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
         [TransferListField.checkbox(v) for v in new_value if not search[1] or search[1].lower() in v.lower()]
