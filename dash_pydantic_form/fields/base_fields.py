@@ -13,7 +13,7 @@ from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 from pydantic_core import PydanticUndefined
@@ -550,7 +550,7 @@ class DatetimeField(BaseField):
 class SelectField(BaseField):
     """Select field."""
 
-    data_getter: Callable[[], list] | None = Field(
+    data_getter: str | None = Field(
         default=None, description="Function to retrieve a list of options. This function takes no argument."
     )
     options_labels: dict | None = Field(
@@ -558,28 +558,16 @@ class SelectField(BaseField):
     )
 
     base_component = dmc.Select
+
     getters: ClassVar[dict[str, Callable]] = {}
 
-    def model_post_init(self, _context):
-        """Convert data_getter from serialised version to function."""
-        super().model_post_init(_context)
-        if self.data_getter is not None:
-            self.getters[str(self.data_getter)] = self.data_getter
-
-    @field_serializer("data_getter")
-    def serialize_data_getter(self, value):
-        """Serialize data_getter."""
-        if value is None:
-            return None
-        return str(value)
-
-    @field_validator("data_getter", mode="before")
     @classmethod
-    def validate_data_getter(cls, value):
-        """Validate data_getter."""
-        if isinstance(value, str) and value in cls.getters:
-            return cls.getters[value]
-        return value
+    def register_data_getter(cls, data_getter: Callable[[], list[str]], name: str | None = None):
+        """Register a data_getter."""
+        name = name or str(data_getter)
+        if name in cls.getters:
+            logging.warning("Data getter %s already registered for Select field.", name)
+        cls.getters[name] = data_getter
 
     def _get_data(self, field_info: FieldInfo, **kwargs) -> list[dict]:
         """Gets option list from annotations."""
@@ -639,11 +627,18 @@ class SelectField(BaseField):
 
         return [x if isinstance(x, dict) else {"value": x, "label": x} for x in data]
 
+    @property
+    def data_gotten(self):
+        """Get data from data_getter."""
+        if self.data_getter:
+            if self.data_getter not in self.getters:
+                raise ValueError(f"Data getter {self.data_getter} not registered, use `register_data_getter`.")
+            return self.getters[self.data_getter]()
+        return None
+
     def _additional_kwargs(self, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
-        return {
-            "data": self.data_getter() if self.data_getter else self.input_kwargs.get("data", self._get_data(**kwargs))
-        }
+        return {"data": self.data_gotten or self.input_kwargs.get("data", self._get_data(**kwargs))}
 
     def _get_value_repr(self, value: Any, field_info: FieldInfo):
         value_repr = super()._get_value_repr(value, field_info)
