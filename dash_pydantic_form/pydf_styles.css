@@ -38,6 +38,10 @@
     --ag-input-disabled-background-color: rgba(104, 104, 110, 0.07);
 }
 
+.ag-theme-alpine.ag-themed.read-only .ag-cell-focus:focus-within {
+    --ag-range-selection-border-color: transparent !important;
+}
+
 .overflowing-ag-grid>div>div {
     overflow: visible !important;
 }
@@ -124,5 +128,14 @@
     &:has(*:active) .pydf-model-list-scalar-item-delete {
         --ai-size: var(--ai-size-sm) !important;
         margin-left: 0.25rem;
+    }
+}
+
+.read-only input.mantine-Input-input {
+    cursor: auto !important;
+    --input-bd: transparent !important;
+
+    &+.mantine-Select-section[data-position="right"] {
+        opacity: 0;
     }
 }

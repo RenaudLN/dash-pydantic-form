@@ -262,7 +262,8 @@ class TableField(BaseField):
                         "suppressRowHoverHighlight": self.read_only,
                         "suppressRowClickSelection": self.read_only,
                     },
-                    className="ag-theme-alpine ag-themed overflowing-ag-grid",
+                    className="ag-theme-alpine ag-themed overflowing-ag-grid"
+                    + (" read-only" if self.read_only else ""),
                 ),
             ]
             + ([dmc.Group(add_row + upload)] if (self.rows_editable or self.with_upload) else [])

@@ -123,6 +123,8 @@ class BaseField(BaseModel):
             self.input_kwargs = valid_input_kwargs
             if ignored_kwargs:
                 logging.debug("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
+        if self.read_only:
+            self.input_kwargs["className"] = self.input_kwargs.get("className", "") + " read-only"
         if self.field_id_meta is None:
             self.field_id_meta = ""
 
@@ -214,7 +216,11 @@ class BaseField(BaseModel):
         if (
             self.read_only
             and self.base_component is not None
-            and "readOnly" not in inspect.signature(self.base_component).parameters
+            and (
+                "readOnly" not in inspect.signature(self.base_component).parameters
+                # NOTE: readOnly not working on SegmentedControl in 0.14.5
+                or self.base_component is dmc.SegmentedControl
+            )
         ):
             return self._render_read_only(value, field, field_info)
 
@@ -398,7 +404,7 @@ class BaseField(BaseModel):
 
     def is_required(self, field_info: FieldInfo) -> bool:
         """Get the required status of the field."""
-        return self.required or field_info.is_required()
+        return (self.required or field_info.is_required()) and not self.read_only
 
     @classmethod
     def _additional_kwargs(cls, **_kwargs) -> dict:
@@ -476,6 +482,14 @@ class ColorField(BaseField):
     """Color field."""
 
     base_component = dmc.ColorPicker
+
+    @staticmethod
+    def _get_value_repr(value: Any, field_info: FieldInfo):  # noqa: ARG004
+        return dmc.Group(
+            [dmc.Badge(color=value, p=0, h="1rem", w="1rem", radius="xs"), dmc.Text(value, size="sm")],
+            gap="sm",
+            align="center",
+        )
 
 
 class SliderField(BaseField):
