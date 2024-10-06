@@ -242,8 +242,9 @@ class BaseField(BaseModel):
                     "readOnly": self.read_only,
                 }
                 if self.base_component not in NO_LABEL_COMPONENTS
-                else {"value": value}
+                else {}
             )
+            | ({"value": value} if value is not None else {})
         )
 
         component = self.base_component(
@@ -304,7 +305,8 @@ class BaseField(BaseModel):
                     "display": "flex",
                     "alignItems": "center",
                     "gap": "0.5rem",
-                    "borderColor": "color-mix(in srgb, var(--mantine-color-default-border), transparent 70%)",
+                    "background": "var(--mantine-color-default)",
+                    "borderColor": "color-mix(in srgb, var(--mantine-color-default-border), transparent 80%)",
                 },
             )
         )

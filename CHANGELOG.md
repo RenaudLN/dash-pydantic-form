@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2024-10-06
+### Fixed
+- Avoid passing None value to dmc component as it errs on some (e.g. MultiSelect)
+- Fixed issue with discriminated model when parent is ullable and None
+
+## Changed
+- Mode read_only improvements
+
 ## [0.5.2] - 2024-10-05
 ### Changed
 - Improved read_only styling

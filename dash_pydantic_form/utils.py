@@ -50,7 +50,7 @@ class Type(Enum):
             if all(is_subclass(x, str | Number) for x in get_args(annotation)):
                 return cls.SCALAR
 
-        if get_origin(annotation) == list and not depth:
+        if get_origin(annotation) is list and not depth:
             ann_args = get_args(annotation)
             if not ann_args:
                 return cls.UNKOWN_LIST
@@ -63,7 +63,7 @@ class Type(Enum):
                 return cls.MODEL_LIST
             return cls.UNKOWN_LIST
 
-        if get_origin(annotation) == dict and not depth:
+        if get_origin(annotation) is dict and not depth:
             ann_args = get_args(annotation)
             if not ann_args:
                 return cls.UNKOWN_DICT
@@ -109,7 +109,7 @@ def get_non_null_annotation(annotation: type[Any]) -> type[Any]:
     e.g., get_non_null_annotation(Optional[str]) = str
     """
     if get_origin(annotation) in [Union, UnionType]:
-        args = tuple(x for x in get_args(annotation) if x != type(None))
+        args = tuple(x for x in get_args(annotation) if x is not type(None))
         if len(args) == 1:
             return args[0]
         return Union[args]  # noqa: UP007
@@ -170,9 +170,9 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
     elif isinstance(item, dict) and isinstance(first_part, int):
         next_item = list(item.values())[first_part]
     else:
-        next_item = item[first_part]
+        next_item = item.get(first_part)
 
-    if len(path) == 1:
+    if len(path) == 1 or next_item is None:
         return next_item
 
     return get_subitem(next_item, SEP.join(path[1:]))

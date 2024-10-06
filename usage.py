@@ -27,14 +27,6 @@ app = Dash(
 server = app.server
 
 
-class Office(Enum):
-    """Office enum."""
-
-    AU = "au"
-    FR = "fr"
-    UK = "uk"
-
-
 class Species(Enum):
     """Species enum."""
 
@@ -58,8 +50,8 @@ class Pet(BaseModel):
 class Desk(BaseModel):
     """Desk model."""
 
-    height: int = Field(title="Height", description="Height of the desk", ge=0)
-    material: str = Field(title="Material", description="Material of the desk")
+    height: int = Field(title="Height", ge=0, repr_kwargs={"suffix": " cm"})
+    material: str = Field(title="Material")
 
 
 class WorkStation(BaseModel):
@@ -100,7 +92,7 @@ class WorkOffice(BaseModel):
             "repr_kwargs": {"options_labels": {"home_office": "Home", "work_office": "Work"}},
         },
     )
-    commute_time: int = Field(title="Commute time", description="Commute time in minutes", ge=0)
+    commute_time: int = Field(title="Commute time", ge=0, repr_kwargs={"suffix": " min"})
 
 
 class Metadata(BaseModel):
@@ -130,7 +122,7 @@ class Employee(BaseModel):
         json_schema_extra={"repr_type": "Markdown"},
     )
     joined: datetime = Field(title="Joined", description="Date when the employee joined the company")
-    office: Office = Field(
+    office: Literal["au", "fr", "uk"] = Field(
         title="Office",
         description="Office of the employee",
         json_schema_extra={
@@ -190,8 +182,8 @@ app.layout = dmc.MantineProvider(
                             mb="1rem",
                         ),
                         ModelForm(
-                            # Employee,
-                            bob,
+                            Employee,
+                            # bob,
                             AIO_ID,
                             FORM_ID,
                             # read_only=True,

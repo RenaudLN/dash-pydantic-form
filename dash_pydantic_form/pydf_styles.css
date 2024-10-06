@@ -131,7 +131,7 @@
     }
 }
 
-.read-only input.mantine-Input-input {
+.read-only .mantine-Input-input {
     cursor: auto !important;
     --input-bd: transparent !important;
 
