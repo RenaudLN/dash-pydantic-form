@@ -131,7 +131,14 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         Allow to return the default value, when the object has been created with model_construct.
     """
     try:
-        return get_subitem(item, get_fullpath(parent, field))
+        subitem = get_subitem(item, parent)
+        if isinstance(subitem, BaseModel):
+            return subitem[field]
+        if isinstance(subitem, dict) and isinstance(field, int):
+            return list(subitem.values())[field]
+        if isinstance(subitem, list) and isinstance(field, int):
+            return subitem[field]
+        return subitem[field]
     except:
         if allow_default:
             subitem_cls = get_subitem_cls(item.__class__, parent, item=item)
