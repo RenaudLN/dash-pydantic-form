@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2024-10-10
+### Changed
+- Allow model-specific excluded_fields via 'private_fields' in the model_config
+
 ## [0.5.6] - 2024-10-09
 ### Fixed
 - utils issues
