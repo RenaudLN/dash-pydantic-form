@@ -107,13 +107,11 @@ dash_clientside.pydf = {
   syncFalse: x => !x,
   updateModalTitle: (val, id) => {
     const out = val != null ? String(val) : dash_clientside.no_update
-    try {
+    if (typeof out === "string") {
       dash_clientside.set_props(
         {...id, component: "_pydf-list-field-modal-text"},
         {"children": out}
       )
-    } catch (e) {
-      //
     }
     return out
   },
