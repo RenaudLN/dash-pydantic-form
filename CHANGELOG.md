@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2024-10-10
+### Fixed
+- Ensure MultiSelect only receives strings or it crashes
+
 ## [0.5.7] - 2024-10-10
 ### Changed
 - Allow model-specific excluded_fields via 'private_fields' in the model_config

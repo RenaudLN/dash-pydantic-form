@@ -686,6 +686,15 @@ class MultiSelectField(SelectField):
 
     base_component = dmc.MultiSelect
 
+    @classmethod
+    def get_value(cls, item: BaseModel, field: str, parent: str) -> Any:
+        """Handle the fact dmc.MultiSelect only allows string values."""
+        value = super().get_value(item, field, parent)
+        if isinstance(value, list):
+            value = [str(x) for x in value]
+
+        return value
+
 
 class RadioItemsField(SelectField):
     """Radio items field."""
