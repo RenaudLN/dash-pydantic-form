@@ -131,12 +131,7 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
         Allow to return the default value, when the object has been created with model_construct.
     """
     try:
-        subitem = get_subitem(item, parent)
-        if isinstance(subitem, BaseModel):
-            return subitem[field]
-        if isinstance(subitem, dict) and isinstance(field, int):
-            return list(subitem.values())[field]
-        return subitem[field]
+        return get_subitem(item, get_fullpath(parent, field))
     except:
         if allow_default:
             subitem_cls = get_subitem_cls(item.__class__, parent, item=item)
@@ -169,6 +164,8 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
         next_item = getattr(item, first_part)
     elif isinstance(item, dict) and isinstance(first_part, int):
         next_item = list(item.values())[first_part]
+    elif isinstance(item, list) and isinstance(first_part, int):
+        next_item = item[first_part]
     else:
         next_item = item.get(first_part)
 
@@ -228,11 +225,7 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
             SEP.join(path[2:]),
             item=subitem,
         )
-    if (
-        get_origin(first_annotation) is dict
-        and (isinstance(second_part, int) or is_idx_template(second_part))
-        and get_args(first_annotation)
-    ):
+    if get_origin(first_annotation) is dict and (isinstance(second_part, int | str)) and get_args(first_annotation):
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[1]),
             SEP.join(path[2:]),
