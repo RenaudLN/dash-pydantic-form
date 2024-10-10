@@ -40,8 +40,8 @@ def check_elem_values(component: Component, expected: dict):
     for elem in component._traverse_ids():
         str_id = json.dumps(elem.id)
         attribute = "value" if ids.value_field.args[0] in str_id else "checked"
-        if str_id in expected and getattr(elem, attribute) != expected[str_id]:
-            mismatched_values[str_id] = (getattr(elem, attribute), expected[str_id])
+        if str_id in expected and getattr(elem, attribute, None) != expected[str_id]:
+            mismatched_values[str_id] = (getattr(elem, attribute, None), expected[str_id])
     if mismatched_values:
         raise ValueError(f"Mismatched values: {mismatched_values}")
 
