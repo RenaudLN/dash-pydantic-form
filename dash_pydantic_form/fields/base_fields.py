@@ -228,15 +228,11 @@ class BaseField(BaseModel):
             aio_id, form_id, field, parent, meta=self.field_id_meta
         )
         value_kwarg = (
-            {
-                "checked": value,
-                "label": self.get_title(field_info, field_name=field),
-            }
+            {"label": self.get_title(field_info, field_name=field)} | ({"checked": value} if value is not None else {})
             if self.base_component in CHECKED_COMPONENTS
             else (
                 {
                     "label": self.get_title(field_info, field_name=field),
-                    "value": value,
                     "description": self.get_description(field_info),
                     "required": self.is_required(field_info),
                     "readOnly": self.read_only,
