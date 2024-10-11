@@ -6,18 +6,22 @@ from .base_fields import ColorField as Color
 from .base_fields import DateField as Date
 from .base_fields import DatetimeField as Datetime
 from .base_fields import JsonField as Json
+from .base_fields import MonthField as Month
 from .base_fields import MultiSelectField as MultiSelect
 from .base_fields import NumberField as Number
 from .base_fields import PasswordField as Password
 from .base_fields import RadioItemsField as RadioItems
 from .base_fields import RangeField as Range
+from .base_fields import RatingField as Rating
 from .base_fields import SegmentedControlField as SegmentedControl
 from .base_fields import SelectField as Select
 from .base_fields import SliderField as Slider
 from .base_fields import SwitchField as Switch
+from .base_fields import TagsField as Tags
 from .base_fields import TextareaField as Textarea
 from .base_fields import TextField as Text
 from .base_fields import TimeField as Time
+from .base_fields import YearField as Year
 from .dict_field import DictField as Dict
 from .list_field import ListField as List
 from .markdown_field import MarkdownField as Markdown
@@ -56,18 +60,22 @@ __all__ = [
     "Markdown",
     "Model",
     "ModelList",
+    "Month",
     "MultiSelect",
     "Number",
     "Password",
     "RadioItems",
     "Range",
+    "Rating",
     "SegmentedControl",
     "Select",
     "Slider",
     "Switch",
     "Table",
+    "Tags",
     "Textarea",
     "Text",
     "Time",
     "TransferList",
+    "Year",
 ]

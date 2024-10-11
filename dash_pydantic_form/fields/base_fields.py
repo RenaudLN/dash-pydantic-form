@@ -38,6 +38,7 @@ NO_LABEL_COMPONENTS = [
     dmc.RangeSlider,
     dmc.Slider,
     dmc.ColorPicker,
+    dmc.Rating,
 ]
 MAX_OPTIONS_INLINE = 4
 
@@ -438,13 +439,13 @@ class TextField(BaseField):
     base_component = dmc.TextInput
 
 
-class TextareaField(TextField):
+class TextareaField(BaseField):
     """Textarea field."""
 
     base_component = dmc.Textarea
 
 
-class NumberField(TextField):
+class NumberField(BaseField):
     """Number field."""
 
     base_component = dmc.NumberInput
@@ -464,13 +465,19 @@ class NumberField(TextField):
         return kwargs
 
 
-class PasswordField(TextField):
+class RatingField(BaseField):
+    """Rating field."""
+
+    base_component = dmc.Rating
+
+
+class PasswordField(BaseField):
     """Password field."""
 
     base_component = dmc.PasswordInput
 
 
-class JsonField(TextField):
+class JsonField(BaseField):
     """Json field."""
 
     base_component = dmc.JsonInput
@@ -479,15 +486,15 @@ class JsonField(TextField):
 class ColorField(BaseField):
     """Color field."""
 
-    base_component = dmc.ColorPicker
+    base_component = dmc.ColorInput
 
-    @staticmethod
-    def _get_value_repr(value: Any, field_info: FieldInfo):  # noqa: ARG004
-        return dmc.Group(
-            [dmc.Badge(color=value, p=0, h="1rem", w="1rem", radius="xs"), dmc.Text(value, size="sm")],
-            gap="sm",
-            align="center",
-        )
+    # @staticmethod
+    # def _get_value_repr(value: Any, field_info: FieldInfo):  # noqa: ARG004
+    #     return dmc.Group(
+    #         [dmc.Badge(color=value, p=0, h="1rem", w="1rem", radius="xs"), dmc.Text(value, size="sm")],
+    #         gap="sm",
+    #         align="center",
+    #     )
 
 
 class SliderField(BaseField):
@@ -557,6 +564,23 @@ class DatetimeField(BaseField):
         """Add defaults for date input."""
         super().model_post_init(_context)
         self.input_kwargs.setdefault("valueFormat", "YYYY-MM-DD HH:mm")
+
+
+class YearField(BaseField):
+    """Year field."""
+
+    base_component = dmc.YearPickerInput
+
+
+class MonthField(BaseField):
+    """Year-month field."""
+
+    base_component = dmc.MonthPickerInput
+
+    def model_post_init(self, _context):
+        """Add defaults for date input."""
+        super().model_post_init(_context)
+        self.input_kwargs.setdefault("valueFormat", "YYYY-MM")
 
 
 class SelectField(BaseField):
@@ -690,6 +714,12 @@ class MultiSelectField(SelectField):
             value = [str(x) for x in value]
 
         return value
+
+
+class TagsField(SelectField):
+    """Tags field."""
+
+    base_component = dmc.TagsInput
 
 
 class RadioItemsField(SelectField):
