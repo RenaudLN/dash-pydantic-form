@@ -128,18 +128,22 @@ Based on DMC:
 * Color
 * Date
 * Json
+* Month
 * MultiSelect
 * Number
 * Password
 * RadioItems
 * Range
+* Rating
 * SegmentedControl
 * Select
 * Slider
 * Switch
+* Tags
 * Textarea
 * Text
 * Time
+* Year
 
 Custom:
 * Dict

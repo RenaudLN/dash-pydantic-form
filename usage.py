@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime
+from datetime import date
 from enum import Enum
 from typing import Literal
 
@@ -51,7 +51,8 @@ class Desk(BaseModel):
     """Desk model."""
 
     height: int = Field(title="Height", ge=0, repr_kwargs={"suffix": " cm"})
-    material: str = Field(title="Material")
+    material: str
+    color: str | None = Field(default=None, repr_type="Color")
 
 
 class WorkStation(BaseModel):
@@ -121,7 +122,7 @@ class Employee(BaseModel):
         default=None,
         json_schema_extra={"repr_type": "Markdown"},
     )
-    joined: datetime = Field(title="Joined", description="Date when the employee joined the company")
+    joined: date = Field(title="Joined", description="Date when the employee joined the company", repr_type="Month")
     office: Literal["au", "fr", "uk"] = Field(
         title="Office",
         description="Office of the employee",
@@ -146,7 +147,15 @@ bob = Employee(
     metadata={
         "languages": ["fr", "en"],
         "siblings": 2,
-        "location": {"type": "home_office", "has_workstation": True},
+        "location": {
+            "type": "home_office",
+            "has_workstation": True,
+            "workstation": {
+                "has_desk": True,
+                "has_monitor": True,
+                "desk": {"height": 100, "material": "wood", "color": "#89284a"},
+            },
+        },
     },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
@@ -182,8 +191,8 @@ app.layout = dmc.MantineProvider(
                             mb="1rem",
                         ),
                         ModelForm(
-                            Employee,
-                            # bob,
+                            # Employee,
+                            bob,
                             AIO_ID,
                             FORM_ID,
                             # read_only=True,
