@@ -10,7 +10,7 @@ import dash_mantine_components as dmc
 import pandas as pd
 from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -18,6 +18,8 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import (
     BaseField,
     CheckboxField,
+    ChecklistField,
+    MultiSelectField,
     RadioItemsField,
     SegmentedControlField,
     SelectField,
@@ -26,7 +28,14 @@ from dash_pydantic_form.fields.base_fields import (
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.ids import field_dependent_id
-from dash_pydantic_form.utils import get_fullpath, get_non_null_annotation
+from dash_pydantic_form.utils import deep_merge, get_fullpath, get_non_null_annotation
+
+
+class JSFunction(BaseModel):
+    """JS function."""
+
+    namespace: str
+    function_name: str
 
 
 class TableField(BaseField):
@@ -40,8 +49,15 @@ class TableField(BaseField):
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
+    dynamic_options: dict[str, JSFunction] | None = Field(
+        default=None,
+        description="Clientside function to use for dynamic options, defined per columnn."
+        " The functions should take as argument the original options and the row data."
+        " The functions should be defined on a sub-namespace of dash_clientside.",
+    )
 
     full_width = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def model_post_init(self, _context):
         """Model post init."""
@@ -316,7 +332,9 @@ class TableField(BaseField):
             column_def["default_value"] = field_info.default_factory()
 
         # if select field, generate column of dropdowns
-        if isinstance(field_repr, SelectField | SegmentedControlField | RadioItemsField):
+        if isinstance(
+            field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
+        ):
             data = (
                 field_repr.data_getter()
                 if field_repr.data_getter
@@ -334,17 +352,19 @@ class TableField(BaseField):
                 for x in data
             ]
             params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
+            if self.dynamic_options and field_name in self.dynamic_options:
+                params["dynamicOptions"] = {
+                    "namespace": self.dynamic_options[field_name].namespace,
+                    "function_name": self.dynamic_options[field_name].function_name,
+                }
+            editor = "PydfMultiSelect" if isinstance(field_repr, MultiSelectField | ChecklistField) else "PydfDropdown"
             column_def.update(
                 {
-                    "cellEditor": {"function": "PydfDropdown"},
+                    "cellEditor": {"function": editor},
                     "cellEditorPopup": False,
                     "cellEditorParams": {"options": options, **params},
                     "cellRenderer": "PydfOptionsRenderer",
-                    "cellClass": {
-                        "function": "selectRequiredCell(params)",
-                    }
-                    if required_field
-                    else None,
+                    "cellClass": {"function": "selectRequiredCell(params)"} if required_field else None,
                 }
             )
 
@@ -384,7 +404,7 @@ class TableField(BaseField):
             )
 
         # update with custom defs
-        column_def.update(self.column_defs_overrides.get(field_name, {}))
+        column_def = deep_merge(column_def, self.column_defs_overrides.get(field_name, {}))
 
         # default return base definition (text field)
         return column_def

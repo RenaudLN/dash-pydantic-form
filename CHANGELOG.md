@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - More dmc inputs: Year, Month, Tags, Rating
+- Dynamic options in Table field for select-type columns
+- MultiSelect in Table
 
 ### Changed
 - Color now uses ColorInput rather than ColorPicker
