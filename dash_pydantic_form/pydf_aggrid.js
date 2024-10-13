@@ -47,9 +47,38 @@ dag.PydfCheckbox = (props) => {
 };
 
 dag.PydfOptionsRenderer = (props) => {
-  const label =
-    props.colDef.cellEditorParams.options.find((p) => p.value === props.value)
-      ?.label || "";
+  const { node, column, api } = props;
+
+  const [options, setOptions] = React.useState(props.colDef.cellEditorParams.options);
+
+  React.useEffect(() => {
+    const onDataChanged = (e) => {
+      if (e && e.rowIndex !== node.rowIndex) return;
+      let newOptions = props.colDef.cellEditorParams.options;
+      if (props.colDef.cellEditorParams.dynamicOptions) {
+        try {
+          const { namespace, function_name } = props.colDef.cellEditorParams.dynamicOptions;
+          const optionsFunc = window.dash_clientside[namespace][function_name];
+          newOptions = optionsFunc(newOptions, node.data, props.colDef.cellEditorParams);
+          if (!newOptions.map(o => typeof o === "string" ? o : o.value).includes(node.data[column.colId])) {
+            node.setDataValue(column.colId, null);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setOptions(newOptions);
+    };
+    onDataChanged()
+
+    api.apiEventService.addEventListener("cellValueChanged", onDataChanged);
+
+    return () => {
+      api.apiEventService.removeEventListener("cellValueChanged", onDataChanged);
+    };
+  }, [node, column, api]);
+
+  const label = options.find((p) => p.value === props.value)?.label || "";
   return React.createElement("span", {}, label);
 };
 
@@ -77,10 +106,21 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
     setTimeout(() => stopEditing(), 1);
   }
 
+  let options_ = options
+  if (componentProps.dynamicOptions) {
+    try {
+      const { namespace, function_name } = componentProps.dynamicOptions
+      const optionsFunc = window.dash_clientside[namespace][function_name]
+      options_ = optionsFunc(options, node.data, colDef.cellEditorParams)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   return React.createElement(window.dash_mantine_components.Select, {
       setProps,
       ref,
-      data: options,
+      data: options_,
       value: value,
       clearable: componentProps.clearable || true,
       searchable: componentProps.searchable || true,

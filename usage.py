@@ -209,6 +209,17 @@ app.layout = dmc.MantineProvider(
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },
                                     table_height=200,
+                                    dynamic_options={
+                                        "species": {"namespace": "pydf_usage", "function_name": "getSpecies"}
+                                    },
+                                    column_defs_overrides={
+                                        "species": {
+                                            "cellEditorParams": {
+                                                "catNames": ["Felix", "Cookie"],
+                                                "dogNames": ["Rex", "Brownie"],
+                                            }
+                                        }
+                                    },
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },
