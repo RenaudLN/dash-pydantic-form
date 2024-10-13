@@ -78,7 +78,15 @@ dag.PydfOptionsRenderer = (props) => {
     };
   }, [node, column, api]);
 
-  const label = options.find((p) => p.value === props.value)?.label || "";
+  const optionMapper = Object.fromEntries(options.map((option) => [option.value, option.label]));
+
+  let label;
+  if (Array.isArray(props.value)) {
+    label = props.value.map((v) => optionMapper[v]).join(", ");
+  } else {
+    label = optionMapper[props.value];
+  }
+
   return React.createElement("span", {}, label);
 };
 
@@ -126,6 +134,53 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
       searchable: componentProps.searchable || true,
       selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
       allowDeselect: componentProps.allowDeselect || true,
+      style: { width: column.actualWidth },
+  })
+})
+
+dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
+  const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = (colDef.cellEditorParams || {});
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-MultiSelect-input')
+    : eGridCell.querySelector('.mantine-MultiSelect-input');
+    inp.tabIndex = "1";
+    inp.click();
+    colDef.suppressKeyboardEvent = (p) => {
+      return p.editing;
+    };
+  }, [])
+
+  const setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+    setValue(value)
+    setTimeout(() => stopEditing(), 1);
+  }
+
+  let options_ = options
+  if (componentProps.dynamicOptions) {
+    try {
+      const { namespace, function_name } = componentProps.dynamicOptions
+      const optionsFunc = window.dash_clientside[namespace][function_name]
+      options_ = optionsFunc(options, node.data, colDef.cellEditorParams)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  return React.createElement(window.dash_mantine_components.MultiSelect, {
+      setProps,
+      ref,
+      data: options_,
+      value: value || [],
+      clearable: componentProps.clearable || true,
+      searchable: componentProps.searchable || true,
+      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
       style: { width: column.actualWidth },
   })
 })

@@ -18,6 +18,8 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import (
     BaseField,
     CheckboxField,
+    ChecklistField,
+    MultiSelectField,
     RadioItemsField,
     SegmentedControlField,
     SelectField,
@@ -330,7 +332,9 @@ class TableField(BaseField):
             column_def["default_value"] = field_info.default_factory()
 
         # if select field, generate column of dropdowns
-        if isinstance(field_repr, SelectField | SegmentedControlField | RadioItemsField):
+        if isinstance(
+            field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
+        ):
             data = (
                 field_repr.data_getter()
                 if field_repr.data_getter
@@ -353,9 +357,10 @@ class TableField(BaseField):
                     "namespace": self.dynamic_options[field_name].namespace,
                     "function_name": self.dynamic_options[field_name].function_name,
                 }
+            editor = "PydfMultiSelect" if isinstance(field_repr, MultiSelectField | ChecklistField) else "PydfDropdown"
             column_def.update(
                 {
-                    "cellEditor": {"function": "PydfDropdown"},
+                    "cellEditor": {"function": editor},
                     "cellEditorPopup": False,
                     "cellEditorParams": {"options": options, **params},
                     "cellRenderer": "PydfOptionsRenderer",
