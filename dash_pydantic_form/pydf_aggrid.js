@@ -71,10 +71,10 @@ dag.PydfOptionsRenderer = (props) => {
     };
     onDataChanged()
 
-    api.apiEventService.addEventListener("cellValueChanged", onDataChanged);
+    api.addEventListener("cellValueChanged", onDataChanged);
 
     return () => {
-      api.apiEventService.removeEventListener("cellValueChanged", onDataChanged);
+      api.removeEventListener("cellValueChanged", onDataChanged);
     };
   }, [node, column, api]);
 
