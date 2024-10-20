@@ -25,6 +25,7 @@ class QuantityField(BaseField):
     )
     auto_convert: bool | None = Field(
         title="Auto-convert between units when switching.",
+        description="If None, checks whether auto-conversion is possible but falls back to False if impossible",
         default=None,
     )
     unit_select_width: str = Field(
@@ -49,7 +50,7 @@ class QuantityField(BaseField):
 
     @model_validator(mode="after")
     def check_field(self):
-        """Check fields together."""
+        """Check auto convert field based on unit options."""
         if self.auto_convert is False:
             return self
 
@@ -85,6 +86,7 @@ class QuantityField(BaseField):
 
         value: Quantity | None = self.get_value(item, field, parent)
 
+        # Convert to Quantity if dict
         if isinstance(value, dict) and set(value) == {"unit", "value"}:
             value = Quantity(**value)
 
@@ -100,6 +102,8 @@ class QuantityField(BaseField):
         current_unit = value.unit if value else self.unit_options[0]
         with_select = len(self.unit_options) > 1 and not self.read_only
         input_kwargs = self.input_kwargs
+
+        # Add unit suffix and placeholder if not already user-defined
         if not with_select:
             if "suffix" not in input_kwargs and "prefix" not in input_kwargs:
                 input_kwargs["suffix"] = f" {current_unit}"
