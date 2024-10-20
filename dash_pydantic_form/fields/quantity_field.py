@@ -85,6 +85,9 @@ class QuantityField(BaseField):
 
         value: Quantity | None = self.get_value(item, field, parent)
 
+        if isinstance(value, dict) and set(value) == {"unit", "value"}:
+            value = Quantity(**value)
+
         # Try converting if the given uit does not match any of the input units
         if value and value.unit not in self.unit_options:
             value = Quantity(value.value, value.unit).to(self.unit_options[0])

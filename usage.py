@@ -69,6 +69,11 @@ class WorkStation(BaseModel):
         default=None,
         json_schema_extra={"repr_kwargs": {"visible": ("has_desk", "==", True)}},
     )
+    room_temperature: Quantity = Field(
+        repr_type="Quantity",
+        repr_kwargs={"unit_options": ["C", "F"]},
+        default_factory=lambda: Quantity(24, "C"),
+    )
 
 
 class HomeOffice(BaseModel):
