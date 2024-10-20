@@ -26,6 +26,7 @@ from .dict_field import DictField as Dict
 from .list_field import ListField as List
 from .markdown_field import MarkdownField as Markdown
 from .model_field import ModelField as Model
+from .quantity_field import QuantityField as Quantity
 from .table_field import TableField as Table
 from .transferlist_field import TransferListField as TransferList
 
@@ -64,6 +65,7 @@ __all__ = [
     "MultiSelect",
     "Number",
     "Password",
+    "Quantity",
     "RadioItems",
     "Range",
     "Rating",
