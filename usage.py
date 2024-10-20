@@ -9,6 +9,7 @@ from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormSection, ModelForm, Sections, fields, get_model_cls, ids
+from dash_pydantic_form.quantity import Quantity
 from dash_pydantic_form.utils import SEP
 
 _dash_renderer._set_react_version("18.2.0")
@@ -50,7 +51,10 @@ class Pet(BaseModel):
 class Desk(BaseModel):
     """Desk model."""
 
-    height: int = Field(title="Height", ge=0, repr_kwargs={"suffix": " cm"})
+    height: Quantity = Field(
+        repr_type="Quantity",
+        repr_kwargs={"unit_options": ["m", "cm", "mm", "ft", "in"], "decimalScale": 3},
+    )
     material: str
     color: str | None = Field(default=None, repr_type="Color")
 
@@ -64,6 +68,11 @@ class WorkStation(BaseModel):
         title="Desk",
         default=None,
         json_schema_extra={"repr_kwargs": {"visible": ("has_desk", "==", True)}},
+    )
+    room_temperature: Quantity = Field(
+        repr_type="Quantity",
+        repr_kwargs={"unit_options": ["C", "F"]},
+        default_factory=lambda: Quantity(24, "C"),
     )
 
 
@@ -152,8 +161,8 @@ bob = Employee(
             "has_workstation": True,
             "workstation": {
                 "has_desk": True,
-                "has_monitor": True,
-                "desk": {"height": 100, "material": "wood", "color": "#89284a"},
+                "has_monitor": False,
+                "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
             },
         },
     },

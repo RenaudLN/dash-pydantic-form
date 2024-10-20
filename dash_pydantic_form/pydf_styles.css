@@ -139,3 +139,17 @@
         opacity: 0;
     }
 }
+
+.read-only .mantine-Checkbox-input,
+.read-only .mantine-Radio-radio {
+    cursor: auto !important;
+    border-color: var(--mantine-color-default-border);
+
+    &:checked {
+        background-color: var(--mantine-color-gray-filled);
+    }
+    &:checked + .mantine-Checkbox-icon,
+    &:checked + .mantine-Radio-icon {
+        color: var(--mantine-primary-color-contrast);
+    }
+}

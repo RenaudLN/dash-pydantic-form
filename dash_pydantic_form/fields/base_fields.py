@@ -316,7 +316,7 @@ class BaseField(BaseModel):
         value_repr = str(value)
         if val_type == Type.SCALAR:
             if isinstance(value, bool):
-                value_repr = "✅" if value else "❌"
+                value_repr = dmc.Checkbox(checked=value, disabled=True, className="read-only")
             if isinstance(value, Enum):
                 value_repr = value.name
             if value is None:

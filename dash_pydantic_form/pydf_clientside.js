@@ -188,7 +188,13 @@ dash_clientside.pydf = {
     )
     const newChildren = current.filter((_, i) => i !== idx)
     return newChildren.map((child, i) => updateModelListIds(child, path, i))
-  }
+  },
+  convertQuantityUnit: (newUnit, value, currentUnit, conversions) => {
+    if (value == null) return dash_clientside.no_update
+    const [rateFrom, baseFrom] = conversions[currentUnit]
+    const [rateTo, baseTo] = conversions[newUnit]
+    return [((value * rateFrom + baseFrom) - baseTo) / rateTo, newUnit]
+  },
 }
 
 // Return a : separated string of the args
