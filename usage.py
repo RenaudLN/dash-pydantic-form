@@ -156,7 +156,7 @@ bob = Employee(
             "has_workstation": True,
             "workstation": {
                 "has_desk": True,
-                "has_monitor": True,
+                "has_monitor": False,
                 "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
             },
         },
@@ -199,7 +199,7 @@ app.layout = dmc.MantineProvider(
                             bob,
                             AIO_ID,
                             FORM_ID,
-                            read_only=True,
+                            # read_only=True,
                             # submit_on_enter=True,
                             # debounce_inputs=200,
                             fields_repr={

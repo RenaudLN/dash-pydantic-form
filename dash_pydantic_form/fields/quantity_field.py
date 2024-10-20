@@ -23,7 +23,6 @@ class QuantityField(BaseField):
         title="Unit options",
         description="List of units to show in the dropdown, if None, uses the ones based on category",
     )
-    show_unit_select: bool = Field(title="Show unit select", default=True)
     auto_convert: bool | None = Field(
         title="Auto-convert between units when switching.",
         default=None,
@@ -33,7 +32,7 @@ class QuantityField(BaseField):
         default="5rem",
     )
 
-    kwargs_for_both: ClassVar[list[str]] = ["size"]
+    kwargs_for_both: ClassVar[list[str]] = ("size",)
 
     class ids:
         """Quantity field ids."""
@@ -95,17 +94,17 @@ class QuantityField(BaseField):
         value_id = common_ids.value_field(aio_id, form_id, "value", parent=new_parent, meta=meta)
         unit_id = common_ids.value_field(aio_id, form_id, "unit", parent=new_parent, meta=meta)
 
-        with_select = self.show_unit_select and len(self.unit_options) > 1
+        current_unit = value.unit if value else self.unit_options[0]
+        with_select = len(self.unit_options) > 1 and not self.read_only
         input_kwargs = self.input_kwargs
-        if len(self.unit_options) == 1:
+        if not with_select:
             if "suffix" not in input_kwargs and "prefix" not in input_kwargs:
-                input_kwargs["suffix"] = f" {self.unit_options[0]}"
+                input_kwargs["suffix"] = f" {current_unit}"
             if "placeholder" not in input_kwargs:
-                input_kwargs["placeholder"] = self.unit_options[0]
+                input_kwargs["placeholder"] = current_unit
 
         select_kwargs = {k: v for k, v in input_kwargs.items() if k in self.kwargs_for_both}
 
-        current_unit = value.unit if value else self.unit_options[0]
         return dmc.Group(
             [
                 dmc.NumberInput(
@@ -158,11 +157,3 @@ clientside_callback(
     State(QuantityField.ids.conversion_store(MATCH, MATCH, "", MATCH, "auto-convert"), "data"),
     prevent_initial_call=True,
 )
-# def convert_unit(new_unit: str, value: float | None, current_unit: str, conversions: dict):
-#     """Convert the value to the newly selected unit."""
-#     if value is None:
-#         return no_update
-
-#     rate_from, base_from = conversions[current_unit]
-#     rate_to, base_to = conversions[new_unit]
-#     return ((value * rate_from + base_from) - base_to) / rate_to, new_unit
