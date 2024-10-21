@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from functools import partial
 from typing import ClassVar
 
@@ -19,9 +20,9 @@ from dash_pydantic_form.utils import (
 class QuantityField(BaseField):
     """Quantity field."""
 
-    unit_options: list[str] = Field(
+    unit_options: list[str] | Mapping[str, str] = Field(
         title="Unit options",
-        description="List of units to show in the dropdown, if None, uses the ones based on category",
+        description="List of units to show in the dropdown, if a Mapping, will use the values as unit labels",
     )
     auto_convert: bool | None = Field(
         title="Auto-convert between units when switching.",
@@ -92,23 +93,26 @@ class QuantityField(BaseField):
 
         # Try converting if the given uit does not match any of the input units
         if value and value.unit not in self.unit_options:
-            value = Quantity(value.value, value.unit).to(self.unit_options[0])
+            value = Quantity(value.value, value.unit).to(next(iter(self.unit_options)))
 
         meta = "auto-convert" if self.auto_convert else "default"
         new_parent = get_fullpath(parent, field)
         value_id = common_ids.value_field(aio_id, form_id, "value", parent=new_parent, meta=meta)
         unit_id = common_ids.value_field(aio_id, form_id, "unit", parent=new_parent, meta=meta)
 
-        current_unit = value.unit if value else self.unit_options[0]
+        current_unit = value.unit if value else next(iter(self.unit_options))
         with_select = len(self.unit_options) > 1 and not self.read_only
         input_kwargs = self.input_kwargs
 
         # Add unit suffix and placeholder if not already user-defined
         if not with_select:
+            current_unit_label = (
+                current_unit if isinstance(self.unit_options, list) else self.unit_options[current_unit]
+            )
             if "suffix" not in input_kwargs and "prefix" not in input_kwargs:
-                input_kwargs["suffix"] = f" {current_unit}"
+                input_kwargs["suffix"] = f" {current_unit_label}"
             if "placeholder" not in input_kwargs:
-                input_kwargs["placeholder"] = current_unit
+                input_kwargs["placeholder"] = current_unit_label
 
         select_kwargs = {k: v for k, v in input_kwargs.items() if k in self.kwargs_for_both}
 
@@ -132,7 +136,9 @@ class QuantityField(BaseField):
                 dmc.Select(
                     value=current_unit,
                     id=unit_id,
-                    data=self.unit_options,
+                    data=self.unit_options
+                    if isinstance(self.unit_options, list)
+                    else [{"value": unit, "label": label} for unit, label in self.unit_options.items()],
                     ml=-1,
                     checkIconPosition="right",
                     readOnly=self.read_only,

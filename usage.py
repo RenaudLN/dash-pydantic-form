@@ -71,7 +71,7 @@ class WorkStation(BaseModel):
     )
     room_temperature: Quantity = Field(
         repr_type="Quantity",
-        repr_kwargs={"unit_options": ["C", "F"]},
+        repr_kwargs={"unit_options": {"C": "°C", "F": "°F"}},
         default_factory=lambda: Quantity(24, "C"),
     )
 
