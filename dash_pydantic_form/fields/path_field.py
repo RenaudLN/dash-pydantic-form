@@ -74,7 +74,7 @@ class PathField(BaseField):
                     "inner": {"justifyContent": "start"},
                     "label": {"fontWeight": "normal"},
                     "root": {
-                        "borderRadius": "0 0.25rem 0.25rem 0",
+                        "borderRadius": "0.25rem",
                         "border": "1px solid var(--mantine-color-default-border)",
                     },
                 },
@@ -96,7 +96,7 @@ class PathField(BaseField):
 
             if not value:
                 inputs[0].children.children = "Click to select a directory"
-            inputs[0].styles["root"]["borderRadius"] = 0
+            inputs[0].styles["root"]["borderRadius"] = "0.25rem 0 0 0.25rem"
 
             inputs += [
                 dmc.TextInput(
@@ -140,34 +140,6 @@ class PathField(BaseField):
         prefix = self.prefix.rstrip("/") + "/"
         return dmc.Group(
             [
-                dmc.Menu(
-                    [
-                        dmc.MenuTarget(
-                            dmc.Paper(
-                                prefix,
-                                fz="sm",
-                                h="2.25rem",
-                                lh="2rem",
-                                bg="var(--mantine-color-default)",
-                                withBorder=True,
-                                style={
-                                    "borderRadius": "0.25rem 0 0 0.25rem",
-                                    "borderRight": "none",
-                                    "maxWidth": "10rem",
-                                    "overflow": "hidden",
-                                    "textOverflow": "ellipsis",
-                                    "whiteSpace": "nowrap",
-                                },
-                                px="0.75rem",
-                            ),
-                            boxWrapperProps={"h": "100%"},
-                        ),
-                        dmc.MenuDropdown(dmc.Text(self.prefix + "/", size="sm", p="0.25rem 0.5rem")),
-                    ],
-                    trigger="hover",
-                    position="bottom-start",
-                    shadow="md",
-                ),
                 *inputs,
                 dmc.Text(
                     dcc.Clipboard(target_id=value_field(*id_args), className="hover-clipboard"),
@@ -290,7 +262,7 @@ def update_filetree(  # noqa: PLR0913
             value = pagination_value
     elif path_type == "glob":
         base_path_match = re.findall("^([^*]*)\/.*\*", value)
-        value = "" if not base_path_match else base_path_match[0]
+        value = value if not base_path_match else base_path_match[0]
 
     # This happens when the modal first opens after clicking on the button
     # in this case, we want to show the content one level up.
@@ -316,10 +288,13 @@ def update_filetree(  # noqa: PLR0913
                 [
                     dmc.Breadcrumbs(
                         [
-                            PathField._base_button(
-                                DashIconify(icon="flat-color-icons:opened-folder", height=16),
-                                id=PathField.ids.nav(*id_parts, ""),
-                            )
+                            dmc.Tooltip(
+                                PathField._base_button(
+                                    DashIconify(icon="flat-color-icons:opened-folder", height=16),
+                                    id=PathField.ids.nav(*id_parts, ""),
+                                ),
+                                label=prefix.rstrip("/"),
+                            ),
                         ]
                         + (
                             [

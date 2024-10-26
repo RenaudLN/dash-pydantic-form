@@ -221,7 +221,7 @@ dash_clientside.pydf = {
         namespace: "dash_mantine_components",
         type: "Stack",
         props: {
-          children: [breadcrumbs, ...Array(5).fill(0).map(() => skeleton({width: 250 + Math.round(Math.random() * 50)}))],
+          children: [breadcrumbs, ...Array(5).fill(0).map((_, idx) => skeleton({width: 150 + idx * 16}))],
           gap: "0.25rem",
           align: "start",
           id: {
@@ -234,7 +234,7 @@ dash_clientside.pydf = {
   },
   updatePathFieldValue: (_trigger, globs, config, current) => {
     const t = dash_clientside.callback_context.triggered
-    if (!t || t.length === 0 || !t[0].value) return [
+    if (!t || t.length === 0 || t[0].value == null) return [
       dash_clientside.no_update,
       dash_clientside.no_update,
       dash_clientside.no_update,

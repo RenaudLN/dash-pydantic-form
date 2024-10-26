@@ -146,7 +146,7 @@ class Employee(BaseModel):
         repr_kwargs={
             "backend": "gs",
             "prefix": "gs://ecmwf-open-data",
-            "path_type": "file",
+            "path_type": "directory",
             "n_cols": 4,
             "value_includes_prefix": False,
         },
