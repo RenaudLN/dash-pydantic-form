@@ -143,7 +143,13 @@ class Employee(BaseModel):
     resume_file: str | None = Field(
         title="Resume file path",
         repr_type="Path",
-        repr_kwargs={"backend": "gs", "prefix": "gs://cppal-forecasting-prd-inputs", "path_type": "file", "n_cols": 4},
+        repr_kwargs={
+            "backend": "gs",
+            "prefix": "gs://ecmwf-open-data",
+            "path_type": "file",
+            "n_cols": 4,
+            "value_includes_prefix": False,
+        },
         default=None,
     )
     metadata: Metadata | None = Field(title="Employee metadata", default=None)

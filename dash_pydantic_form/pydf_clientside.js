@@ -195,6 +195,69 @@ dash_clientside.pydf = {
     const [rateTo, baseTo] = conversions[newUnit]
     return [((value * rateFrom + baseFrom) - baseTo) / rateTo, newUnit]
   },
+  showPathFieldSkeletons: (n) => {
+    if (!n) return dash_clientside.no_update
+
+    const skeleton = (props) => ({
+      namespace: "dash_mantine_components",
+      type: "Skeleton",
+      props: {height: 26, ...props},
+    })
+    const skeletonTop = skeleton({width: "3rem", display: "inline-block"})
+    const breadcrumbs = {
+      namespace: "dash_mantine_components",
+      type: "Breadcrumbs",
+      props: {
+        children: [skeletonTop, skeletonTop],
+        separator: "/",
+        separatorMargin: "0.125rem",
+        mb: "1rem",
+      },
+    }
+    const id = dash_clientside.callback_context.inputs_list[0].id
+    return [
+      !!n,
+      {
+        namespace: "dash_mantine_components",
+        type: "Stack",
+        props: {
+          children: [breadcrumbs, ...Array(5).fill(0).map(() => skeleton({width: 250 + Math.round(Math.random() * 50)}))],
+          gap: "0.25rem",
+          align: "start",
+          id: {
+            ...id,
+            component: "_firestore-path-field-filetree",
+          },
+        }
+      }
+    ]
+  },
+  updatePathFieldValue: (_trigger, globs, config, current) => {
+    const t = dash_clientside.callback_context.triggered
+    if (!t || t.length === 0 || !t[0].value) return [
+      dash_clientside.no_update,
+      dash_clientside.no_update,
+      dash_clientside.no_update,
+    ]
+    const t_id = JSON.parse(t[0].prop_id.split('.')[0])
+
+    let path = ""
+    if (t_id.path) {
+      path = t_id.path.replaceAll("||", ".")
+    } else if (typeof current === "string") {
+      path = current
+    }
+
+    const prefix = config.value_includes_prefix ? `${config.prefix.replace(/\/+$/, "")}/` : ""
+
+    if (t_id.component.includes("glob")) {
+      return [dash_clientside.no_update, `${prefix}${path}/${globs[0]}`, dash_clientside.no_update]
+    }
+    if (config.path_type === "glob") {
+      return [false, `${prefix}${path}/${globs[0]}`, path]
+    }
+    return [false, `${prefix}${path}`, path]
+  }
 }
 
 // Return a : separated string of the args

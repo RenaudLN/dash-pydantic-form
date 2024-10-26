@@ -153,3 +153,12 @@
         color: var(--mantine-primary-color-contrast);
     }
 }
+
+.hover-clipboard {
+    opacity: 0.4;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.75;
+    }
+}
