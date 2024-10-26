@@ -140,6 +140,12 @@ class Employee(BaseModel):
             "repr_kwargs": {"options_labels": {"au": "Australia", "fr": "France", "uk": "United Kingdom"}},
         },
     )
+    resume_file: str | None = Field(
+        title="Resume file path",
+        repr_type="Path",
+        repr_kwargs={"backend": "gs", "prefix": "gs://cppal-forecasting-prd-inputs", "path_type": "file", "n_cols": 4},
+        default=None,
+    )
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(

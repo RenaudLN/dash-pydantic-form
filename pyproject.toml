@@ -15,6 +15,7 @@ dependencies = [
     "dash_ag_grid>=31",
     "pandas",
     "pydantic==2.*",
+    "fsspec",
 ]
 
 [project.optional-dependencies]
