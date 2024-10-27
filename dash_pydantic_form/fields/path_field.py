@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form.fields.base_fields import BaseField
+from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id, value_field
 
 PathType = Literal["file", "directory", "glob"]
@@ -106,7 +107,7 @@ class PathField(BaseField):
                 glob = ""
 
             if not value:
-                inputs[0].children.children = "Click to select a directory"
+                inputs[0].children.children = _("Click to select a directory")
             inputs[0].styles["root"]["borderRadius"] = "0.25rem 0 0 0.25rem"
 
             inputs += [
@@ -265,7 +266,7 @@ class PathField(BaseField):
                     + [
                         dmc.TextInput(
                             size="xs",
-                            placeholder="Filter with prefix",
+                            placeholder=_("Filter with prefix"),
                             variant="unstyled",
                             id=cls.ids.filter(*id_parts),
                             classNames={"input": "path-field-filter-input"},
@@ -353,14 +354,14 @@ class PathField(BaseField):
                 [
                     dmc.Checkbox(
                         id=PathField.ids.checkbox(*id_parts, value.replace(".", "||")),
-                        label=f"Select {path_type}",
+                        label=_("Select {path_type}").format(path_type=_(path_type)),
                     )
                 ]
                 if len(filtered_vals) == 0 and not current_filter
                 else []
             ),
             *(
-                [dmc.Text("Nothing matches your filter", size="sm", c="dimmed", fs="italic")]
+                [dmc.Text(_("No match"), size="sm", c="dimmed", fs="italic")]
                 if len(filtered_vals) == 0 and current_filter
                 else []
             ),

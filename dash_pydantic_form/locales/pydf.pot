@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-27 18:06+1100\n"
+"POT-Creation-Date: 2024-10-27 22:01+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,6 +33,23 @@ msgstr ""
 #: dash_pydantic_form/fields/list_field.py:269
 #: dash_pydantic_form/fields/model_field.py:109
 msgid "Save"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:110
+msgid "Click to select a directory"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:269
+msgid "Filter with prefix"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:357
+#, python-brace-format
+msgid "Select {path_type}"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:364
+msgid "No match"
 msgstr ""
 
 #: dash_pydantic_form/fields/table_field.py:109
@@ -61,4 +78,9 @@ msgstr ""
 
 #: dash_pydantic_form/fields/table_field.py:201
 msgid "Add row"
+msgstr ""
+
+#: dash_pydantic_form/fields/transferlist_field.py:330
+#, python-brace-format
+msgid "Showing first {max_items} items, refine your search for more..."
 msgstr ""

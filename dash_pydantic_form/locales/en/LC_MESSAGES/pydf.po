@@ -10,6 +10,24 @@ msgstr "Add"
 msgid "Save"
 msgstr "Save"
 
+msgid "Click to select a directory"
+msgstr "Click to select a directory"
+
+msgid "Filter with prefix"
+msgstr "Filter with prefix"
+
+msgid "Select {path_type}"
+msgstr "Select {path_type}"
+
+msgid "No match"
+msgstr ""
+
+msgid "directory"
+msgstr "directory"
+
+msgid "file"
+msgstr "file"
+
 msgid "Drag & drop a csv file or "
 msgstr "Drag & drop a csv file or "
 
@@ -30,3 +48,6 @@ msgstr "Upload CSV"
 
 msgid "Add row"
 msgstr "Add row"
+
+msgid "Showing first {max_items} items, refine your search for more..."
+msgstr "Showing first {max_items} items, refine your search for more..."

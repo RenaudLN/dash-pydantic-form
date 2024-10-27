@@ -24,6 +24,7 @@ from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
+from dash_pydantic_form.i18n import _
 
 
 def side_id(  # noqa: PLR0913
@@ -326,7 +327,7 @@ class TransferListField(BaseField):
 
         return [
             dmc.Text(
-                f"Showing first {max_items} items, refine your search for more...",
+                _("Showing first {max_items} items, refine your search for more...").format(max_items=max_items),
                 size="xs",
                 c="dimmed",
                 p="0.25rem 0.5rem",
