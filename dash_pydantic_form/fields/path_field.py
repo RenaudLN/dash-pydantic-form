@@ -361,7 +361,7 @@ class PathField(BaseField):
                 else []
             ),
             *(
-                [dmc.Text(_("No match"), size="sm", c="dimmed", fs="italic")]
+                [dmc.Text(_("No match"), size="sm", c="dimmed", fs="italic", px="0.5rem")]
                 if len(filtered_vals) == 0 and current_filter
                 else []
             ),
