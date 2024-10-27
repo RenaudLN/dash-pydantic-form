@@ -156,6 +156,7 @@ class PathField(BaseField):
                     id=self.ids.modal(*id_args),
                     title=f"Select a {self.path_type if self.path_type != 'glob' else 'directory'}",
                     size=f"min({self.modal_max_width}px, 100vw - 4rem)",
+                    styles={"header": {"paddingTop": "0.75rem", "paddingBottom": "0.25rem", "minHeight": "2.75rem"}},
                 ),
                 dcc.Store(
                     id=self.ids.config(*id_args),
@@ -168,8 +169,6 @@ class PathField(BaseField):
                     },
                 ),
             ],
-            # TODO
-            style={"&>div:first-child": {"flex": "0 0 100px"}, "&>*": {"flex": "1 1 37%"}},
             gap=0,
             wrap="nowrap",
         )
@@ -253,12 +252,13 @@ class PathField(BaseField):
                     ml=-3,
                 ),
                 dmc.Text("/", c="dimmed", lh=1),
+                # TODO: Add filtering option
             ],
             gap="0.125rem",
             pb="0.5rem",
             mb="0.5rem",
             pos="sticky",
-            top="3.75rem",
+            top="2.75rem",
             bg="var(--mantine-color-body)",
             style={
                 "zIndex": 1,
@@ -313,7 +313,7 @@ class PathField(BaseField):
                         total=math.ceil(len(filtered_vals) / page_size),
                         value=page,
                         id=cls.ids.pagination(*id_parts),
-                        mt="1rem",
+                        mt="0.5rem",
                         size="sm",
                         boundaries=2,
                         siblings=2,

@@ -221,7 +221,7 @@ dash_clientside.pydf = {
         namespace: "dash_mantine_components",
         type: "Stack",
         props: {
-          children: [breadcrumbs, ...Array(5).fill(0).map((_, idx) => skeleton({width: 150 + idx * 16}))],
+          children: [breadcrumbs, ...Array(5).fill(0).map((_, idx) => skeleton({width: 150 + (idx % 2) * 32}))],
           gap: "0.25rem",
           align: "start",
           id: {
