@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date
 from enum import Enum
 from typing import Literal
@@ -9,7 +10,6 @@ from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormSection, ModelForm, Sections, fields, get_model_cls, ids
-from dash_pydantic_form.i18n import language_context
 from dash_pydantic_form.quantity import Quantity
 from dash_pydantic_form.utils import SEP
 
@@ -25,6 +25,7 @@ app = Dash(
         "https://unpkg.com/@mantine/nprogress@7/styles.css",
     ],
 )
+os.environ["LANGUAGE"] = "fr"
 
 server = app.server
 
@@ -141,6 +142,18 @@ class Employee(BaseModel):
             "repr_kwargs": {"options_labels": {"au": "Australia", "fr": "France", "uk": "United Kingdom"}},
         },
     )
+    resume_file: str | None = Field(
+        title="Resume file path",
+        repr_type="Path",
+        repr_kwargs={
+            "backend": "gs",
+            "prefix": "gs://ecmwf-open-data",
+            "path_type": "directory",
+            "n_cols": 4,
+            "value_includes_prefix": True,
+        },
+        default=None,
+    )
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
@@ -169,103 +182,101 @@ bob = Employee(
     },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
+    resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
 )
 
 
 AIO_ID = "home"
 FORM_ID = "Bob"
 
-with language_context("fr"):
-    app.layout = dmc.MantineProvider(
-        id="mantine-provider",
-        defaultColorScheme="auto",
-        children=dmc.AppShell(
-            [
-                dmc.AppShellMain(
-                    dmc.Container(
-                        [
-                            dmc.Group(
-                                [
-                                    dmc.Title("Dash Pydantic form", order=3),
-                                    dmc.Switch(
-                                        offLabel=DashIconify(icon="radix-icons:moon", height=18),
-                                        onLabel=DashIconify(icon="radix-icons:sun", height=18),
-                                        size="md",
-                                        color="yellow",
-                                        persistence=True,
-                                        checked=True,
-                                        id="scheme-switch",
-                                    ),
-                                ],
-                                align="center",
-                                justify="space-between",
-                                mb="1rem",
-                            ),
-                            ModelForm(
-                                # Employee,
-                                bob,
-                                AIO_ID,
-                                FORM_ID,
-                                # read_only=True,
-                                # submit_on_enter=True,
-                                # debounce_inputs=200,
-                                fields_repr={
-                                    "name": {"placeholder": "Enter your name"},
-                                    "metadata": {
-                                        "render_type": "accordion",
-                                        "visible": ("_root_:office", "==", "au"),
-                                    },
-                                    "pets": fields.Table(
-                                        fields_repr={
-                                            "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
-                                        },
-                                        table_height=200,
-                                        dynamic_options={
-                                            "species": {"namespace": "pydf_usage", "function_name": "getSpecies"}
-                                        },
-                                        column_defs_overrides={
-                                            "species": {
-                                                "cellEditorParams": {
-                                                    "catNames": ["Felix", "Cookie"],
-                                                    "dogNames": ["Rex", "Brownie"],
-                                                }
-                                            }
-                                        },
-                                    ),
-                                    "jobs": {"placeholder": "A job name"},
-                                },
-                                sections=Sections(
-                                    sections=[
-                                        FormSection(
-                                            name="General", fields=["name", "age", "mini_bio"], default_open=True
-                                        ),
-                                        FormSection(
-                                            name="HR",
-                                            fields=["office", "joined", "location", "metadata"],
-                                            default_open=True,
-                                        ),
-                                        FormSection(name="Other", fields=["pets", "jobs"], default_open=True),
-                                    ],
-                                    render="accordion",
+app.layout = dmc.MantineProvider(
+    id="mantine-provider",
+    defaultColorScheme="auto",
+    children=dmc.AppShell(
+        [
+            dmc.AppShellMain(
+                dmc.Container(
+                    [
+                        dmc.Group(
+                            [
+                                dmc.Title("Dash Pydantic form", order=3),
+                                dmc.Switch(
+                                    offLabel=DashIconify(icon="radix-icons:moon", height=18),
+                                    onLabel=DashIconify(icon="radix-icons:sun", height=18),
+                                    size="md",
+                                    color="yellow",
+                                    persistence=True,
+                                    checked=True,
+                                    id="scheme-switch",
                                 ),
-                            ),
-                        ],
-                        pt="1rem",
-                    )
-                ),
-                dmc.AppShellAside(
-                    dmc.ScrollArea(
-                        dmc.Text(
-                            id=ids.form_dependent_id("output", AIO_ID, FORM_ID),
-                            style={"whiteSpace": "pre-wrap"},
-                            p="1rem 0.5rem",
+                            ],
+                            align="center",
+                            justify="space-between",
+                            mb="1rem",
                         ),
+                        ModelForm(
+                            # Employee,
+                            bob,
+                            AIO_ID,
+                            FORM_ID,
+                            # read_only=True,
+                            # submit_on_enter=True,
+                            # debounce_inputs=200,
+                            fields_repr={
+                                "name": {"placeholder": "Enter your name"},
+                                "metadata": {
+                                    "render_type": "accordion",
+                                    "visible": ("_root_:office", "==", "au"),
+                                },
+                                "pets": fields.Table(
+                                    fields_repr={
+                                        "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
+                                    },
+                                    table_height=200,
+                                    dynamic_options={
+                                        "species": {"namespace": "pydf_usage", "function_name": "getSpecies"}
+                                    },
+                                    column_defs_overrides={
+                                        "species": {
+                                            "cellEditorParams": {
+                                                "catNames": ["Felix", "Cookie"],
+                                                "dogNames": ["Rex", "Brownie"],
+                                            }
+                                        }
+                                    },
+                                ),
+                                "jobs": {"placeholder": "A job name"},
+                            },
+                            sections=Sections(
+                                sections=[
+                                    FormSection(name="General", fields=["name", "age", "mini_bio"], default_open=True),
+                                    FormSection(
+                                        name="HR",
+                                        fields=["office", "joined", "location", "resume_file", "metadata"],
+                                        default_open=True,
+                                    ),
+                                    FormSection(name="Other", fields=["pets", "jobs"], default_open=True),
+                                ],
+                                render="accordion",
+                            ),
+                        ),
+                    ],
+                    pt="1rem",
+                )
+            ),
+            dmc.AppShellAside(
+                dmc.ScrollArea(
+                    dmc.Text(
+                        id=ids.form_dependent_id("output", AIO_ID, FORM_ID),
+                        style={"whiteSpace": "pre-wrap"},
+                        p="1rem 0.5rem",
                     ),
                 ),
-            ],
-            aside={"width": 350},
-        ),
-    )
+            ),
+        ],
+        aside={"width": 350},
+    ),
+)
 
 
 @callback(
