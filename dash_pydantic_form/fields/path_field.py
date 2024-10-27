@@ -223,6 +223,118 @@ class PathField(BaseField):
             gap="0.625rem",
         )
 
+    @classmethod
+    def _breadcrumbs_group(cls, prefix: str, value: str, id_parts: list[str], parts: list[str]):
+        return dmc.Group(
+            [
+                dmc.Breadcrumbs(
+                    [
+                        dmc.Tooltip(
+                            cls._base_button(
+                                DashIconify(icon="flat-color-icons:opened-folder", height=16),
+                                id=cls.ids.nav(*id_parts, ""),
+                            ),
+                            label=prefix.rstrip("/"),
+                        ),
+                    ]
+                    + (
+                        [
+                            cls._base_button(
+                                part,
+                                id=cls.ids.nav(*id_parts, "/".join(parts[: i + 1]).replace(".", "||")),
+                            )
+                            for i, part in enumerate(parts)
+                        ]
+                        if value
+                        else []
+                    ),
+                    separator="/",
+                    separatorMargin="0.125rem",
+                    ml=-3,
+                ),
+                dmc.Text("/", c="dimmed", lh=1),
+            ],
+            gap="0.125rem",
+            pb="0.5rem",
+            mb="0.5rem",
+            pos="sticky",
+            top="3.75rem",
+            bg="var(--mantine-color-body)",
+            style={
+                "zIndex": 1,
+                "borderBottom": "1px solid color-mix(in srgb, var(--mantine-color-default-border), #0000 50%)",
+            },
+            w="100%",
+        )
+
+    @classmethod
+    def filetree(  # noqa: PLR0913
+        cls,
+        *,
+        prefix: str,
+        value: str,
+        id_parts: list[str],
+        parts: list[str],
+        path_type: PathType,
+        filtered_vals: list[dict],
+        page_size: int,
+        page: int,
+    ):
+        """File tree."""
+        return [
+            cls._breadcrumbs_group(prefix, value, id_parts, parts),
+            *[
+                cls._base_button(
+                    cls._get_subpath(prefix, value, v["name"], rm_value=True),
+                    icon=DashIconify(icon="flat-color-icons:folder", height=16),
+                    id=cls.ids.nav(*id_parts, cls._get_subpath(prefix, value, v["name"], safe=True)),
+                )
+                if v["type"] != path_type
+                else cls._selectable_group(
+                    cls.ids.checkbox(*id_parts, cls._get_subpath(prefix, value, v["name"], safe=True)),
+                    **{
+                        "button": cls._base_button(
+                            cls._get_subpath(prefix, value, v["name"], True),
+                            icon=DashIconify(icon="flat-color-icons:folder", height=16),
+                            id=cls.ids.nav(*id_parts, cls._get_subpath(prefix, value, v["name"], safe=True)),
+                        )
+                        if v["type"] == "directory"
+                        else None,
+                        "label": None
+                        if v["type"] == "directory"
+                        else cls._file_group(cls._get_subpath(prefix, value, v["name"], True)),
+                    },
+                )
+                for v in filtered_vals[page_size * (page - 1) : page_size * page]
+            ],
+            *(
+                [
+                    dmc.Pagination(
+                        total=math.ceil(len(filtered_vals) / page_size),
+                        value=page,
+                        id=cls.ids.pagination(*id_parts),
+                        mt="1rem",
+                        size="sm",
+                        boundaries=2,
+                        siblings=2,
+                    ),
+                    dcc.Store(data=value, id=cls.ids.pagination_store(*id_parts)),
+                ]
+                if len(filtered_vals) > page_size
+                else []
+            ),
+            *(
+                [
+                    dmc.Checkbox(
+                        id=PathField.ids.checkbox(*id_parts, value.replace(".", "||")),
+                        label=f"Select {path_type}",
+                    )
+                ]
+                if len(filtered_vals) == 0
+                else []
+            ),
+        ]
+
 
 # dmc.Skeleton
 clientside_callback(
@@ -282,100 +394,16 @@ def update_filetree(  # noqa: PLR0913
     ]
     parts = value.split("/")
     page_size = config.get("page_size", 20)
-    return (
-        [
-            dmc.Group(
-                [
-                    dmc.Breadcrumbs(
-                        [
-                            dmc.Tooltip(
-                                PathField._base_button(
-                                    DashIconify(icon="flat-color-icons:opened-folder", height=16),
-                                    id=PathField.ids.nav(*id_parts, ""),
-                                ),
-                                label=prefix.rstrip("/"),
-                            ),
-                        ]
-                        + (
-                            [
-                                PathField._base_button(
-                                    part,
-                                    id=PathField.ids.nav(*id_parts, "/".join(parts[: i + 1]).replace(".", "||")),
-                                )
-                                for i, part in enumerate(parts)
-                            ]
-                            if value
-                            else []
-                        ),
-                        separator="/",
-                        separatorMargin="0.125rem",
-                        ml=-3,
-                    ),
-                    dmc.Text("/", c="dimmed", lh=1),
-                ],
-                gap="0.125rem",
-                pb="0.5rem",
-                mb="0.5rem",
-                pos="sticky",
-                top="3.75rem",
-                bg="var(--mantine-color-body)",
-                style={
-                    "zIndex": 1,
-                    "borderBottom": "1px solid color-mix(in srgb, var(--mantine-color-default-border), #0000 50%)",
-                },
-                w="100%",
-            ),
-        ]
-        + [
-            PathField._base_button(
-                PathField._get_subpath(prefix, value, v["name"], rm_value=True),
-                icon=DashIconify(icon="flat-color-icons:folder", height=16),
-                id=PathField.ids.nav(*id_parts, PathField._get_subpath(prefix, value, v["name"], safe=True)),
-            )
-            if v["type"] != path_type
-            else PathField._selectable_group(
-                PathField.ids.checkbox(*id_parts, PathField._get_subpath(prefix, value, v["name"], safe=True)),
-                **{
-                    "button": PathField._base_button(
-                        PathField._get_subpath(prefix, value, v["name"], True),
-                        icon=DashIconify(icon="flat-color-icons:folder", height=16),
-                        id=PathField.ids.nav(*id_parts, PathField._get_subpath(prefix, value, v["name"], safe=True)),
-                    )
-                    if v["type"] == "directory"
-                    else None,
-                    "label": None
-                    if v["type"] == "directory"
-                    else PathField._file_group(PathField._get_subpath(prefix, value, v["name"], True)),
-                },
-            )
-            for v in filtered_vals[page_size * (page - 1) : page_size * page]
-        ]
-        + (
-            [
-                dmc.Pagination(
-                    total=math.ceil(len(filtered_vals) / page_size),
-                    value=page,
-                    id=PathField.ids.pagination(*id_parts),
-                    mt="1rem",
-                    size="sm",
-                    boundaries=2,
-                    siblings=2,
-                ),
-                dcc.Store(data=value, id=PathField.ids.pagination_store(*id_parts)),
-            ]
-            if len(filtered_vals) > page_size
-            else []
-        )
-        + (
-            [
-                dmc.Checkbox(
-                    id=PathField.ids.checkbox(*id_parts, value.replace(".", "||")),
-                    label=f"Select {path_type}",
-                )
-            ]
-            if len(filtered_vals) == 0
-            else []
-        )
+
+    return PathField.filetree(
+        prefix=prefix,
+        value=value,
+        id_parts=id_parts,
+        parts=parts,
+        path_type=path_type,
+        filtered_vals=filtered_vals,
+        page_size=page_size,
+        page=page,
     )
 
 
