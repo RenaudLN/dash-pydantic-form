@@ -151,6 +151,7 @@ Custom:
 * List
 * Markdown
 * Model
+* Path
 * Quantity
 * TransferList
 

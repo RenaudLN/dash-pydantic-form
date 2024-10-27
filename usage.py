@@ -146,7 +146,7 @@ class Employee(BaseModel):
         repr_kwargs={
             "backend": "gs",
             "prefix": "gs://ecmwf-open-data",
-            "path_type": "file",
+            "path_type": "directory",
             "n_cols": 4,
             "value_includes_prefix": True,
         },
@@ -180,6 +180,7 @@ bob = Employee(
     },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
+    resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
 )
 
 
@@ -249,7 +250,7 @@ app.layout = dmc.MantineProvider(
                                     FormSection(name="General", fields=["name", "age", "mini_bio"], default_open=True),
                                     FormSection(
                                         name="HR",
-                                        fields=["office", "joined", "location", "metadata"],
+                                        fields=["office", "joined", "location", "resume_file", "metadata"],
                                         default_open=True,
                                     ),
                                     FormSection(name="Other", fields=["pets", "jobs"], default_open=True),

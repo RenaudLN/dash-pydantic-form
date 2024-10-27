@@ -31,19 +31,21 @@ class PathField(BaseField):
     class ids(BaseField.ids):  # pylint: disable = invalid-name
         """Model list field ids."""
 
-        modal = partial(field_dependent_id, "_firestore-path-field-modal")
-        modal_btn = partial(field_dependent_id, "_firestore-path-field-modal-btn")
-        filetree = partial(field_dependent_id, "_firestore-path-field-filetree")
-        config = partial(field_dependent_id, "_firestore-path-field-config")
-        prefix = partial(field_dependent_id, "_firestore-path-field-prefix")
-        glob = partial(field_dependent_id, "_firestore-path-field-glob")
-        pagination = partial(field_dependent_id, "_firestore-path-field-pagination")
-        pagination_store = partial(field_dependent_id, "_firestore-path-field-pagination-store")
+        modal = partial(field_dependent_id, "_pydf-path-field-modal")
+        modal_btn = partial(field_dependent_id, "_pydf-path-field-modal-btn")
+        modal_btn_text = partial(field_dependent_id, "_pydf-path-field-modal-btn-text")
+        filetree = partial(field_dependent_id, "_pydf-path-field-filetree")
+        config = partial(field_dependent_id, "_pydf-path-field-config")
+        prefix = partial(field_dependent_id, "_pydf-path-field-prefix")
+        glob = partial(field_dependent_id, "_pydf-path-field-glob")
+        pagination = partial(field_dependent_id, "_pydf-path-field-pagination")
+        pagination_store = partial(field_dependent_id, "_pydf-path-field-pagination-store")
+        filter = partial(field_dependent_id, "_pydf-path-field-filter")
         nav = lambda aio_id, form_id, field, parent, meta, path: field_dependent_id(  # noqa: E731
-            "_firestore-path-field-nav", aio_id, form_id, field, parent, meta
+            "_pydf-path-field-nav", aio_id, form_id, field, parent, meta
         ) | {"path": path}
         checkbox = lambda aio_id, form_id, field, parent, meta, path: field_dependent_id(  # noqa: E731
-            "_firestore-path-field-checkbox", aio_id, form_id, field, parent, meta
+            "_pydf-path-field-checkbox", aio_id, form_id, field, parent, meta
         ) | {"path": path}
 
     def fs(self) -> fsspec.AbstractFileSystem:
@@ -62,10 +64,19 @@ class PathField(BaseField):
     ) -> Component:
         """Create a form field of type image to interact with the model field."""
         value = self.get_value(item, field, parent)
+        if self.read_only:
+            return self._render_read_only(value, field, field_info)
 
         inputs = [
             dmc.Button(
-                value or dmc.Text(f"Click to select a {self.path_type}", size="xs", fs="italic"),
+                dmc.ScrollArea(
+                    value or dmc.Text(f"Click to select a {self.path_type}", size="xs", fs="italic"),
+                    id=self.ids.modal_btn_text(aio_id, form_id, field, parent),
+                    offsetScrollbars=True,
+                    scrollbars="x",
+                    scrollbarSize="0.25rem",
+                    mb="-0.125rem",
+                ),
                 size="sm",
                 id=self.ids.modal_btn(aio_id, form_id, field, parent),
                 variant="outline",
@@ -174,7 +185,7 @@ class PathField(BaseField):
         )
 
     @staticmethod
-    def _get_subpath(prefix: str, value: str | None, val, rm_value: bool = False, safe: bool = False):
+    def _get_subpath(prefix: str, value: str | None, val: str, rm_value: bool = False, safe: bool = False):
         subpath = val[len(prefix.split("://")[-1]) :]
         if rm_value and value:
             subpath = subpath.removeprefix(value).lstrip("/")
@@ -223,7 +234,9 @@ class PathField(BaseField):
         )
 
     @classmethod
-    def _breadcrumbs_group(cls, prefix: str, value: str, id_parts: list[str], parts: list[str]):
+    def _breadcrumbs_group(  # noqa: PLR0913
+        cls, prefix: str, value: str, id_parts: list[str], parts: list[str], current_filter: str | None
+    ):
         return dmc.Group(
             [
                 dmc.Breadcrumbs(
@@ -231,7 +244,7 @@ class PathField(BaseField):
                         dmc.Tooltip(
                             cls._base_button(
                                 DashIconify(icon="flat-color-icons:opened-folder", height=16),
-                                id=cls.ids.nav(*id_parts, ""),
+                                id=cls.ids.nav(*id_parts[:-1], path="", meta="breadcrumbs"),
                             ),
                             label=prefix.rstrip("/"),
                         ),
@@ -240,19 +253,31 @@ class PathField(BaseField):
                         [
                             cls._base_button(
                                 part,
-                                id=cls.ids.nav(*id_parts, "/".join(parts[: i + 1]).replace(".", "||")),
+                                id=cls.ids.nav(
+                                    *id_parts[:-1], path="/".join(parts[: i + 1]).replace(".", "||"), meta="breadcrumbs"
+                                ),
                             )
                             for i, part in enumerate(parts)
                         ]
                         if value
                         else []
-                    ),
+                    )
+                    + [
+                        dmc.TextInput(
+                            size="xs",
+                            placeholder="Filter with prefix",
+                            variant="unstyled",
+                            id=cls.ids.filter(*id_parts),
+                            classNames={"input": "path-field-filter-input"},
+                            leftSection=DashIconify(icon="carbon:filter", height=14),
+                            debounce=350,
+                            value=current_filter,
+                        )
+                    ],
                     separator="/",
                     separatorMargin="0.125rem",
                     ml=-3,
                 ),
-                dmc.Text("/", c="dimmed", lh=1),
-                # TODO: Add filtering option
             ],
             gap="0.125rem",
             pb="0.5rem",
@@ -279,10 +304,11 @@ class PathField(BaseField):
         filtered_vals: list[dict],
         page_size: int,
         page: int,
+        current_filter: str | None = None,
     ):
         """File tree."""
         return [
-            cls._breadcrumbs_group(prefix, value, id_parts, parts),
+            cls._breadcrumbs_group(prefix, value, id_parts, parts, current_filter),
             *[
                 cls._base_button(
                     cls._get_subpath(prefix, value, v["name"], rm_value=True),
@@ -330,7 +356,12 @@ class PathField(BaseField):
                         label=f"Select {path_type}",
                     )
                 ]
-                if len(filtered_vals) == 0
+                if len(filtered_vals) == 0 and not current_filter
+                else []
+            ),
+            *(
+                [dmc.Text("Nothing matches your filter", size="sm", c="dimmed", fs="italic")]
+                if len(filtered_vals) == 0 and current_filter
                 else []
             ),
         ]
@@ -346,16 +377,17 @@ clientside_callback(
 
 
 @callback(
-    Output(PathField.ids.filetree(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
-    Input(PathField.ids.filetree(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
-    Input(PathField.ids.nav(MATCH, MATCH, MATCH, MATCH, MATCH, ALL), "n_clicks"),
+    Output(PathField.ids.filetree(MATCH, MATCH, MATCH, MATCH), "children"),
+    Input(PathField.ids.filetree(MATCH, MATCH, MATCH, MATCH), "id"),
+    Input(PathField.ids.nav(MATCH, MATCH, MATCH, MATCH, ALL, ALL), "n_clicks"),
     Input(PathField.ids.pagination(MATCH, MATCH, MATCH, MATCH, ALL), "value"),
-    State(value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "value"),
-    State(PathField.ids.config(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    Input(PathField.ids.filter(MATCH, MATCH, MATCH, MATCH, ALL), "value"),
+    State(value_field(MATCH, MATCH, MATCH, MATCH), "value"),
+    State(PathField.ids.config(MATCH, MATCH, MATCH, MATCH), "data"),
     State(PathField.ids.pagination_store(MATCH, MATCH, MATCH, MATCH, ALL), "data"),
 )
 def update_filetree(  # noqa: PLR0913
-    id_, _navs, page, value, config, pagination_value
+    id_, _navs, page, filter_str, value, config, pagination_value
 ):
     """Update the file tree."""
     fs = fsspec.filesystem(config["backend"])
@@ -366,9 +398,18 @@ def update_filetree(  # noqa: PLR0913
     page = page[0] if page else 1
     pagination_value = pagination_value[0] if pagination_value else value
 
+    from_filter = False
     if ctx.triggered_id and isinstance(ctx.triggered_id, dict):
         if "nav" in ctx.triggered_id["component"]:
             value = ctx.triggered_id["path"].replace("||", ".")
+            page = 1
+        elif "filter" in ctx.triggered_id["component"]:
+            value = next(
+                inp["id"]["path"].replace("||", ".")
+                for inp in ctx.inputs_list[1][::-1]
+                if inp["id"]["meta"] == "breadcrumbs"
+            )
+            from_filter = True
             page = 1
         else:
             value = pagination_value
@@ -379,19 +420,28 @@ def update_filetree(  # noqa: PLR0913
     # This happens when the modal first opens after clicking on the button
     # in this case, we want to show the content one level up.
     if not ctx.triggered_id:
-        value = value.rsplit("/", maxsplit=1)[0]
+        val_split = value.rsplit("/", maxsplit=1)
+        value = val_split[0]
+        if len(val_split) > 1:
+            from_filter = True
+            filter_str = [val_split[1]]
 
     if path_type == "glob":
         path_type = "directory"
 
-    vals = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True)
+    vals: list[dict] = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True)
 
-    filtered_vals = [
-        v
-        for v in vals
-        if ((path_type == "file") or (v["type"] != "file"))
-        and PathField._get_subpath(prefix, value, v["name"]) != value
-    ]
+    filtered_vals = []
+    for val in vals:
+        subpath = PathField._get_subpath(prefix, value, val["name"])
+        subpath2 = PathField._get_subpath(prefix, value, val["name"], rm_value=True)
+        if (
+            ((path_type == "file") or (val["type"] != "file"))
+            and subpath != value
+            and (not from_filter or not filter_str or not filter_str[0] or subpath2.startswith(filter_str[0]))
+        ):
+            filtered_vals.append(val)
+
     parts = value.split("/")
     page_size = config.get("page_size", 20)
 
@@ -404,6 +454,7 @@ def update_filetree(  # noqa: PLR0913
         filtered_vals=filtered_vals,
         page_size=page_size,
         page=page,
+        current_filter=(filter_str or [""])[0] if from_filter else "",
     )
 
 
@@ -411,10 +462,10 @@ clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="updatePathFieldValue"),
     Output(PathField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
     Output(value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "value", allow_duplicate=True),
-    Output(PathField.ids.modal_btn(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
+    Output(PathField.ids.modal_btn_text(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
     Input(PathField.ids.checkbox(MATCH, MATCH, MATCH, MATCH, MATCH, ALL), "checked"),
     Input(PathField.ids.glob(MATCH, MATCH, MATCH, MATCH, ALL), "value"),
     State(PathField.ids.config(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
-    State(PathField.ids.modal_btn(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
+    State(PathField.ids.modal_btn_text(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
     prevent_initial_call=True,
 )

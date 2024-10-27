@@ -203,14 +203,11 @@ dash_clientside.pydf = {
       type: "Skeleton",
       props: {height: 26, ...props},
     })
-    const skeletonTop = skeleton({width: "3rem", display: "inline-block"})
     const breadcrumbs = {
       namespace: "dash_mantine_components",
       type: "Breadcrumbs",
       props: {
-        children: [skeletonTop, skeletonTop],
-        separator: "/",
-        separatorMargin: "0.125rem",
+        children: skeleton({width: 120}),
         mb: "1rem",
       },
     }
@@ -226,7 +223,7 @@ dash_clientside.pydf = {
           align: "start",
           id: {
             ...id,
-            component: "_firestore-path-field-filetree",
+            component: "_pydf-path-field-filetree",
           },
         }
       }
@@ -254,9 +251,9 @@ dash_clientside.pydf = {
       return [dash_clientside.no_update, `${prefix}${path}/${globs[0]}`, dash_clientside.no_update]
     }
     if (config.path_type === "glob") {
-      return [false, `${prefix}${path}/${globs[0]}`, path]
+      return [false, `${prefix}${path}/${globs[0]}`, `${prefix}${path}`]
     }
-    return [false, `${prefix}${path}`, path]
+    return [false, `${prefix}${path}`, `${prefix}${path}`]
   }
 }
 
