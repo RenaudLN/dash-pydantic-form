@@ -153,3 +153,23 @@
         color: var(--mantine-primary-color-contrast);
     }
 }
+
+.hover-clipboard {
+    opacity: 0.4;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.75;
+    }
+}
+.path-field-filter-input {
+    padding-inline: 1.25rem 0.5rem;
+    margin-left: 0.25rem;
+    transition: background-color 250ms;
+
+    &:hover,
+    &:focus-visible,
+    &:not([value=""]) {
+        background-color: var(--mantine-color-gray-light);
+    }
+}
