@@ -3,6 +3,7 @@ from importlib.metadata import version
 
 from pydantic import BaseModel
 
+import dash_pydantic_form.i18n  # noqa: F401
 from dash_pydantic_form.fields import fields
 from dash_pydantic_form.form_section import FormSection, Sections
 from dash_pydantic_form.model_form import ModelForm

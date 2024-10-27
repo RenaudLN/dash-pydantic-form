@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from . import ids as common_ids
 from .fields import BaseField, fields
 from .form_section import Sections
+from .i18n import _
 from .utils import (
     SEP,
     Type,
@@ -494,14 +495,14 @@ class ModelForm(html.Div):
                     dmc.Group(
                         [
                             dmc.Button(
-                                "Back",
+                                _("Back"),
                                 id=cls.ids.steps_previous(aio_id, form_id, path),
                                 disabled=True,
                                 size="compact-md",
                                 leftSection=DashIconify(icon="carbon:arrow-left", height=16),
                             ),
                             dmc.Button(
-                                "Next",
+                                _("Next"),
                                 id=cls.ids.steps_next(aio_id, form_id, path),
                                 size="compact-md",
                                 rightSection=DashIconify(icon="carbon:arrow-right", height=16),

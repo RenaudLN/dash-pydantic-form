@@ -1,0 +1,32 @@
+msgid "Back"
+msgstr "Precedent"
+
+msgid "Next"
+msgstr "Suivant"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Save"
+msgstr "Sauvegarder"
+
+msgid "Drag & drop a csv file or "
+msgstr "Glisser-deposer un fichier CSV ou "
+
+msgid "select it"
+msgstr "le selectionner ici"
+
+msgid "CSV columns"
+msgstr "colonnes CSV"
+
+msgid "REQUIRED"
+msgstr "OBLIGATOIRE"
+
+msgid "OPTIONAL"
+msgstr "OPTIONNEL"
+
+msgid "Upload CSV"
+msgstr "Ajouter via CSV"
+
+msgid "Add row"
+msgstr "Ajouter une ligne"

@@ -18,6 +18,7 @@ from pydantic.fields import FieldInfo
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_section import Sections
+from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import get_fullpath
 
 
@@ -105,7 +106,7 @@ class ModelField(BaseField):
                             ),
                             dmc.Group(
                                 dmc.Button(
-                                    "Save",
+                                    _("Save"),
                                     leftSection=DashIconify(icon="carbon:save"),
                                     id=self.ids.modal_save(aio_id, form_id, field, parent=parent),
                                 ),

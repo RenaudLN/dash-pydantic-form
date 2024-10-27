@@ -27,6 +27,7 @@ from dash_pydantic_form.fields.base_fields import (
     TextField,
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
+from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_form.utils import deep_merge, get_fullpath, get_non_null_annotation
 
@@ -105,16 +106,16 @@ class TableField(BaseField):
                     [
                         html.Div(
                             [
-                                "Drag & drop a csv file or ",
-                                dmc.Anchor("select it", href="#"),
+                                _("Drag & drop a csv file or "),
+                                dmc.Anchor(_("select it"), href="#"),
                             ]
                         ),
                         dmc.Stack(
                             [
-                                dmc.Text("CSV columns", size="sm"),
+                                dmc.Text(_("CSV columns"), size="sm"),
                                 dmc.Group(
                                     [
-                                        dmc.Text("REQUIRED", size="sm", style={"flexShrink": 0}),
+                                        dmc.Text(_("REQUIRED"), size="sm", style={"flexShrink": 0}),
                                         dmc.Group(
                                             [
                                                 dmc.Badge(
@@ -141,7 +142,7 @@ class TableField(BaseField):
                             + [
                                 dmc.Group(
                                     [
-                                        dmc.Text("OPTIONAL", size="sm", style={"flexShrink": 0}),
+                                        dmc.Text(_("OPTIONAL"), size="sm", style={"flexShrink": 0}),
                                         dmc.Group(
                                             [
                                                 dmc.Badge(
@@ -184,7 +185,7 @@ class TableField(BaseField):
             upload = [
                 dmc.Menu(
                     [
-                        dmc.MenuTarget(dmc.Button("Upload CSV", size="compact-sm")),
+                        dmc.MenuTarget(dmc.Button(_("Upload CSV"), size="compact-sm")),
                         dmc.MenuDropdown(upload_),
                     ],
                     shadow="xl",
@@ -197,7 +198,7 @@ class TableField(BaseField):
         if self.rows_editable:
             add_row = [
                 dmc.Button(
-                    "Add row",
+                    _("Add row"),
                     id=self.ids.add_row(aio_id, form_id, field, parent=parent),
                     size="compact-sm",
                 ),
