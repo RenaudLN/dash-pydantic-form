@@ -14,12 +14,18 @@ gettext.bindtextdomain("pydf", locale_dir)
 @contextmanager
 def language_context(language: str):
     """Language context for pydf."""
-    language_before = os.getenv("LANGUAGE")
-    os.environ["LANGUAGE"] = language
-    try:
+    if language:
+        language_before = os.getenv("LANGUAGE")
+        os.environ["LANGUAGE"] = language
+        try:
+            yield
+        finally:
+            if language_before is None:
+                del os.environ["LANGUAGE"]
+            else:
+                os.environ["LANGUAGE"] = language_before
+    else:
         yield
-    finally:
-        os.environ["LANGUAGE"] = language_before
 
 
 _ = partial(gettext.dgettext, "pydf")

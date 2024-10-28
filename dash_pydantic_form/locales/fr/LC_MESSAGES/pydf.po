@@ -18,6 +18,12 @@ msgstr "Sauvegarder"
 msgid "Click to select a {path_type}"
 msgstr "Cliquer pour choisir un {path_type}"
 
+msgid "Click to select a directory"
+msgstr "Cliquer pour choisir un dossier"
+
+msgid "Select a {path_type}"
+msgstr "Choix de {path_type}"
+
 msgid "Filter with prefix"
 msgstr "Filtrer"
 
@@ -32,6 +38,9 @@ msgstr "dossier"
 
 msgid "file"
 msgstr "fichier"
+
+msgid "glob"
+msgstr "glob"
 
 msgid "Drag & drop a csv file or "
 msgstr "Glisser-déposer un fichier CSV ou "

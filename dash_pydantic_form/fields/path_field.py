@@ -71,7 +71,12 @@ class PathField(BaseField):
         inputs = [
             dmc.Button(
                 dmc.ScrollArea(
-                    value or dmc.Text(f"Click to select a {self.path_type}", size="xs", fs="italic"),
+                    value
+                    or dmc.Text(
+                        _("Click to select a {path_type}").format(path_type=_(self.path_type)),
+                        size="xs",
+                        fs="italic",
+                    ),
                     id=self.ids.modal_btn_text(aio_id, form_id, field, parent),
                     offsetScrollbars=True,
                     scrollbars="x",
@@ -166,7 +171,9 @@ class PathField(BaseField):
                 ),
                 dmc.Modal(
                     id=self.ids.modal(*id_args),
-                    title=f"Select a {self.path_type if self.path_type != 'glob' else 'directory'}",
+                    title=_("Select a {path_type}").format(
+                        path_type=_(self.path_type if self.path_type != "glob" else "directory")
+                    ),
                     size=f"min({self.modal_max_width}px, 100vw - 4rem)",
                     styles={"header": {"paddingTop": "0.75rem", "paddingBottom": "0.25rem", "minHeight": "2.75rem"}},
                 ),

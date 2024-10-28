@@ -15,8 +15,14 @@ msgstr "Add"
 msgid "Save"
 msgstr "Save"
 
+msgid "Click to select a {path_type}"
+msgstr "Click to select a {path_type}"
+
 msgid "Click to select a directory"
 msgstr "Click to select a directory"
+
+msgid "Select a {path_type}"
+msgstr "Select a {path_type}"
 
 msgid "Filter with prefix"
 msgstr "Filter with prefix"

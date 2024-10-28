@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-27 22:01+1100\n"
+"POT-Creation-Date: 2024-10-28 20:21+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,20 +35,34 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:110
+#: dash_pydantic_form/fields/path_field.py:75
+#, python-brace-format
+msgid "Click to select a {path_type}"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:114
 msgid "Click to select a directory"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:269
+#: dash_pydantic_form/fields/path_field.py:173
+#, python-brace-format
+msgid "Select a {path_type}"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:174
+msgid "glob"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:275
 msgid "Filter with prefix"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:357
+#: dash_pydantic_form/fields/path_field.py:363
 #, python-brace-format
 msgid "Select {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:364
+#: dash_pydantic_form/fields/path_field.py:370
 msgid "No match"
 msgstr ""
 

@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import date
 from enum import Enum
 from typing import Literal
@@ -25,7 +24,6 @@ app = Dash(
         "https://unpkg.com/@mantine/nprogress@7/styles.css",
     ],
 )
-os.environ["LANGUAGE"] = "fr"
 
 server = app.server
 
@@ -182,7 +180,7 @@ bob = Employee(
     },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
-    resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
+    # resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
 )
 
 
@@ -222,6 +220,7 @@ app.layout = dmc.MantineProvider(
                             # read_only=True,
                             # submit_on_enter=True,
                             # debounce_inputs=200,
+                            locale="en",
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
                                 "metadata": {

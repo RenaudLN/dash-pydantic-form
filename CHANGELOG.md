@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Path field to retrieve of path using fsspec
+- Internationalisation of components, with i18n (FR translation available)
 
 ## [0.7.1] - 2024-10-22
 ### Added
