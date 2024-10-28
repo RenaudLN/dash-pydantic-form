@@ -1,0 +1,8 @@
+exclude assets/*
+exclude docs/*
+exclude images/*
+exclude tests/*
+exclude .vscode/*
+recursive-exclude .github/ *
+recursive-exclude dash_pydantic_form/locales *.pot *.po
+recursive-include dash_pydantic_form/locales *.mo
