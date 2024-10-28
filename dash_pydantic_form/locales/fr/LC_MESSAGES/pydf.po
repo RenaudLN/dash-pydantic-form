@@ -1,0 +1,67 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Back"
+msgstr "Précédent"
+
+msgid "Next"
+msgstr "Suivant"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Save"
+msgstr "Sauvegarder"
+
+msgid "Click to select a {path_type}"
+msgstr "Cliquer pour choisir un {path_type}"
+
+msgid "Click to select a directory"
+msgstr "Cliquer pour choisir un dossier"
+
+msgid "Select a {path_type}"
+msgstr "Choix de {path_type}"
+
+msgid "Filter with prefix"
+msgstr "Filtrer"
+
+msgid "Select {path_type}"
+msgstr "Choisir le {path_type}"
+
+msgid "No match"
+msgstr "Aucun résultat"
+
+msgid "directory"
+msgstr "dossier"
+
+msgid "file"
+msgstr "fichier"
+
+msgid "glob"
+msgstr "glob"
+
+msgid "Drag & drop a csv file or "
+msgstr "Glisser-déposer un fichier CSV ou "
+
+msgid "select it"
+msgstr "le sélectionner ici"
+
+msgid "CSV columns"
+msgstr "Colonnes CSV"
+
+msgid "REQUIRED"
+msgstr "OBLIGATOIRES"
+
+msgid "OPTIONAL"
+msgstr "OPTIONNELLES"
+
+msgid "Upload CSV"
+msgstr "Ajouter via CSV"
+
+msgid "Add row"
+msgstr "Ajouter une ligne"
+
+msgid "Showing first {max_items} items, refine your search for more..."
+msgstr "Les {max_items} premiers résultats sont affichés, affinez votre recherche pour en voir plus..."

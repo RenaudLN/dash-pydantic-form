@@ -180,7 +180,7 @@ bob = Employee(
     },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
-    resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
+    # resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
 )
 
 
@@ -220,6 +220,7 @@ app.layout = dmc.MantineProvider(
                             # read_only=True,
                             # submit_on_enter=True,
                             # debounce_inputs=200,
+                            # locale="fr",
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
                                 "metadata": {

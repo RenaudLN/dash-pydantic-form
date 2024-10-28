@@ -77,6 +77,11 @@ jobs:
         run: |
           pip install build twine "importlib_metadata<8"
 
+      - name: Create .mo translations
+        run: |
+          msgfmt -o dash_pydantic_form/locales/en/LC_MESSAGES/pydf.mo dash_pydantic_form/locales/en/LC_MESSAGES/pydf.po
+          msgfmt -o dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.mo dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.po
+
       - name: Build and Publish package
         run: |
           python3 -m build

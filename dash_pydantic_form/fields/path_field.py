@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form.fields.base_fields import BaseField
+from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id, value_field
 
 PathType = Literal["file", "directory", "glob"]
@@ -70,7 +71,12 @@ class PathField(BaseField):
         inputs = [
             dmc.Button(
                 dmc.ScrollArea(
-                    value or dmc.Text(f"Click to select a {self.path_type}", size="xs", fs="italic"),
+                    value
+                    or dmc.Text(
+                        _("Click to select a {path_type}").format(path_type=_(self.path_type)),
+                        size="xs",
+                        fs="italic",
+                    ),
                     id=self.ids.modal_btn_text(aio_id, form_id, field, parent),
                     offsetScrollbars=True,
                     scrollbars="x",
@@ -106,7 +112,7 @@ class PathField(BaseField):
                 glob = ""
 
             if not value:
-                inputs[0].children.children = "Click to select a directory"
+                inputs[0].children.children = _("Click to select a directory")
             inputs[0].styles["root"]["borderRadius"] = "0.25rem 0 0 0.25rem"
 
             inputs += [
@@ -165,7 +171,9 @@ class PathField(BaseField):
                 ),
                 dmc.Modal(
                     id=self.ids.modal(*id_args),
-                    title=f"Select a {self.path_type if self.path_type != 'glob' else 'directory'}",
+                    title=_("Select a {path_type}").format(
+                        path_type=_(self.path_type if self.path_type != "glob" else "directory")
+                    ),
                     size=f"min({self.modal_max_width}px, 100vw - 4rem)",
                     styles={"header": {"paddingTop": "0.75rem", "paddingBottom": "0.25rem", "minHeight": "2.75rem"}},
                 ),
@@ -265,7 +273,7 @@ class PathField(BaseField):
                     + [
                         dmc.TextInput(
                             size="xs",
-                            placeholder="Filter with prefix",
+                            placeholder=_("Filter with prefix"),
                             variant="unstyled",
                             id=cls.ids.filter(*id_parts),
                             classNames={"input": "path-field-filter-input"},
@@ -353,14 +361,14 @@ class PathField(BaseField):
                 [
                     dmc.Checkbox(
                         id=PathField.ids.checkbox(*id_parts, value.replace(".", "||")),
-                        label=f"Select {path_type}",
+                        label=_("Select {path_type}").format(path_type=_(path_type)),
                     )
                 ]
                 if len(filtered_vals) == 0 and not current_filter
                 else []
             ),
             *(
-                [dmc.Text("Nothing matches your filter", size="sm", c="dimmed", fs="italic")]
+                [dmc.Text(_("No match"), size="sm", c="dimmed", fs="italic", px="0.5rem")]
                 if len(filtered_vals) == 0 and current_filter
                 else []
             ),

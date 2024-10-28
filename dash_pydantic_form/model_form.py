@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from . import ids as common_ids
 from .fields import BaseField, fields
 from .form_section import Sections
+from .i18n import _, language_context
 from .utils import (
     SEP,
     Type,
@@ -81,6 +82,9 @@ class ModelForm(html.Div):
         True/False set all the fields to read only or not. None keeps the field setting.
     debounce_inputs: int | None
         Debounce inputs in milliseconds. Only works with DMC components that can be debounced.
+    locale: str | None
+        Locale to render the buttons and helpers in, currently English and French are supported.
+        If left to None, will default to system locale, and fallback to English.
     """
 
     class ids:
@@ -113,6 +117,7 @@ class ModelForm(html.Div):
         container_kwargs: dict | None = None,
         read_only: bool | None = None,
         debounce_inputs: int | None = None,
+        locale: str = None,
     ) -> None:
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
@@ -121,38 +126,41 @@ class ModelForm(html.Div):
         fields_repr = fields_repr or {}
 
         subitem_cls, disc_vals = self.get_discriminated_subitem_cls(item=item, path=path, discriminator=discriminator)
-        field_inputs = self.render_fields(
-            item=item,
-            aio_id=aio_id,
-            form_id=form_id,
-            path=path,
-            subitem_cls=subitem_cls,
-            disc_vals=disc_vals,
-            fields_repr=fields_repr,
-            excluded_fields=excluded_fields,
-            discriminator=discriminator,
-            read_only=read_only,
-            debounce_inputs=debounce_inputs,
-        )
-
-        if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
-            children = [self.grid(list(field_inputs.values()))]
-        else:
-            children = self.handle_sections(
-                field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
-            )
-
-        children.extend(
-            self.get_meta_children(
-                subitem_cls=subitem_cls,
-                fields_repr=fields_repr,
-                sections=sections,
+        with language_context(locale):
+            field_inputs = self.render_fields(
                 item=item,
                 aio_id=aio_id,
                 form_id=form_id,
                 path=path,
+                subitem_cls=subitem_cls,
+                disc_vals=disc_vals,
+                fields_repr=fields_repr,
+                excluded_fields=excluded_fields,
+                discriminator=discriminator,
+                read_only=read_only,
+                debounce_inputs=debounce_inputs,
             )
-        )
+
+            if not sections or not any(
+                [f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields
+            ):
+                children = [self.grid(list(field_inputs.values()))]
+            else:
+                children = self.handle_sections(
+                    field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
+                )
+
+            children.extend(
+                self.get_meta_children(
+                    subitem_cls=subitem_cls,
+                    fields_repr=fields_repr,
+                    sections=sections,
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    path=path,
+                )
+            )
 
         super().__init__(
             children=children,
@@ -494,14 +502,14 @@ class ModelForm(html.Div):
                     dmc.Group(
                         [
                             dmc.Button(
-                                "Back",
+                                _("Back"),
                                 id=cls.ids.steps_previous(aio_id, form_id, path),
                                 disabled=True,
                                 size="compact-md",
                                 leftSection=DashIconify(icon="carbon:arrow-left", height=16),
                             ),
                             dmc.Button(
-                                "Next",
+                                _("Next"),
                                 id=cls.ids.steps_next(aio_id, form_id, path),
                                 size="compact-md",
                                 rightSection=DashIconify(icon="carbon:arrow-right", height=16),
