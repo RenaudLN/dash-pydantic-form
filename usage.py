@@ -220,7 +220,7 @@ app.layout = dmc.MantineProvider(
                             # read_only=True,
                             # submit_on_enter=True,
                             # debounce_inputs=200,
-                            locale="en",
+                            # locale="fr",
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
                                 "metadata": {

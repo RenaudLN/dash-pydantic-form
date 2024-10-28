@@ -141,24 +141,26 @@ class ModelForm(html.Div):
                 debounce_inputs=debounce_inputs,
             )
 
-        if not sections or not any([f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields):
-            children = [self.grid(list(field_inputs.values()))]
-        else:
-            children = self.handle_sections(
-                field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
-            )
+            if not sections or not any(
+                [f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields
+            ):
+                children = [self.grid(list(field_inputs.values()))]
+            else:
+                children = self.handle_sections(
+                    field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
+                )
 
-        children.extend(
-            self.get_meta_children(
-                subitem_cls=subitem_cls,
-                fields_repr=fields_repr,
-                sections=sections,
-                item=item,
-                aio_id=aio_id,
-                form_id=form_id,
-                path=path,
+            children.extend(
+                self.get_meta_children(
+                    subitem_cls=subitem_cls,
+                    fields_repr=fields_repr,
+                    sections=sections,
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    path=path,
+                )
             )
-        )
 
         super().__init__(
             children=children,
