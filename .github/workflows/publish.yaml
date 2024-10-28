@@ -76,6 +76,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install build twine "importlib_metadata<8"
+          sudo apt-get install -y gettext
 
       - name: Create .mo translations
         run: |
