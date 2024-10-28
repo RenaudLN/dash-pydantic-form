@@ -89,6 +89,12 @@ class Quantity(BaseModel):
 
     """Conversion factors from unit to IS unit."""
     conversion: ClassVar[dict[ISUnits, Mapping[str, float]]] = {
+        # Unitless
+        ISUnits(): {
+            "": 1,
+            "%": 0.01,
+            "‰": 0.001,
+        },
         # Money
         ISUnits(USD=1): {
             "USD": 1,
@@ -173,6 +179,7 @@ class Quantity(BaseModel):
         },
     }
     names: ClassVar[dict[ISUnits, NameData]] = {
+        ISUnits(): {"category": "Unitless", "unit": ""},
         ISUnits(USD=1): {"category": "Money", "unit": "USD"},
         ISUnits(m=1): {"category": "Length", "unit": "m"},
         ISUnits(kg=1): {"category": "Mass", "unit": "kg"},
@@ -373,7 +380,7 @@ class Quantity(BaseModel):
         base = f"{self.value:.3f}" if abs(self.value) >= 1e-2 or self.value == 0 else f"{self.value:.2e}"  # noqa: PLR2004
         if "." in base:
             base = base.rstrip("0").rstrip(".")
-        return f"{base} {self.unit}"
+        return f"{base} {self.unit}" if self.unit else base
 
     @classmethod
     def register_unit_rates(
