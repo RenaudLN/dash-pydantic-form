@@ -97,7 +97,7 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-Select-input')
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-Select-input')
     : eGridCell.querySelector('.mantine-Select-input');
     inp.tabIndex = "1";
     inp.focus();
@@ -145,7 +145,7 @@ dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-MultiSelect-input')
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-MultiSelect-input')
     : eGridCell.querySelector('.mantine-MultiSelect-input');
     inp.tabIndex = "1";
     inp.click();
@@ -192,7 +192,7 @@ dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DateInput-input')
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-DateInput-input')
     : eGridCell.querySelector('.mantine-DateInput-input');
     inp.focus()
   }, []);
@@ -222,7 +222,7 @@ dagfuncs.PydfDatetimePicker = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-DateTimePicker-input')
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-DateTimePicker-input')
     : eGridCell.querySelector('.mantine-DateTimePicker-input');
     inp.click();
     colDef.suppressKeyboardEvent = (p) => {
@@ -256,7 +256,7 @@ dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div[class^="ag-theme-alpine"]').querySelector('.ag-popup-editor .mantine-TimeInput-input')
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-TimeInput-input')
     : eGridCell.querySelector('.mantine-TimeInput-input');
     inp.focus();
     colDef.suppressKeyboardEvent = (p) => {

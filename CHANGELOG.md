@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Table with data_getter Selects
+- Improved ag-grid cell selector
 
 ## [0.8.0] - 2024-10-28
 ### Added
