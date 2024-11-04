@@ -162,18 +162,20 @@ class ModelForm(html.Div):
                 )
             )
 
+        container_kwargs = container_kwargs or {}
+
         super().__init__(
             children=children,
             **(
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
-                    "style": {"containerType": "inline-size"},
+                    "style": {"containerType": "inline-size"} | (container_kwargs.pop("style", {})),
                 }
                 if not path
                 else {}
             ),
-            **(container_kwargs or {}),
+            **container_kwargs,
         )
 
     @staticmethod
