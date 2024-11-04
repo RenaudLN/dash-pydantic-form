@@ -336,10 +336,8 @@ class TableField(BaseField):
         if isinstance(
             field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
         ):
-            data = (
-                field_repr.data_getter()
-                if field_repr.data_getter
-                else field_repr.input_kwargs.get("data", field_repr._get_data(field_info=field_info))
+            data = field_repr.data_gotten or field_repr.input_kwargs.get(
+                "data", field_repr._get_data(field_info=field_info)
             )
             options = [
                 {
