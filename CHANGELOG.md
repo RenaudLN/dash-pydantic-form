@@ -5,10 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.2] - 2024-11-06
 ### Fixed
 - Table with data_getter Selects
 - Improved ag-grid cell selector
 - Allow passing additional styles to the model form container
+- Fix console warning on ForwardRef in table field
 
 ## [0.8.0] - 2024-10-28
 ### Added

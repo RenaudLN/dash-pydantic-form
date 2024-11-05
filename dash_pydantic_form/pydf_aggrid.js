@@ -127,7 +127,6 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
 
   return React.createElement(window.dash_mantine_components.Select, {
       setProps,
-      ref,
       data: options_,
       value: value,
       clearable: componentProps.clearable || true,
@@ -175,7 +174,6 @@ dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
 
   return React.createElement(window.dash_mantine_components.MultiSelect, {
       setProps,
-      ref,
       data: options_,
       value: value || [],
       clearable: componentProps.clearable || true,
