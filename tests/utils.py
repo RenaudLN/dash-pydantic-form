@@ -4,6 +4,7 @@ from typing import Any
 from dash.development.base_component import Component
 from pydantic import BaseModel
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 from dash_pydantic_form import ids
 from dash_pydantic_form.utils import get_non_null_annotation
@@ -67,7 +68,8 @@ def set_input(dash_duo, id: str | dict, value: Any):
     """Set input value."""
     str_id = stringify_id(id)
     elem = dash_duo.driver.find_element(By.ID, str_id)
-    elem.clear()
+    elem.send_keys(Keys.CONTROL + "a")
+    elem.send_keys(Keys.DELETE)
     elem.send_keys(str(value))
 
 
