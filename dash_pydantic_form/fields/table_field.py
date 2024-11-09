@@ -56,6 +56,11 @@ class TableField(BaseField):
         " The functions should take as argument the original options and the row data."
         " The functions should be defined on a sub-namespace of dash_clientside.",
     )
+    grid_kwargs: dict = Field(
+        default_factory=dict,
+        description="Additional keyword arguments passed to the AGGrid instance. "
+        "columnDefs passed here will not be considered, use column_defs_overrides.",
+    )
 
     full_width = True
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -213,6 +218,9 @@ class TableField(BaseField):
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+        grid_kwargs = self.grid_kwargs
+        grid_kwargs.pop("columnDefs", None)
+        grid_kwargs.pop("rowData", None)
         return html.Div(
             [
                 html.Div(
@@ -268,19 +276,26 @@ class TableField(BaseField):
                         )
                         for field_name in template.model_fields
                     ],
-                    defaultColDef={"editable": not self.read_only, "resizable": True, "sortable": True, "filter": True},
+                    defaultColDef={"resizable": True, "sortable": True, "filter": True}
+                    | grid_kwargs.pop("defaultColDef", {})
+                    | {"editable": not self.read_only},
                     rowData=value,
-                    columnSize="responsiveSizeToFit",
-                    style={"height": self.table_height},
+                    columnSize=grid_kwargs.pop("columnSize", "responsiveSizeToFit"),
+                    style=grid_kwargs.pop("style", {}) | {"height": self.table_height},
                     dashGridOptions={
                         "singleClickEdit": True,
                         "rowSelection": "multiple",
                         "stopEditingWhenCellsLoseFocus": True,
+                    }
+                    | grid_kwargs.pop("dashGridOptions", {})
+                    | {
                         "suppressRowHoverHighlight": self.read_only,
                         "suppressRowClickSelection": self.read_only,
                     },
-                    className="ag-theme-alpine ag-themed overflowing-ag-grid"
+                    className=grid_kwargs.pop("className", "")
+                    + " ag-theme-alpine ag-themed overflowing-ag-grid"
                     + (" read-only" if self.read_only else ""),
+                    **grid_kwargs,
                 ),
             ]
             + ([dmc.Group(add_row + upload)] if (self.rows_editable or self.with_upload) else [])
