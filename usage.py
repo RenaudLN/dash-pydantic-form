@@ -243,6 +243,7 @@ app.layout = dmc.MantineProvider(
                                             }
                                         }
                                     },
+                                    grid_kwargs={"dashGridOptions": {"suppressCellFocus": False}},
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },
