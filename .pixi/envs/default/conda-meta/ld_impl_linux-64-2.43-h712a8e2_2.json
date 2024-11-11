@@ -1,0 +1,67 @@
+{
+  "build": "h712a8e2_2",
+  "build_number": 2,
+  "constrains": [
+    "binutils_impl_linux-64 2.43"
+  ],
+  "depends": [
+    "__glibc >=2.17,<3.0.a0"
+  ],
+  "license": "GPL-3.0-only",
+  "license_family": "GPL",
+  "md5": "048b02e3962f066da18efe3a21b77672",
+  "name": "ld_impl_linux-64",
+  "purls": [],
+  "sha256": "7c91cea91b13f4314d125d1bedb9d03a29ebbd5080ccdea70260363424646dbe",
+  "size": 669211,
+  "subdir": "linux-64",
+  "timestamp": 1729655358674,
+  "version": "2.43",
+  "fn": "ld_impl_linux-64-2.43-h712a8e2_2.conda",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.43-h712a8e2_2.conda",
+  "channel": "https://conda.anaconda.org/conda-forge/",
+  "extracted_package_dir": "/home/delanoberite/.cache/rattler/cache/pkgs/ld_impl_linux-64-2.43-h712a8e2_2",
+  "files": [
+    "bin/x86_64-conda-linux-gnu-ld",
+    "bin/x86_64-conda_cos6-linux-gnu-ld",
+    "x86_64-conda-linux-gnu/bin/ld",
+    "x86_64-conda_cos6-linux-gnu/bin/ld"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "bin/x86_64-conda-linux-gnu-ld",
+        "path_type": "hardlink",
+        "sha256": "2772a2759bf97e627a68f3615b64183b5f24393124a41a0e4b36bc740ee93be3",
+        "sha256_in_prefix": "2772a2759bf97e627a68f3615b64183b5f24393124a41a0e4b36bc740ee93be3",
+        "size_in_bytes": 3318336
+      },
+      {
+        "_path": "bin/x86_64-conda_cos6-linux-gnu-ld",
+        "path_type": "softlink",
+        "sha256": "2772a2759bf97e627a68f3615b64183b5f24393124a41a0e4b36bc740ee93be3",
+        "sha256_in_prefix": "8f8f6cb5d26b508b8a2ff5a226a6ce9209347cdd303f81e28442f818583e93c8",
+        "size_in_bytes": 3318336
+      },
+      {
+        "_path": "x86_64-conda-linux-gnu/bin/ld",
+        "path_type": "softlink",
+        "sha256": "2772a2759bf97e627a68f3615b64183b5f24393124a41a0e4b36bc740ee93be3",
+        "sha256_in_prefix": "200559a49e2afbc18f6bd07fb1fb921d332d76a49776a317cd657d7cbf424300",
+        "size_in_bytes": 3318336
+      },
+      {
+        "_path": "x86_64-conda_cos6-linux-gnu/bin/ld",
+        "path_type": "softlink",
+        "sha256": "2772a2759bf97e627a68f3615b64183b5f24393124a41a0e4b36bc740ee93be3",
+        "sha256_in_prefix": "200559a49e2afbc18f6bd07fb1fb921d332d76a49776a317cd657d7cbf424300",
+        "size_in_bytes": 3318336
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/delanoberite/.cache/rattler/cache/pkgs/ld_impl_linux-64-2.43-h712a8e2_2",
+    "type": 1
+  }
+}
