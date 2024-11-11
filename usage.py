@@ -40,7 +40,7 @@ class Pet(BaseModel):
 
     name: str = Field(title="Name", description="Name of the pet")
     species: Species = Field(title="Species", description="Species of the pet")
-    dob: date | None = Field(title="Date of birth", description="Date of birth of the pet", default=None)
+    dob: int = Field(title="Date of birth", description="Date of birth of the pet", default=0)
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
     def __str__(self) -> str:
