@@ -275,6 +275,7 @@ dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
     {
       ...componentProps,
       value,
+      
     }
   );
 });
@@ -286,20 +287,19 @@ dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
 
   React.useEffect(() => {
     const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-TimeInput-input')
-    : eGridCell.querySelector('.mantine-TimeInput-input');
-    inp.focus();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-YearPickerInput-input')
+    : eGridCell.querySelector('.mantine-YearPickerInput-input');
+    inp.click();
   }, []);
 
   componentProps.setProps = (newProps) => {
-    console.log("yeye")
-    if (typeof newProps.value === "undefined") return
+    if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
+    const year = new Date(newProps.value).getFullYear();
+    console.log(year);
+    node.setDataValue(column.colId, year);
+    setValue(year)
+    setTimeout(() => stopEditing(), 1);
   };
 
 
@@ -308,6 +308,10 @@ dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
     {
       ...componentProps,
       value,
+      returnFocus:true,
+      popoverProps: {withinPortal: false},
+      style: { width: column.actualWidth },
+      valueFormat: "YYYY"
     }
   );
 });

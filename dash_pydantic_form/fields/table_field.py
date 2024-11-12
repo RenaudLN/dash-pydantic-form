@@ -325,8 +325,6 @@ class TableField(BaseField):
 
         if isinstance(field_repr, dict):
             field_repr = get_default_repr(field_info, **field_repr)
-        if field_name == "dob":
-            print(field_info)
 
 
         # Column_def no matter the type
@@ -401,14 +399,13 @@ class TableField(BaseField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
 
         annotation = get_non_null_annotation(field_info.annotation)
-        if annotation in [int, date, datetime, time]:
+
+        if annotation in [date, datetime, time]:
             function_mapper = {
                 date: "PydfDatePicker",
                 datetime: "PydfDatetimePicker",
                 time: "PydfTimePicker",
-                int:"PydfYearPicker"
             }
-            
             column_def.update(
                 {
                     "cellEditor": {"function": function_mapper[annotation]},
@@ -420,8 +417,17 @@ class TableField(BaseField):
             )
 
         if annotation in [int, float]:
-            
-            column_def.update({"filter": "agNumberColumnFilter"})
+            if field_name == "dob":
+                column_def.update(
+                {
+                    "cellEditor": {"function": "PydfYearPicker"},
+                    "cellEditorPopup": True,
+                    "cellEditorParams": field_repr.input_kwargs,
+                    "filter": "agDateColumnFilter",
+                    "filterParams": {"comparator": {"function": "PydfDateComparator"}},
+                })
+            else:
+                column_def.update({"filter": "agNumberColumnFilter"})
 
         
 
