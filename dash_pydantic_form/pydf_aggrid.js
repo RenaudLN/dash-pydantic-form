@@ -274,8 +274,7 @@ dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
     window.dash_mantine_components.TimeInput,
     {
       ...componentProps,
-      value,
-      
+      value,    
     }
   );
 });

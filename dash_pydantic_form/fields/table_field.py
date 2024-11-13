@@ -98,7 +98,6 @@ class TableField(BaseField):
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
-        
         template = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
@@ -402,13 +401,16 @@ class TableField(BaseField):
 
         annotation = get_non_null_annotation(field_info.annotation)
 
+        if annotation in [int, float]:
+            column_def.update({"filter": "agNumberColumnFilter"})
+
         if annotation in [date, datetime, time]:
             picker_function = {
                 date: "PydfDatePicker",
                 datetime: "PydfDatetimePicker",
                 time: "PydfTimePicker",
             }[annotation]
-            
+
             if isinstance(field_repr, YearField):
                 picker_function = "PydfYearPicker"
             elif isinstance(field_repr, MonthField):
@@ -423,12 +425,7 @@ class TableField(BaseField):
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },
             )
-
-        if annotation in [int, float]:
-            column_def.update({"filter": "agNumberColumnFilter"})
-
-        
-
+            
         # update with custom defs
         column_def = deep_merge(column_def, self.column_defs_overrides.get(field_name, {}))
 
