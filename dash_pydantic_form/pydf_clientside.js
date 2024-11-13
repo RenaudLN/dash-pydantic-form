@@ -121,20 +121,6 @@ dash_clientside.pydf = {
   syncTableJson: (rowData) => {
     return rowData.filter(row => Object.values(row).some(x => x != null))
   },
-  stepsClickListener: (id) => {
-    const strId = JSON.stringify(id, Object.keys(id).sort())
-    waitForElem(strId).then((elem) => {
-      const steps = elem.children[0].children
-      for (let i = 0; i < steps.length; i++) {
-          const child = steps[i]
-          child.addEventListener("click", event => {
-              dash_clientside.set_props(id, {active: i})
-          })
-      }
-    })
-
-    return dash_clientside.no_update
-  },
   stepsDisable: (active, nSteps) => [active === 0, active === nSteps],
   stepsPreviousNext: (_t1, _t2, active, nSteps) => {
     const trigger = dash_clientside.callback_context.triggered

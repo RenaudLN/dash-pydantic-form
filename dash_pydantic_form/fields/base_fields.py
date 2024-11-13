@@ -30,6 +30,10 @@ from dash_pydantic_form.utils import (
 CHECKED_COMPONENTS = [
     dmc.Checkbox,
     dmc.Switch,
+    dmc.Chip,
+]
+CHECKED_CHILDREN_COMPONENTS = [
+    dmc.Chip,
 ]
 NO_LABEL_COMPONENTS = [
     dmc.SegmentedControl,
@@ -228,7 +232,12 @@ class BaseField(BaseModel):
             aio_id, form_id, field, parent, meta=self.field_id_meta
         )
         value_kwarg = (
-            {"label": self.get_title(field_info, field_name=field)} | ({"checked": value} if value is not None else {})
+            {
+                "children" if self.base_component in CHECKED_CHILDREN_COMPONENTS else "label": self.get_title(
+                    field_info, field_name=field
+                )
+            }
+            | ({"checked": value} if value is not None else {})
             if self.base_component in CHECKED_COMPONENTS
             else (
                 {
@@ -528,6 +537,12 @@ class SwitchField(CheckboxField):
     base_component = dmc.Switch
 
 
+class ChipField(CheckboxField):
+    """Switch field."""
+
+    base_component = dmc.Chip
+
+
 class DateField(BaseField):
     """Date field."""
 
@@ -716,6 +731,10 @@ class RadioItemsField(SelectField):
     """Radio items field."""
 
     base_component = dmc.RadioGroup
+    orientation: Literal["horizontal", "vertical"] | None = Field(
+        default=None,
+        description="Orientation of the chip group, defaults to None which will adapt based on the number of items.",
+    )
 
     def _additional_kwargs(self, *, field: str = None, field_info: FieldInfo, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
@@ -728,7 +747,7 @@ class RadioItemsField(SelectField):
             for x in data
         ]
         mt = "5px" if self.get_title(field_info, field_name=field) and self.get_description(field_info) else 0
-        if len(data) <= MAX_OPTIONS_INLINE:
+        if self.orientation == "horizontal" or (self.orientation is None and len(data) <= MAX_OPTIONS_INLINE):
             return {"children": dmc.Group(children, mt=mt, py="0.5rem")}
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem")}
 
@@ -737,6 +756,10 @@ class ChecklistField(MultiSelectField):
     """Checklist field."""
 
     base_component = dmc.CheckboxGroup
+    orientation: Literal["horizontal", "vertical"] | None = Field(
+        default=None,
+        description="Orientation of the chip group, defaults to None which will adapt based on the number of items.",
+    )
 
     def _additional_kwargs(self, *, field: str = None, field_info: FieldInfo, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
@@ -746,10 +769,10 @@ class ChecklistField(MultiSelectField):
             x
             if isinstance(x, dmc.Checkbox)
             else (dmc.Checkbox(**x) if isinstance(x, dict) else dmc.Checkbox(label=str(x), value=x))
-            for x in (kwargs["data"] or [])
+            for x in data
         ]
         mt = "5px" if self.get_title(field_info, field_name=field) and self.get_description(field_info) else 0
-        if len(data) <= MAX_OPTIONS_INLINE:
+        if self.orientation == "horizontal" or (self.orientation is None and len(data) <= MAX_OPTIONS_INLINE):
             return {"children": dmc.Group(children, mt=mt, py="0.5rem")}
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem")}
 
@@ -763,6 +786,31 @@ class SegmentedControlField(SelectField):
         """Add default style."""
         super().model_post_init(_context)
         self.input_kwargs.setdefault("style", {"alignSelf": "baseline"})
+
+
+class ChipGroupField(SelectField):
+    """Segmented control field."""
+
+    base_component = dmc.ChipGroup
+    orientation: Literal["horizontal", "vertical"] | None = Field(
+        default=None,
+        description="Orientation of the chip group, defaults to None which will adapt based on the number of items.",
+    )
+
+    def _additional_kwargs(self, *, field: str = None, field_info: FieldInfo, **kwargs) -> dict:
+        """Retrieve data from Literal annotation if data is not present in input_kwargs."""
+        kwargs = super()._additional_kwargs(field_info=field_info, **kwargs)
+        data = kwargs["data"] or []
+        children = [
+            x
+            if isinstance(x, dmc.Chip)
+            else (dmc.Chip(x["label"], value=x["value"]) if isinstance(x, dict) else dmc.Chip(str(x), value=str(x)))
+            for x in data
+        ]
+        mt = "5px" if self.get_title(field_info, field_name=field) and self.get_description(field_info) else 0
+        if self.orientation == "horizontal" or (self.orientation is None and len(data) <= MAX_OPTIONS_INLINE):
+            return {"children": dmc.Group(children, mt=mt, py="0.5rem", gap="0.5rem")}
+        return {"children": dmc.Stack(children, mt=mt, py="0.25rem", gap="0.5rem")}
 
 
 clientside_callback(

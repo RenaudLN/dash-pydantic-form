@@ -28,6 +28,17 @@ app = Dash(
 server = app.server
 
 
+fields.Select.register_data_getter(
+    lambda: [
+        {"label": "French", "value": "fr"},
+        {"label": "English", "value": "en"},
+        {"label": "Spanish", "value": "sp"},
+        {"label": "Chinese", "value": "cn"},
+    ],
+    "languages",
+)
+
+
 class Species(Enum):
     """Species enum."""
 
@@ -62,8 +73,8 @@ class Desk(BaseModel):
 class WorkStation(BaseModel):
     """Work station model."""
 
-    has_desk: bool = Field(title="Has desk")
-    has_monitor: bool = Field(title="Has monitor")
+    has_desk: bool = Field(title="Has desk", repr_type="Chip")
+    has_monitor: bool = Field(title="Has monitor", repr_type="Switch")
     desk: Desk | None = Field(
         title="Desk",
         default=None,
@@ -108,12 +119,12 @@ class WorkOffice(BaseModel):
 class Metadata(BaseModel):
     """Metadata model."""
 
-    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(
+    languages: list[str] = Field(
         title="Languages spoken",
         default_factory=list,
         json_schema_extra={
-            "repr_type": "Checklist",
-            "repr_kwargs": {"options_labels": {"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"}},
+            "repr_type": "ChipGroup",
+            "repr_kwargs": {"multiple": True, "orientation": "horizontal", "data_getter": "languages"},
         },
     )
     siblings: int | None = Field(title="Siblings", default=None, ge=0)

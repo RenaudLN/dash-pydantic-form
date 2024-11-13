@@ -2,6 +2,8 @@ import logging
 
 from .base_fields import CheckboxField as Checkbox
 from .base_fields import ChecklistField as Checklist
+from .base_fields import ChipField as Chip
+from .base_fields import ChipGroupField as ChipGroup
 from .base_fields import ColorField as Color
 from .base_fields import DateField as Date
 from .base_fields import DatetimeField as Datetime
@@ -52,6 +54,8 @@ EditableTable = deprecated_field_factory("EditableTable", Table)
 __all__ = [
     "Checkbox",
     "Checklist",
+    "Chip",
+    "ChipGroup",
     "Color",
     "Date",
     "Datetime",
