@@ -548,12 +548,6 @@ clientside_callback(
 )
 
 clientside_callback(
-    ClientsideFunction(namespace="pydf", function_name="stepsClickListener"),
-    Output(ModelForm.ids.steps(MATCH, MATCH, MATCH), "id"),
-    Input(ModelForm.ids.steps(MATCH, MATCH, MATCH), "id"),
-)
-
-clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="getValues"),
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
     Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),

@@ -62,8 +62,8 @@ class Desk(BaseModel):
 class WorkStation(BaseModel):
     """Work station model."""
 
-    has_desk: bool = Field(title="Has desk")
-    has_monitor: bool = Field(title="Has monitor")
+    has_desk: bool = Field(title="Has desk", repr_type="Chip")
+    has_monitor: bool = Field(title="Has monitor", repr_type="Switch")
     desk: Desk | None = Field(
         title="Desk",
         default=None,
@@ -112,8 +112,12 @@ class Metadata(BaseModel):
         title="Languages spoken",
         default_factory=list,
         json_schema_extra={
-            "repr_type": "Checklist",
-            "repr_kwargs": {"options_labels": {"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"}},
+            "repr_type": "ChipGroup",
+            "repr_kwargs": {
+                "options_labels": {"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"},
+                "multiple": True,
+                "orientation": "horizontal",
+            },
         },
     )
     siblings: int | None = Field(title="Siblings", default=None, ge=0)
