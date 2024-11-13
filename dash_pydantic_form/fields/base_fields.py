@@ -3,7 +3,6 @@ import json
 import logging
 import os
 from collections.abc import Callable
-from datetime import time
 from enum import Enum, EnumMeta
 from functools import partial
 from textwrap import TextWrapper
@@ -544,15 +543,6 @@ class TimeField(BaseField):
     """Time field."""
 
     base_component = dmc.TimeInput
-
-    @classmethod
-    def get_value(cls, item: BaseModel, field: str, parent: str) -> Any:
-        """Handle the fact dmc.TimeInput uses datetime rather than plain time."""
-        value = super().get_value(item, field, parent)
-        if value and isinstance(value, time):
-            value = f"2000-01-01T{value}"
-
-        return value
 
 
 class DatetimeField(BaseField):
