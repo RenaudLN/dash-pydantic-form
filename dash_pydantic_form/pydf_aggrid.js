@@ -295,10 +295,10 @@ dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
   componentProps.setProps = (newProps) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
-    const year = new Date(newProps.value).getFullYear();
-    console.log(year);
-    node.setDataValue(column.colId, year);
-    setValue(year)
+
+    node.setDataValue(column.colId, newProps.value);
+
+    setValue(newProps.value)
     setTimeout(() => stopEditing(), 1);
   };
 
@@ -312,6 +312,41 @@ dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
       popoverProps: {withinPortal: false},
       style: { width: column.actualWidth },
       valueFormat: "YYYY"
+    }
+  );
+});
+
+dagfuncs.PydfMonthPicker = React.forwardRef((props, ref) => {
+  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = {...colDef.cellEditorParams};
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-MonthPickerInput-input')
+    : eGridCell.querySelector('.mantine-MonthPickerInput-input');
+    inp.click();
+  }, []);
+
+  componentProps.setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+
+    setValue(newProps.value)
+    setTimeout(() => stopEditing(), 1);
+  };
+
+
+  return React.createElement(
+    window.dash_mantine_components.MonthPickerInput,
+    {
+      ...componentProps,
+      value,
+      returnFocus:true,
+      popoverProps: {withinPortal: false},
+      style: { width: column.actualWidth },
+      valueFormat: "YYYY-MM"
     }
   );
 });

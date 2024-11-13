@@ -19,12 +19,14 @@ from dash_pydantic_form.fields.base_fields import (
     BaseField,
     CheckboxField,
     ChecklistField,
+    MonthField,
     MultiSelectField,
     RadioItemsField,
     SegmentedControlField,
     SelectField,
     TextareaField,
     TextField,
+    YearField
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
@@ -96,6 +98,7 @@ class TableField(BaseField):
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
+        
         template = get_args(get_non_null_annotation(field_info.annotation))[0]
         if not issubclass(template, BaseModel):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
@@ -326,7 +329,6 @@ class TableField(BaseField):
         if isinstance(field_repr, dict):
             field_repr = get_default_repr(field_info, **field_repr)
 
-
         # Column_def no matter the type
         column_def = {
             "editable": editable,
@@ -401,15 +403,21 @@ class TableField(BaseField):
         annotation = get_non_null_annotation(field_info.annotation)
 
         if annotation in [date, datetime, time]:
-            function_mapper = {
+            picker_function = {
                 date: "PydfDatePicker",
                 datetime: "PydfDatetimePicker",
                 time: "PydfTimePicker",
-            }
+            }[annotation]
+            
+            if isinstance(field_repr, YearField):
+                picker_function = "PydfYearPicker"
+            elif isinstance(field_repr, MonthField):
+                picker_function = "PydfMonthPicker"
+
             column_def.update(
                 {
-                    "cellEditor": {"function": function_mapper[annotation]},
-                    "cellEditorPopup": annotation is datetime,
+                    "cellEditor": {"function": picker_function},
+                    "cellEditorPopup": annotation is datetime or isinstance(field_repr, YearField | MonthField) ,
                     "cellEditorParams": field_repr.input_kwargs,
                     "filter": "agDateColumnFilter",
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
@@ -417,17 +425,7 @@ class TableField(BaseField):
             )
 
         if annotation in [int, float]:
-            if field_name == "dob":
-                column_def.update(
-                {
-                    "cellEditor": {"function": "PydfYearPicker"},
-                    "cellEditorPopup": True,
-                    "cellEditorParams": field_repr.input_kwargs,
-                    "filter": "agDateColumnFilter",
-                    "filterParams": {"comparator": {"function": "PydfDateComparator"}},
-                })
-            else:
-                column_def.update({"filter": "agNumberColumnFilter"})
+            column_def.update({"filter": "agNumberColumnFilter"})
 
         
 
