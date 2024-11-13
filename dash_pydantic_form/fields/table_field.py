@@ -400,7 +400,6 @@ class TableField(BaseField):
             column_def.update({"cellRenderer": "PydfCheckbox", "editable": False})
 
         annotation = get_non_null_annotation(field_info.annotation)
-
         if annotation in [int, float]:
             column_def.update({"filter": "agNumberColumnFilter"})
 
@@ -425,7 +424,7 @@ class TableField(BaseField):
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },
             )
-            
+
         # update with custom defs
         column_def = deep_merge(column_def, self.column_defs_overrides.get(field_name, {}))
 
