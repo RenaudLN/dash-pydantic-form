@@ -28,6 +28,17 @@ app = Dash(
 server = app.server
 
 
+fields.Select.register_data_getter(
+    lambda: [
+        {"label": "French", "value": "fr"},
+        {"label": "English", "value": "en"},
+        {"label": "Spanish", "value": "sp"},
+        {"label": "Chinese", "value": "cn"},
+    ],
+    "languages",
+)
+
+
 class Species(Enum):
     """Species enum."""
 
@@ -108,16 +119,12 @@ class WorkOffice(BaseModel):
 class Metadata(BaseModel):
     """Metadata model."""
 
-    languages: list[Literal["fr", "en", "sp", "cn"]] = Field(
+    languages: list[str] = Field(
         title="Languages spoken",
         default_factory=list,
         json_schema_extra={
             "repr_type": "ChipGroup",
-            "repr_kwargs": {
-                "options_labels": {"fr": "French", "en": "English", "sp": "Spanish", "cn": "Chinese"},
-                "multiple": True,
-                "orientation": "horizontal",
-            },
+            "repr_kwargs": {"multiple": True, "orientation": "horizontal", "data_getter": "languages"},
         },
     )
     siblings: int | None = Field(title="Siblings", default=None, ge=0)
