@@ -294,9 +294,7 @@ dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
   componentProps.setProps = (newProps) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
-
     node.setDataValue(column.colId, newProps.value);
-
     setValue(newProps.value)
     setTimeout(() => stopEditing(), 1);
   };
@@ -331,7 +329,6 @@ dagfuncs.PydfMonthPicker = React.forwardRef((props, ref) => {
     if (typeof newProps.value === 'undefined') return
     delete colDef.suppressKeyboardEvent;
     node.setDataValue(column.colId, newProps.value);
-
     setValue(newProps.value)
     setTimeout(() => stopEditing(), 1);
   };
