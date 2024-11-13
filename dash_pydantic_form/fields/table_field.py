@@ -26,7 +26,7 @@ from dash_pydantic_form.fields.base_fields import (
     SelectField,
     TextareaField,
     TextField,
-    YearField
+    YearField,
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
@@ -313,7 +313,7 @@ class TableField(BaseField):
             style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 
-    def _generate_field_column(  # noqa: PLR0913
+    def _generate_field_column(  # noqa: PLR0913, PLR0912
         self,
         *,
         field_name: str,
@@ -403,7 +403,7 @@ class TableField(BaseField):
         if annotation in [int, float]:
             column_def.update({"filter": "agNumberColumnFilter"})
 
-        if annotation in [date, datetime, time]:
+        if annotation in [date, datetime, time] or isinstance(field_repr, YearField | MonthField):
             picker_function = {
                 date: "PydfDatePicker",
                 datetime: "PydfDatetimePicker",
@@ -418,7 +418,7 @@ class TableField(BaseField):
             column_def.update(
                 {
                     "cellEditor": {"function": picker_function},
-                    "cellEditorPopup": annotation is datetime or isinstance(field_repr, YearField | MonthField) ,
+                    "cellEditorPopup": annotation is datetime or isinstance(field_repr, YearField | MonthField),
                     "cellEditorParams": field_repr.input_kwargs,
                     "filter": "agDateColumnFilter",
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
