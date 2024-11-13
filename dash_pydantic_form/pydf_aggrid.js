@@ -279,6 +279,74 @@ dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
   );
 });
 
+dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
+  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = {...colDef.cellEditorParams};
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-YearPickerInput-input')
+    : eGridCell.querySelector('.mantine-YearPickerInput-input');
+    inp.click();
+  }, []);
+
+  componentProps.setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+    setValue(newProps.value)
+    setTimeout(() => stopEditing(), 1);
+  };
+
+
+  return React.createElement(
+    window.dash_mantine_components.YearPickerInput,
+    {
+      ...componentProps,
+      value,
+      returnFocus:true,
+      popoverProps: {withinPortal: false},
+      style: { width: column.actualWidth },
+      valueFormat: "YYYY"
+    }
+  );
+});
+
+dagfuncs.PydfMonthPicker = React.forwardRef((props, ref) => {
+  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
+  const [value, setValue] = React.useState(initialValue);
+  const componentProps = {...colDef.cellEditorParams};
+
+  React.useEffect(() => {
+    const inp = colDef.cellEditorPopup
+    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-MonthPickerInput-input')
+    : eGridCell.querySelector('.mantine-MonthPickerInput-input');
+    inp.click();
+  }, []);
+
+  componentProps.setProps = (newProps) => {
+    if (typeof newProps.value === 'undefined') return
+    delete colDef.suppressKeyboardEvent;
+    node.setDataValue(column.colId, newProps.value);
+    setValue(newProps.value)
+    setTimeout(() => stopEditing(), 1);
+  };
+
+
+  return React.createElement(
+    window.dash_mantine_components.MonthPickerInput,
+    {
+      ...componentProps,
+      value,
+      returnFocus:true,
+      popoverProps: {withinPortal: false},
+      style: { width: column.actualWidth },
+      valueFormat: "YYYY-MM"
+    }
+  );
+});
+
 
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []

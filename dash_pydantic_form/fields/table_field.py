@@ -19,12 +19,14 @@ from dash_pydantic_form.fields.base_fields import (
     BaseField,
     CheckboxField,
     ChecklistField,
+    MonthField,
     MultiSelectField,
     RadioItemsField,
     SegmentedControlField,
     SelectField,
     TextareaField,
     TextField,
+    YearField,
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
@@ -311,7 +313,7 @@ class TableField(BaseField):
             style={"display": "grid", "gap": "0.5rem", "gridTemplateColumns": "1fr"},
         )
 
-    def _generate_field_column(  # noqa: PLR0913
+    def _generate_field_column(  # noqa: PLR0913, PLR0912
         self,
         *,
         field_name: str,
@@ -401,16 +403,22 @@ class TableField(BaseField):
         if annotation in [int, float]:
             column_def.update({"filter": "agNumberColumnFilter"})
 
-        if annotation in [date, datetime, time]:
-            function_mapper = {
+        if annotation in [date, datetime, time] or isinstance(field_repr, YearField | MonthField):
+            picker_function = {
                 date: "PydfDatePicker",
                 datetime: "PydfDatetimePicker",
                 time: "PydfTimePicker",
-            }
+            }[annotation]
+
+            if isinstance(field_repr, YearField):
+                picker_function = "PydfYearPicker"
+            elif isinstance(field_repr, MonthField):
+                picker_function = "PydfMonthPicker"
+
             column_def.update(
                 {
-                    "cellEditor": {"function": function_mapper[annotation]},
-                    "cellEditorPopup": annotation is datetime,
+                    "cellEditor": {"function": picker_function},
+                    "cellEditorPopup": annotation is datetime or isinstance(field_repr, YearField | MonthField),
                     "cellEditorParams": field_repr.input_kwargs,
                     "filter": "agDateColumnFilter",
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
