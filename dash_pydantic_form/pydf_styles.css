@@ -1,18 +1,19 @@
 .pydantic-form-grid {
-    --col-1-4: 1;
-    --col-2-4: 2;
-    --col-3-4: 3;
-    --col-4-4: 4;
-    --sg-cols: 4 !important;
+    grid-template-columns: repeat(var(--pydf-cols), minmax(0, 1fr));
+}
+
+.pydantic-form-field {
+    grid-column: span var(--n-cols);
 }
 
 @container (max-width: 40rem) {
     .pydantic-form-grid {
-        --col-1-4: 1;
-        --col-2-4: 1;
-        --col-3-4: 1;
-        --col-4-4: 1;
-        --sg-cols: 1 !important;
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    .pydantic-form-field {
+        grid-column: span 1;
     }
 }
 

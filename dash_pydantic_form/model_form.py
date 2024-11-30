@@ -64,6 +64,8 @@ class ModelForm(html.Div):
     form_id: str
         Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID.
+    cols: str
+        Number of columns in the form, defaults to 4.
     fields_repr: dict[str, dict | BaseField] | None
         Mapping between field name and field representation. If not provided, default field
         representations will be used based on the field annotation.
@@ -109,6 +111,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str = "",
+        cols: int = 4,
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
         submit_on_enter: bool = False,
@@ -144,10 +147,10 @@ class ModelForm(html.Div):
             if not sections or not any(
                 [f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields
             ):
-                children = [self.grid(list(field_inputs.values()))]
+                children = [self.grid(list(field_inputs.values()), cols=cols)]
             else:
                 children = self.handle_sections(
-                    field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
+                    field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path, cols=cols
                 )
 
             children.extend(
@@ -170,7 +173,7 @@ class ModelForm(html.Div):
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
-                    "style": {"containerType": "inline-size"} | (container_kwargs.pop("style", {})),
+                    "style": {"containerType": "inline-size", "--pydf-cols": f"{cols}"} | (container_kwargs.pop("style", {})),
                 }
                 if not path
                 else {}
@@ -231,7 +234,7 @@ class ModelForm(html.Div):
             if disc_vals and field_name == discriminator:
                 field_info = deepcopy(field_info)  # noqa: PLW2901
                 field_info.annotation = Literal[disc_vals]
-                more_kwargs |= {"n_cols": 4, "field_id_meta": "discriminator"}
+                more_kwargs |= {"n_cols": "var(--pydf-cols)", "field_id_meta": "discriminator"}
             if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
                     field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
@@ -262,6 +265,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str,
+        cols: int,
     ):
         """Handle the sections."""
         fields_not_in_sections = set(field_inputs) - set(
@@ -283,6 +287,7 @@ class ModelForm(html.Div):
             path=path,
             field_inputs=field_inputs,
             sections=sections,
+            cols=cols,
             **sections.render_kwargs,
         )
 
@@ -290,11 +295,11 @@ class ModelForm(html.Div):
             children = sections_render
         elif sections.remaining_fields_position == "top":
             children = [
-                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm", cols=cols)
             ] + sections_render
         else:
             children = sections_render + [
-                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
+                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm", cols=cols)
             ]
 
         return children
@@ -347,9 +352,14 @@ class ModelForm(html.Div):
         return children
 
     @classmethod
-    def grid(cls, children: Children, **kwargs):
+    def grid(cls, children: Children, cols: int, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
+        return dmc.SimpleGrid(
+            children,
+            className="pydantic-form-grid " + kwargs.pop("className", ""),
+            cols=cols,
+            **kwargs,
+        )
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913
@@ -360,6 +370,7 @@ class ModelForm(html.Div):
         path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
+        cols: int,
         **_kwargs,
     ):
         """Render the form sections as accordion."""
@@ -376,7 +387,7 @@ class ModelForm(html.Div):
                                 ),
                             ),
                             dmc.AccordionPanel(
-                                cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
+                                cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
                             ),
                         ],
                         value=section.name,
@@ -414,6 +425,7 @@ class ModelForm(html.Div):
         path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
+        cols: int,
         **_kwargs,
     ):
         """Render the form sections as tabs."""
@@ -440,7 +452,7 @@ class ModelForm(html.Div):
                     ),
                     *[
                         dmc.TabsPanel(
-                            cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
+                            cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
                             value=section.name,
                         )
                         for section in sections.sections
@@ -464,6 +476,7 @@ class ModelForm(html.Div):
         field_inputs: dict[str, Component],
         sections: Sections,
         additional_steps: list = None,
+        cols: int,
         **kwargs,
     ):
         """Render the form sections as steps."""
@@ -489,7 +502,7 @@ class ModelForm(html.Div):
                 dmc.StepperStep(
                     label=section.name,
                     icon=DashIconify(icon=section.icon) if section.icon else None,
-                    children=cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
+                    children=cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
                 )
                 for section in sections.sections
             ]

@@ -186,7 +186,8 @@ class ModelField(BaseField):
                     "padding": "0.125rem 0.5rem 0.5rem",
                 },
             },
-            style={"gridColumn": "span var(--col-4-4)"},
+            style={"--n-cols": "var(--pydf-cols)"},
+            className="pydantic-form-field",
         )
 
     def _render(  # noqa: PLR0913

@@ -139,7 +139,8 @@ class TransferListField(BaseField):
                         ),
                     ],
                     gap="0.375rem",
-                    style={"gridColumn": "span var(--col-2-4)"},
+                    className="pydantic-form-field",
+                    style={"--n-cols": "calc(var(--pydf-cols) / 2)"},
                 ),
                 # Second list
                 dmc.Stack(
@@ -164,7 +165,8 @@ class TransferListField(BaseField):
                         ),
                     ],
                     gap="0.375rem",
-                    style={"gridColumn": "span var(--col-2-4)"},
+                    className="pydantic-form-field",
+                    style={"--n-cols": "calc(var(--pydf-cols) / 2)"},
                 ),
                 # This input holds the actual value as well as some metadata to pass to callbacks
                 dmc.JsonInput(
