@@ -1,9 +1,9 @@
 .pydantic-form-grid {
-    grid-template-columns: repeat(var(--pydf-cols), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--pydf-form-cols), minmax(0, 1fr));
 }
 
 .pydantic-form-field {
-    grid-column: span var(--n-cols);
+    grid-column: span var(--pydf-field-cols);
 }
 
 @container (max-width: 40rem) {

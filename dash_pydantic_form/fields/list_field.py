@@ -554,7 +554,7 @@ class ListField(BaseField):
                 ),
             ],
             className="pydantic-form-field",
-            style={"--n-cols": "var(--pydf-cols)"},
+            style={"--pydf-field-cols": "var(--pydf-form-cols)"},
             gap="0.5rem",
             mt="sm",
         )

@@ -114,7 +114,7 @@ class BaseField(BaseModel):
     def model_post_init(self, _context):
         """Model post init."""
         if self.n_cols is None:
-            self.n_cols = "var(--pydf-cols)" if self.full_width else "calc(var(--pydf-cols) / 2)"
+            self.n_cols = "var(--pydf-form-cols)" if self.full_width else "calc(var(--pydf-form-cols) / 2)"
         if self.input_kwargs is None:
             self.input_kwargs = {}
         if self.model_extra:
@@ -171,7 +171,9 @@ class BaseField(BaseModel):
         visible = self.visible
 
         if visible is None or visible is True:
-            return html.Div(inputs, className="pydantic-form-field", style={"--n-cols": f"{self.n_cols}"}, title=title)
+            return html.Div(
+                inputs, className="pydantic-form-field", style={"--pydf-field-cols": f"{self.n_cols}"}, title=title
+            )
 
         if field_info.default == PydanticUndefined and field_info.default_factory is None:
             logging.warning(
@@ -391,7 +393,7 @@ class BaseField(BaseModel):
             className="pydantic-form-field",
             style={
                 "display": None if self.check_visibility(current_value, operator, expected_value) else "none",
-                "--n-cols": f"{self.n_cols}",
+                "--pydf-field-cols": f"{self.n_cols}",
             },
             title=title if index == n_visibility_fields - 1 else None,
         )

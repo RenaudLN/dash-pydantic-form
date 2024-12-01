@@ -186,7 +186,7 @@ class ModelField(BaseField):
                     "padding": "0.125rem 0.5rem 0.5rem",
                 },
             },
-            style={"--n-cols": "var(--pydf-cols)"},
+            style={"--pydf-field-cols": "var(--pydf-form-cols)"},
             className="pydantic-form-field",
         )
 
