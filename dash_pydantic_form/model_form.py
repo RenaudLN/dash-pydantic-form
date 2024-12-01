@@ -173,7 +173,8 @@ class ModelForm(html.Div):
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
-                    "style": {"containerType": "inline-size", "--pydf-cols": f"{cols}"} | (container_kwargs.pop("style", {})),
+                    "style": {"containerType": "inline-size", "--pydf-cols": f"{cols}"}
+                    | (container_kwargs.pop("style", {})),
                 }
                 if not path
                 else {}
@@ -387,7 +388,10 @@ class ModelForm(html.Div):
                                 ),
                             ),
                             dmc.AccordionPanel(
-                                cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
+                                cls.grid(
+                                    [field_inputs[field] for field in section.fields if field in field_inputs],
+                                    cols=cols,
+                                ),
                             ),
                         ],
                         value=section.name,
@@ -452,7 +456,9 @@ class ModelForm(html.Div):
                     ),
                     *[
                         dmc.TabsPanel(
-                            cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
+                            cls.grid(
+                                [field_inputs[field] for field in section.fields if field in field_inputs], cols=cols
+                            ),
                             value=section.name,
                         )
                         for section in sections.sections
@@ -502,7 +508,9 @@ class ModelForm(html.Div):
                 dmc.StepperStep(
                     label=section.name,
                     icon=DashIconify(icon=section.icon) if section.icon else None,
-                    children=cls.grid([field_inputs[field] for field in section.fields if field in field_inputs], cols=cols),
+                    children=cls.grid(
+                        [field_inputs[field] for field in section.fields if field in field_inputs], cols=cols
+                    ),
                 )
                 for section in sections.sections
             ]
