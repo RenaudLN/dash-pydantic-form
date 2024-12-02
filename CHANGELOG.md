@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Option to change the available number of columns in the form. For backwards compatibility, the default is set to 4.
+- Possibility to use a float in fields repr `n_cols`, representing a fraction of the form columns.
 
 ## [0.9.0] - 2024-11-13
 ### Added

@@ -66,7 +66,14 @@ class BaseField(BaseModel):
         default=None,
         description="Whether to display a required asterisk. If not provided, uses pydantic's field `is_required`.",
     )
-    n_cols: int | str | None = Field(default=None, description="Number of form columns the fields spans.")
+    n_cols: int | float | str | None = Field(
+        default=None,
+        description="Number of form columns the fields spans. "
+        "If an int is provided, the field will span that many columns. "
+        "If a float is provided, it should be between 0 and 1 and represent a share of the available columns. "
+        "If a string is provided, it should represent the css to go with `grid-column: span <x>`. "
+        "If None, will default to half the available columns.",
+    )
     visible: bool | VisibilityFilter | list[VisibilityFilter] | None = Field(
         default=None,
         description=(
@@ -115,6 +122,8 @@ class BaseField(BaseModel):
         """Model post init."""
         if self.n_cols is None:
             self.n_cols = "var(--pydf-form-cols)" if self.full_width else "calc(var(--pydf-form-cols) / 2)"
+        if isinstance(self.n_cols, float) and (self.n_cols < 0 or self.n_cols > 1):
+            raise ValueError("Field n_cols must be between 0 and 1 when using a float.")
         if self.input_kwargs is None:
             self.input_kwargs = {}
         if self.model_extra:
@@ -131,6 +140,15 @@ class BaseField(BaseModel):
             self.input_kwargs["className"] = self.input_kwargs.get("className", "") + " read-only"
         if self.field_id_meta is None:
             self.field_id_meta = ""
+
+    @property
+    def n_cols_css(self):
+        """Get number of columns CSS variable."""
+        if isinstance(self.n_cols, str):
+            return self.n_cols
+        if isinstance(self.n_cols, float):
+            return f"calc(var(--pydf-form-cols) * {self.n_cols})"
+        return f"{self.n_cols}"
 
     class ids:
         """Form ids."""
@@ -172,7 +190,7 @@ class BaseField(BaseModel):
 
         if visible is None or visible is True:
             return html.Div(
-                inputs, className="pydantic-form-field", style={"--pydf-field-cols": f"{self.n_cols}"}, title=title
+                inputs, className="pydantic-form-field", style={"--pydf-field-cols": self.n_cols_css}, title=title
             )
 
         if field_info.default == PydanticUndefined and field_info.default_factory is None:
@@ -393,7 +411,7 @@ class BaseField(BaseModel):
             className="pydantic-form-field",
             style={
                 "display": None if self.check_visibility(current_value, operator, expected_value) else "none",
-                "--pydf-field-cols": f"{self.n_cols}",
+                "--pydf-field-cols": self.n_cols_css,
             },
             title=title if index == n_visibility_fields - 1 else None,
         )

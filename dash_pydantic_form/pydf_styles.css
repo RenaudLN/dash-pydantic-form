@@ -1,16 +1,17 @@
 .pydantic-form-grid {
-    grid-template-columns: repeat(var(--pydf-form-cols), minmax(0, 1fr));
+    display: flex !important;
+    flex-direction: column;
+}
+
+@container (min-width: 40rem) {
+    .pydantic-form-grid {
+        display: grid !important;
+        grid-template-columns: repeat(var(--pydf-form-cols), minmax(0, 1fr));
+    }
 }
 
 .pydantic-form-field {
     grid-column: span var(--pydf-field-cols);
-}
-
-@container (max-width: 40rem) {
-    .pydantic-form-grid {
-        display: flex !important;
-        flex-direction: column;
-    }
 }
 
 [data-mantine-color-scheme="dark"] .ag-theme-alpine.ag-themed {
