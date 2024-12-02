@@ -11,10 +11,6 @@
         display: flex !important;
         flex-direction: column;
     }
-
-    .pydantic-form-field {
-        grid-column: span 1;
-    }
 }
 
 [data-mantine-color-scheme="dark"] .ag-theme-alpine.ag-themed {

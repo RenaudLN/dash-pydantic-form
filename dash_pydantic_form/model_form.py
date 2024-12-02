@@ -64,7 +64,7 @@ class ModelForm(html.Div):
     form_id: str
         Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID.
-    cols: str
+    cols: int
         Number of columns in the form, defaults to 4.
     fields_repr: dict[str, dict | BaseField] | None
         Mapping between field name and field representation. If not provided, default field
@@ -353,11 +353,7 @@ class ModelForm(html.Div):
     @classmethod
     def grid(cls, children: Children, **kwargs):
         """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(
-            children,
-            className="pydantic-form-grid " + kwargs.pop("className", ""),
-            **kwargs,
-        )
+        return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913
