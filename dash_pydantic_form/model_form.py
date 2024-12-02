@@ -64,6 +64,8 @@ class ModelForm(html.Div):
     form_id: str
         Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID.
+    cols: int
+        Number of columns in the form, defaults to 4.
     fields_repr: dict[str, dict | BaseField] | None
         Mapping between field name and field representation. If not provided, default field
         representations will be used based on the field annotation.
@@ -109,6 +111,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str = "",
+        cols: int = 4,
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
         submit_on_enter: bool = False,
@@ -170,7 +173,8 @@ class ModelForm(html.Div):
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
-                    "style": {"containerType": "inline-size"} | (container_kwargs.pop("style", {})),
+                    "style": {"containerType": "inline-size", "--pydf-form-cols": f"{cols}"}
+                    | (container_kwargs.pop("style", {})),
                 }
                 if not path
                 else {}
@@ -231,7 +235,7 @@ class ModelForm(html.Div):
             if disc_vals and field_name == discriminator:
                 field_info = deepcopy(field_info)  # noqa: PLW2901
                 field_info.annotation = Literal[disc_vals]
-                more_kwargs |= {"n_cols": 4, "field_id_meta": "discriminator"}
+                more_kwargs |= {"n_cols": "var(--pydf-form-cols)", "field_id_meta": "discriminator"}
             if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
                     field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)

@@ -64,10 +64,10 @@ class Desk(BaseModel):
 
     height: Quantity = Field(
         repr_type="Quantity",
-        repr_kwargs={"unit_options": ["m", "cm", "mm", "ft", "in"], "decimalScale": 3},
+        repr_kwargs={"unit_options": ["m", "cm", "mm", "ft", "in"], "decimalScale": 3, "n_cols": 1 / 3},
     )
-    material: str
-    color: str | None = Field(default=None, repr_type="Color")
+    material: str = Field(repr_kwargs={"n_cols": 1 / 3})
+    color: str | None = Field(default=None, repr_type="Color", repr_kwargs={"n_cols": 1 / 3})
 
 
 class WorkStation(BaseModel):
@@ -158,7 +158,7 @@ class Employee(BaseModel):
             "backend": "gs",
             "prefix": "gs://ecmwf-open-data",
             "path_type": "directory",
-            "n_cols": 4,
+            "n_cols": 1.0,
             "value_includes_prefix": True,
         },
         default=None,
@@ -232,6 +232,7 @@ app.layout = dmc.MantineProvider(
                             # submit_on_enter=True,
                             # debounce_inputs=200,
                             # locale="fr",
+                            cols=12,
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},
                                 "metadata": {
