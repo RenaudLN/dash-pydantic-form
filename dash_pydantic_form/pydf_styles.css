@@ -11,7 +11,7 @@
 }
 
 .pydantic-form-field {
-    grid-column: span var(--pydf-field-cols);
+    grid-column: span min(var(--pydf-field-cols), var(--pydf-form-cols));
 }
 
 [data-mantine-color-scheme="dark"] .ag-theme-alpine.ag-themed {

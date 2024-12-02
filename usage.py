@@ -158,7 +158,7 @@ class Employee(BaseModel):
             "backend": "gs",
             "prefix": "gs://ecmwf-open-data",
             "path_type": "directory",
-            "n_cols": 4,
+            "n_cols": 1.0,
             "value_includes_prefix": True,
         },
         default=None,
