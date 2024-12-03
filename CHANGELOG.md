@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Option to change the available number of columns in the form. For backwards compatibility, the default is set to 4.
 - Possibility to use a float in fields repr `n_cols`, representing a fraction of the form columns.
 
+### Fixed
+- List field allows discriminated models in nesting
+
 ## [0.9.1] - 2024-11-19
 ### Fixed
 - Date comparator in Table field works with Datetimes

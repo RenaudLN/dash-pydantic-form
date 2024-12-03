@@ -90,12 +90,7 @@ class WorkStation(BaseModel):
 class HomeOffice(BaseModel):
     """Home office model."""
 
-    type: Literal["home_office"] = Field(
-        json_schema_extra={
-            "repr_type": "RadioItems",
-            "repr_kwargs": {"options_labels": {"home_office": "Home", "work_office": "Work"}},
-        },
-    )
+    type: Literal["home_office"]
     has_workstation: bool = Field(title="Has workstation", description="Does the employee have a suitable workstation")
     workstation: WorkStation | None = Field(
         title="Workstation",
@@ -107,12 +102,7 @@ class HomeOffice(BaseModel):
 class WorkOffice(BaseModel):
     """Work office model."""
 
-    type: Literal["work_office"] = Field(
-        json_schema_extra={
-            "repr_type": "RadioItems",
-            "repr_kwargs": {"options_labels": {"home_office": "Home", "work_office": "Work"}},
-        },
-    )
+    type: Literal["work_office"]
     commute_time: int = Field(title="Commute time", ge=0, repr_kwargs={"suffix": " min"})
 
 
@@ -128,7 +118,14 @@ class Metadata(BaseModel):
         },
     )
     siblings: int | None = Field(title="Siblings", default=None, ge=0)
-    location: HomeOffice | WorkOffice | None = Field(title="Work location", default=None, discriminator="type")
+    location: HomeOffice | WorkOffice | None = Field(
+        title="Work location",
+        default=None,
+        discriminator="type",
+        repr_kwargs={
+            "fields_repr": {"type": fields.RadioItems(options_labels={"home_office": "Home", "work_office": "Work"})}
+        },
+    )
 
 
 class Employee(BaseModel):
@@ -163,7 +160,8 @@ class Employee(BaseModel):
         },
         default=None,
     )
-    metadata: Metadata | None = Field(title="Employee metadata", default=None)
+    metadata: list[Metadata] = Field(title="Employee metadata", default_factory=list)
+    # metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
         title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
@@ -176,19 +174,21 @@ bob = Employee(
     joined="2020-01-01",
     mini_bio="### Birth\nSomething something\n\n### Education\nCollege",
     office="au",
-    metadata={
-        "languages": ["fr", "en"],
-        "siblings": 2,
-        "location": {
-            "type": "home_office",
-            "has_workstation": True,
-            "workstation": {
-                "has_desk": True,
-                "has_monitor": False,
-                "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
-            },
-        },
-    },
+    metadata=[],
+    # metadata=None,
+    # metadata={
+    #     "languages": ["fr", "en"],
+    #     "siblings": 2,
+    #     "location": {
+    #         "type": "home_office",
+    #         "has_workstation": True,
+    #         "workstation": {
+    #             "has_desk": True,
+    #             "has_monitor": False,
+    #             "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
+    #         },
+    #     },
+    # },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
     # resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",

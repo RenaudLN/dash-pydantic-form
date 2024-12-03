@@ -173,6 +173,8 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
         next_item = list(item.values())[first_part]
     elif isinstance(item, list) and isinstance(first_part, int):
         next_item = item[first_part]
+    elif is_idx_template(first_part):
+        next_item = None
     else:
         next_item = item.get(first_part)
 
@@ -219,7 +221,7 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
             raise TypeError("Discriminated models with nesting need passing item data to be displayed")
         discriminator_value = None if subitem is None else getattr(subitem, field_info.discriminator, None)
         subitem_cls, _ = handle_discriminated(
-            item.__class__, path, first_annotation, field_info.discriminator, discriminator_value
+            item.__class__, parent, first_annotation, field_info.discriminator, discriminator_value
         )
         return get_subitem_cls(subitem_cls, SEP.join(path[1:]), item=subitem)
     if (
@@ -227,6 +229,10 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
         and (isinstance(second_part, int) or is_idx_template(second_part))
         and get_args(first_annotation)
     ):
+        try:
+            subitem = subitem[second_part] if subitem is not None else None
+        except:  # noqa: E722
+            subitem = None
         return get_subitem_cls(
             get_non_null_annotation(get_args(first_annotation)[0]),
             SEP.join(path[2:]),
