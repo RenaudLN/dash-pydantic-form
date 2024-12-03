@@ -344,5 +344,4 @@ class DictField(ListField):
             className="pydantic-form-field",
             style={"--pydf-field-cols": "var(--pydf-form-cols)"},
             gap="0.5rem",
-            mt="sm",
         )
