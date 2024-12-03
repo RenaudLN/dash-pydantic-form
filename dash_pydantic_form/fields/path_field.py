@@ -29,7 +29,7 @@ class PathField(BaseField):
     value_includes_prefix: bool = False
     page_size: int = 20
 
-    class ids(BaseField.ids):  # pylint: disable = invalid-name
+    class ids(BaseField.ids):
         """Model list field ids."""
 
         modal = partial(field_dependent_id, "_pydf-path-field-modal")

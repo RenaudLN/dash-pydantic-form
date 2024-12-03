@@ -60,7 +60,7 @@ class TransferListField(BaseField):
 
     getters: ClassVar[dict[str, Callable[[str | None, int | None], list[str]]]] = {}
 
-    class ids:
+    class ids(BaseField.ids):
         """TransferListField ids."""
 
         search = partial(side_id, "__trl-search-input")

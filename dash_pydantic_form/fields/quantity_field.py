@@ -36,7 +36,7 @@ class QuantityField(BaseField):
 
     kwargs_for_both: ClassVar[list[str]] = ("size",)
 
-    class ids:
+    class ids(BaseField.ids):
         """Quantity field ids."""
 
         conversion_store = partial(common_ids.field_dependent_id, "_pydf-quantity-conversions")
