@@ -3,6 +3,7 @@ from typing import Literal
 import dash_mantine_components as dmc
 from dash import Dash
 from pydantic import BaseModel, Field
+from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ModelForm, ids
 from tests.utils import (
@@ -160,3 +161,38 @@ def test_du004_discriminated_in_discriminated(dash_duo):
     set_input(dash_duo, ids.value_field(aio_id, form_id, "b", parent="pet:options"), "456")
     set_select(dash_duo, ids.value_field(aio_id, form_id, "species", parent="pet", meta="discriminator"), "dog")
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="pet"), False)
+
+
+def test_du0005_list_discriminated_union(dash_duo):
+    """Test a discriminated union nested in a model."""
+
+    class Cat(BaseModel):
+        species: Literal["cat"]
+        meows: bool = True
+
+    class Dog(BaseModel):
+        species: Literal["dog"]
+        barks: bool = True
+
+    class Nested(BaseModel):
+        pet: Cat | Dog | None = Field(title="Pet", discriminator="species", default=None)
+
+    class Basic(BaseModel):
+        nested: list[Nested] = Field(default_factory=list)
+
+    app = Dash(__name__)
+    item = Basic(nested=[{"pet": {"species": "cat"}}])
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(item, aio_id=aio_id, form_id=form_id))
+    check_ids_exist(
+        app.layout,
+        [ids.checked_field(aio_id, form_id, "meows", parent="nested:0:pet")],
+    )
+    dash_duo.start_server(app)
+    dash_duo.driver.find_element(By.CSS_SELECTOR, ".mantine-Accordion-control").click()
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent="nested:0:pet"), False)
+    set_select(
+        dash_duo, ids.value_field(aio_id, form_id, "species", parent="nested:0:pet", meta="discriminator"), "dog"
+    )
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="nested:0:pet"), False)
