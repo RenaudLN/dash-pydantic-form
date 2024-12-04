@@ -227,9 +227,9 @@ class ModelForm(html.Div):
             if field_name in (excluded_fields or []):
                 continue
             more_kwargs = {}
-            if read_only is not None:
+            if read_only:
                 more_kwargs["read_only"] = read_only
-            if debounce_inputs is not None:
+            if debounce_inputs:
                 more_kwargs["debounce"] = debounce_inputs
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
