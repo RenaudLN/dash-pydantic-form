@@ -2,7 +2,7 @@ import contextlib
 import itertools
 from copy import deepcopy
 from functools import partial
-from typing import Literal, Union
+from typing import Annotated, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import (
@@ -187,6 +187,8 @@ class ModelForm(html.Div):
     ) -> tuple[type[BaseModel], tuple]:
         """Get the subitem of a model at a given parent, handling type unions."""
         subitem_cls = get_subitem_cls(item.__class__, path, item=item)
+        if get_origin(subitem_cls) is Annotated:
+            subitem_cls = get_args(subitem_cls)[0]
 
         # Handle type unions
         disc_vals = None

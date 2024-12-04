@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 import dash_mantine_components as dmc
 from dash import Dash
@@ -210,7 +210,7 @@ def test_du0006_list_discriminated_union(dash_duo):
         barks: bool = True
 
     class Basic(BaseModel):
-        pets: list[Cat | Dog] = Field(default_factory=list, discriminator="species")
+        pets: list[Annotated[Cat | Dog, Field(discriminator="species")]] = Field(default_factory=list)
 
     app = Dash(__name__)
     item = Basic(pets=[{"species": "cat"}])

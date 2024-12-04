@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Callable
 from functools import partial
-from typing import Literal
+from typing import Literal, get_args
 
 import dash_mantine_components as dmc
 from dash import (
@@ -388,6 +388,12 @@ class ListField(BaseField):
         if type_ not in [Type.MODEL_LIST, Type.DISCRIMINATED_MODEL_LIST] and self.render_type != "scalar":
             raise ValueError("Cannot render non model list as non scalar")
 
+        discriminator = (
+            get_args(get_args(field_info.annotation)[0])[1].discriminator
+            if type_ == Type.DISCRIMINATED_MODEL_LIST
+            else None
+        )
+
         value: list = self.get_value(item, field, parent) or []
 
         class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
@@ -406,7 +412,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
-                        discriminator=field_info.discriminator,
+                        discriminator=discriminator,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -444,7 +450,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
-                        discriminator=field_info.discriminator,
+                        discriminator=discriminator,
                     )
                     for i, _ in enumerate(value)
                 ],
@@ -494,7 +500,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
-                        discriminator=field_info.discriminator,
+                        discriminator=discriminator,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -525,7 +531,7 @@ class ListField(BaseField):
             items_deletable=self.items_deletable,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
-            discriminator=field_info.discriminator,
+            discriminator=discriminator,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)

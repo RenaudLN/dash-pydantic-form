@@ -5,9 +5,10 @@ from datetime import date, time
 from enum import Enum
 from numbers import Number
 from types import UnionType
-from typing import Any, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError, create_model
+from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
 SEP = ":"
@@ -55,7 +56,15 @@ class Type(Enum):
             ann_args = get_args(annotation)
             if not ann_args:
                 return cls.UNKOWN_LIST
-            args_type = Type.classify(ann_args[0], discriminator=discriminator, depth=1)
+            if get_origin(ann_args[0]) is Annotated:
+                sub_ann = get_args(ann_args[0])[0]
+                info = get_args(ann_args[0])[1]
+                if isinstance(info, FieldInfo):
+                    args_type = Type.classify(sub_ann, discriminator=info.discriminator, depth=1)
+                else:
+                    args_type = Type.classify(sub_ann, depth=1)
+            else:
+                args_type = Type.classify(ann_args[0], depth=1)
             if args_type == Type.SCALAR:
                 return cls.SCALAR_LIST
             if args_type == Type.LITERAL:
@@ -325,8 +334,11 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
         elif type_ == Type.DISCRIMINATED_MODEL_LIST and isinstance(val, list):
             new_val = []
             sub_ann = get_args(ann)[0]
+            # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
+            sub_ann2 = get_args(sub_ann)[0]
+            discriminator = get_args(sub_ann)[1].discriminator
             for vv in val:
-                new_val.append(_construct_handle_discriminated(vv, field_info.discriminator, sub_ann))
+                new_val.append(_construct_handle_discriminated(vv, discriminator, sub_ann2))
             updated[key] = new_val
 
     return data_model.model_construct(**updated)
