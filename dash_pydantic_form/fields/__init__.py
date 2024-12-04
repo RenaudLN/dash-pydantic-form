@@ -55,7 +55,7 @@ def get_default_repr(field_info: FieldInfo | None, annotation: type | None = Non
     if type_ in [Type.MODEL, Type.DISCRIMINATED_MODEL]:
         return fields.Model(**kwargs)
 
-    if type_ in [Type.MODEL_LIST, Type.SCALAR_LIST]:
+    if type_ in [Type.MODEL_LIST, Type.DISCRIMINATED_MODEL_LIST, Type.SCALAR_LIST]:
         if type_ == Type.SCALAR_LIST:
             kwargs.update(render_type="scalar")
         return fields.List(**kwargs)

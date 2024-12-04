@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 import dash_mantine_components as dmc
 from dash import Dash
@@ -163,8 +163,8 @@ def test_du004_discriminated_in_discriminated(dash_duo):
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="pet"), False)
 
 
-def test_du0005_list_discriminated_union(dash_duo):
-    """Test a discriminated union nested in a model."""
+def test_du0005_list_nested_discriminated_union(dash_duo):
+    """Test a list of nested models with discriminated union field."""
 
     class Cat(BaseModel):
         species: Literal["cat"]
@@ -196,3 +196,33 @@ def test_du0005_list_discriminated_union(dash_duo):
         dash_duo, ids.value_field(aio_id, form_id, "species", parent="nested:0:pet", meta="discriminator"), "dog"
     )
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="nested:0:pet"), False)
+
+
+def test_du0006_list_discriminated_union(dash_duo):
+    """Test a list of discriminated unions."""
+
+    class Cat(BaseModel):
+        species: Literal["cat"]
+        meows: bool = True
+
+    class Dog(BaseModel):
+        species: Literal["dog"]
+        barks: bool = True
+
+    class Basic(BaseModel):
+        pets: list[Annotated[Cat | Dog, Field(discriminator="species")]] = Field(default_factory=list)
+
+    app = Dash(__name__)
+    item = Basic(pets=[{"species": "cat"}])
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(item, aio_id=aio_id, form_id=form_id))
+    check_ids_exist(
+        app.layout,
+        [ids.checked_field(aio_id, form_id, "meows", parent="pets:0")],
+    )
+    dash_duo.start_server(app)
+    dash_duo.driver.find_element(By.CSS_SELECTOR, ".mantine-Accordion-control").click()
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent="pets:0"), False)
+    set_select(dash_duo, ids.value_field(aio_id, form_id, "species", parent="pets:0", meta="discriminator"), "dog")
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="pets:0"), False)
