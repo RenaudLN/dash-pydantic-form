@@ -25,6 +25,7 @@ class Type(Enum):
     SCALAR_LIST = "scalar_list"
     LITERAL_LIST = "literal_list"
     UNKOWN_LIST = "unknown_list"
+    DISCRIMINATED_MODEL_LIST = "discriminated_model_list"
     MODEL_DICT = "model_dict"
     SCALAR_DICT = "scalar_dict"
     LITERAL_DICT = "literal_dict"
@@ -54,13 +55,15 @@ class Type(Enum):
             ann_args = get_args(annotation)
             if not ann_args:
                 return cls.UNKOWN_LIST
-            args_type = Type.classify(ann_args[0], depth=1)
+            args_type = Type.classify(ann_args[0], discriminator=discriminator, depth=1)
             if args_type == Type.SCALAR:
                 return cls.SCALAR_LIST
             if args_type == Type.LITERAL:
                 return cls.LITERAL_LIST
             if args_type == Type.MODEL:
                 return cls.MODEL_LIST
+            if args_type == Type.DISCRIMINATED_MODEL:
+                return cls.DISCRIMINATED_MODEL_LIST
             return cls.UNKOWN_LIST
 
         if get_origin(annotation) is dict and not depth:
@@ -315,22 +318,37 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
         type_ = Type.classify(ann, field_info.discriminator)
         if type_ == Type.MODEL:
             updated[key] = model_construct_recursive(val, ann)
-        elif type_ == Type.DISCRIMINATED_MODEL and field_info.discriminator in val:
-            disc_val = val[field_info.discriminator]
-            out = None
-            for possible in get_args(ann):
-                if not get_origin(possible.model_fields[field_info.discriminator].annotation) == Literal:
-                    raise ValueError("Discriminator must be a Literal")
-
-                if disc_val in get_args(possible.model_fields[field_info.discriminator].annotation):
-                    out = possible
-                    break
-            if out is not None:
-                updated[key] = model_construct_recursive(val, possible)
+        elif type_ == Type.DISCRIMINATED_MODEL:
+            updated[key] = _construct_handle_discriminated(val, field_info.discriminator, ann)
         elif type_ == Type.MODEL_LIST and isinstance(val, list):
             updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
+        elif type_ == Type.DISCRIMINATED_MODEL_LIST and isinstance(val, list):
+            new_val = []
+            sub_ann = get_args(ann)[0]
+            for vv in val:
+                new_val.append(_construct_handle_discriminated(vv, field_info.discriminator, sub_ann))
+            updated[key] = new_val
 
     return data_model.model_construct(**updated)
+
+
+def _construct_handle_discriminated(val: dict, discriminator: str | None, ann: type):
+    if discriminator is None or discriminator not in val:
+        return val
+
+    disc_val = val[discriminator]
+    out = None
+    for possible in get_args(ann):
+        if not get_origin(possible.model_fields[discriminator].annotation) == Literal:
+            raise ValueError("Discriminator must be a Literal")
+
+        if disc_val in get_args(possible.model_fields[discriminator].annotation):
+            out = possible
+            break
+
+    if out is not None:
+        return model_construct_recursive(val, out)
+    return val
 
 
 def from_form_data(data: dict, data_model: type[BaseModel]):

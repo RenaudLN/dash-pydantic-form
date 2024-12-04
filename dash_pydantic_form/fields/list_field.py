@@ -74,6 +74,7 @@ class ListField(BaseField):
     class ids(BaseField.ids):
         """Model list field ids."""
 
+        form_wrapper = partial(common_ids.field_dependent_id, "_pydf-model-form-wrapper")
         wrapper = partial(common_ids.field_dependent_id, "_pydf-list-field-wrapper")
         delete = partial(common_ids.field_dependent_id, "_pydf-list-field-delete")
         edit = partial(common_ids.field_dependent_id, "_pydf-list-field-edit")
@@ -99,6 +100,7 @@ class ListField(BaseField):
         sections: Sections | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
+        discriminator: str | None = None,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -134,14 +136,18 @@ class ListField(BaseField):
                     pos="relative",
                 ),
                 dmc.AccordionPanel(
-                    ModelForm(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        path=new_parent,
-                        fields_repr=fields_repr,
-                        sections=sections,
-                        read_only=read_only,
+                    html.Div(
+                        ModelForm(
+                            item=item,
+                            aio_id=aio_id,
+                            form_id=form_id,
+                            path=new_parent,
+                            fields_repr=fields_repr,
+                            sections=sections,
+                            read_only=read_only,
+                            discriminator=discriminator,
+                        ),
+                        id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                     ),
                 ),
             ],
@@ -161,6 +167,7 @@ class ListField(BaseField):
         sections: Sections | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
+        discriminator: str | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -169,15 +176,19 @@ class ListField(BaseField):
         new_parent = get_fullpath(parent, field, index)
         return dmc.Group(
             [
-                ModelForm(
-                    item=item,
-                    aio_id=aio_id,
-                    form_id=form_id,
-                    path=new_parent,
-                    fields_repr=fields_repr,
-                    sections=sections,
-                    container_kwargs={"style": {"flex": 1}},
-                    read_only=read_only,
+                html.Div(
+                    ModelForm(
+                        item=item,
+                        aio_id=aio_id,
+                        form_id=form_id,
+                        path=new_parent,
+                        fields_repr=fields_repr,
+                        sections=sections,
+                        container_kwargs={"style": {"flex": 1}},
+                        read_only=read_only,
+                        discriminator=discriminator,
+                    ),
+                    id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                 ),
             ]
             + items_deletable
@@ -211,6 +222,7 @@ class ListField(BaseField):
         sections: Sections | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
+        discriminator: str | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -255,14 +267,18 @@ class ListField(BaseField):
                     ),
                     dmc.Modal(
                         [
-                            ModelForm(
-                                item=item,
-                                aio_id=aio_id,
-                                form_id=form_id,
-                                path=new_parent,
-                                fields_repr=fields_repr,
-                                sections=sections,
-                                read_only=read_only,
+                            html.Div(
+                                ModelForm(
+                                    item=item,
+                                    aio_id=aio_id,
+                                    form_id=form_id,
+                                    path=new_parent,
+                                    fields_repr=fields_repr,
+                                    sections=sections,
+                                    read_only=read_only,
+                                    discriminator=discriminator,
+                                ),
+                                id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -367,9 +383,9 @@ class ListField(BaseField):
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
         type_ = Type.classify(field_info.annotation, field_info.discriminator)
-        if type_ == Type.MODEL_LIST and self.render_type == "scalar":
+        if type_ in [Type.MODEL_LIST, Type.DISCRIMINATED_MODEL_LIST] and self.render_type == "scalar":
             raise ValueError("Cannot render model list as scalar")
-        if type_ != Type.MODEL_LIST and self.render_type != "scalar":
+        if type_ not in [Type.MODEL_LIST, Type.DISCRIMINATED_MODEL_LIST] and self.render_type != "scalar":
             raise ValueError("Cannot render non model list as non scalar")
 
         value: list = self.get_value(item, field, parent) or []
@@ -390,6 +406,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                        discriminator=field_info.discriminator,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -427,6 +444,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                        discriminator=field_info.discriminator,
                     )
                     for i, _ in enumerate(value)
                 ],
@@ -476,6 +494,7 @@ class ListField(BaseField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                        discriminator=field_info.discriminator,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -506,6 +525,7 @@ class ListField(BaseField):
             items_deletable=self.items_deletable,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
+            discriminator=field_info.discriminator,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
