@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - QuantityField and TransferList ids inherit from BaseField ids
+- fields_repr working for conditional fields on discriminated unions
 
 ## [0.9.2] - 2024-12-03
 ### Added

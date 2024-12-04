@@ -155,7 +155,6 @@ class ModelForm(html.Div):
 
             children.extend(
                 self.get_meta_children(
-                    subitem_cls=subitem_cls,
                     fields_repr=fields_repr,
                     sections=sections,
                     item=item,
@@ -307,7 +306,6 @@ class ModelForm(html.Div):
     def get_meta_children(  # noqa: PLR0913
         cls,
         *,
-        subitem_cls: type[BaseModel],
         fields_repr: dict[str, dict | BaseField],
         sections: Sections | None,
         item: BaseModel,
@@ -316,8 +314,6 @@ class ModelForm(html.Div):
         path: str,
     ):
         """Get 'meta' form children used for passing data to callbacks."""
-        from dash_pydantic_form.fields import get_default_repr
-
         children = []
         if not path:
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
@@ -326,13 +322,8 @@ class ModelForm(html.Div):
 
         fields_repr_dicts = (
             {
-                field_name: (
-                    get_default_repr(subitem_cls.model_fields[field_name], **field_repr)
-                    if isinstance(field_repr, dict)
-                    else field_repr
-                ).to_dict()
+                field_name: field_repr if isinstance(field_repr, dict) else field_repr.to_dict()
                 for field_name, field_repr in fields_repr.items()
-                if field_name in subitem_cls.model_fields
             }
             if fields_repr
             else None
@@ -600,9 +591,10 @@ def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict
     item = model_construct_recursive(form_data, model_cls)
 
     # Retrieve fields-repr and sections from the stored data
-    fields_repr: dict[str, BaseField] = {
-        k: BaseField.from_dict(v) for k, v in (form_specs["fields_repr"] or {}).items()
-    }
+    fields_repr: dict[str, BaseField] = form_specs["fields_repr"] or {}
+    for k, v in fields_repr.items():
+        with contextlib.suppress(KeyError):
+            fields_repr[k] = BaseField.from_dict(v)
     sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
 
     return ModelForm(
