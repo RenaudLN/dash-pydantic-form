@@ -225,7 +225,7 @@ app.layout = dmc.MantineProvider(
                             bob,
                             AIO_ID,
                             FORM_ID,
-                            read_only=True,
+                            # read_only=True,
                             # submit_on_enter=True,
                             # debounce_inputs=200,
                             # locale="fr",
