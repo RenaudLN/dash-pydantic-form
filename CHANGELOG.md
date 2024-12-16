@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - read_only was forced False on nested form elements when unset on the parent
+- read_only working for ChipGroup and MultiSelect
 
 ## [0.10.0] - 2024-12-04
 ### Added

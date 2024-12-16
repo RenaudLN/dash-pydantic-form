@@ -160,8 +160,7 @@ class Employee(BaseModel):
         },
         default=None,
     )
-    metadata: list[Metadata] = Field(title="Employee metadata", default_factory=list)
-    # metadata: Metadata | None = Field(title="Employee metadata", default=None)
+    metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
         title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
@@ -174,21 +173,19 @@ bob = Employee(
     joined="2020-01-01",
     mini_bio="### Birth\nSomething something\n\n### Education\nCollege",
     office="au",
-    metadata=[],
-    # metadata=None,
-    # metadata={
-    #     "languages": ["fr", "en"],
-    #     "siblings": 2,
-    #     "location": {
-    #         "type": "home_office",
-    #         "has_workstation": True,
-    #         "workstation": {
-    #             "has_desk": True,
-    #             "has_monitor": False,
-    #             "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
-    #         },
-    #     },
-    # },
+    metadata={
+        "languages": ["fr", "en"],
+        "siblings": 2,
+        "location": {
+            "type": "home_office",
+            "has_workstation": True,
+            "workstation": {
+                "has_desk": True,
+                "has_monitor": False,
+                "desk": {"height": {"value": 125, "unit": "cm"}, "material": "wood", "color": "#89284a"},
+            },
+        },
+    },
     pets=[{"name": "Rex", "species": "cat"}],
     jobs=["Engineer", "Lawyer"],
     # resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
