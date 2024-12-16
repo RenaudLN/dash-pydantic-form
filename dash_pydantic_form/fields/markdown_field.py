@@ -15,6 +15,7 @@ class MarkdownField(BaseField):
     """Markdown field."""
 
     full_width = True
+    base_component = dmc.Textarea
 
     class ids(BaseField.ids):
         """Model list field ids."""
