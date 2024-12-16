@@ -35,6 +35,7 @@ class QuantityField(BaseField):
     )
 
     kwargs_for_both: ClassVar[list[str]] = ("size",)
+    base_component = dmc.NumberInput
 
     class ids(BaseField.ids):
         """Quantity field ids."""

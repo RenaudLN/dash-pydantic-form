@@ -39,6 +39,7 @@ class ModelField(BaseField):
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     sections: Sections | None = Field(default=None, description="Sub-form sections.")
+    form_cols: int = Field(default=4, description="Number of columns in the form.")
 
     full_width = True
 
@@ -103,6 +104,7 @@ class ModelField(BaseField):
                                 fields_repr=self.fields_repr,
                                 sections=self.sections,
                                 read_only=self.read_only,
+                                form_cols=self.form_cols,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -117,6 +119,7 @@ class ModelField(BaseField):
                         title=title,
                         id=self.ids.modal(aio_id, form_id, field, parent=parent),
                         style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
+                        styles={"content": {"containerType": "inline-size"}},
                     ),
                 ],
                 gap="sm",
@@ -160,6 +163,7 @@ class ModelField(BaseField):
                                     sections=self.sections,
                                     discriminator=field_info.discriminator,
                                     read_only=self.read_only,
+                                    form_cols=self.form_cols,
                                 ),
                                 id=self.ids.form_wrapper(
                                     aio_id, form_id, field_info.discriminator or "", parent=get_fullpath(parent, field)

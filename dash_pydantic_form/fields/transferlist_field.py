@@ -43,7 +43,7 @@ def side_id(  # noqa: PLR0913
 class TransferListField(BaseField):
     """TransferListField."""
 
-    base_component = None
+    base_component = dmc.SimpleGrid
     full_width = True
 
     titles: tuple[str, str] | None = Field(default=None, description="List titles.")

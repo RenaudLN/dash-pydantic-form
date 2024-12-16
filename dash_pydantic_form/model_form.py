@@ -1,5 +1,6 @@
 import contextlib
 import itertools
+import warnings
 from copy import deepcopy
 from functools import partial
 from typing import Annotated, Literal, Union, get_args, get_origin
@@ -64,7 +65,7 @@ class ModelForm(html.Div):
     form_id: str
         Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID.
-    cols: int
+    form_cols: int
         Number of columns in the form, defaults to 4.
     fields_repr: dict[str, dict | BaseField] | None
         Mapping between field name and field representation. If not provided, default field
@@ -87,6 +88,8 @@ class ModelForm(html.Div):
     locale: str | None
         Locale to render the buttons and helpers in, currently English and French are supported.
         If left to None, will default to system locale, and fallback to English.
+    cols: int
+        Deprecated, use `form_cols` instead.
     """
 
     class ids:
@@ -111,7 +114,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str = "",
-        cols: int = 4,
+        form_cols: int = 4,
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
         sections: Sections | None = None,
         submit_on_enter: bool = False,
@@ -121,10 +124,15 @@ class ModelForm(html.Div):
         read_only: bool | None = None,
         debounce_inputs: int | None = None,
         locale: str = None,
+        cols: int = None,
     ) -> None:
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
                 item = item.model_construct()
+
+        if cols is not None:
+            warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
+            form_cols = cols
 
         fields_repr = fields_repr or {}
 
@@ -142,6 +150,7 @@ class ModelForm(html.Div):
                 discriminator=discriminator,
                 read_only=read_only,
                 debounce_inputs=debounce_inputs,
+                form_cols=form_cols,
             )
 
             if not sections or not any(
@@ -161,19 +170,22 @@ class ModelForm(html.Div):
                     aio_id=aio_id,
                     form_id=form_id,
                     path=path,
+                    form_cols=form_cols,
                 )
             )
 
         container_kwargs = container_kwargs or {}
+        style = {"--pydf-form-cols": f"{form_cols}"} | container_kwargs.pop("style", {})
+        if not path:
+            style |= {"containerType": "inline-size"}
 
         super().__init__(
             children=children,
+            style=style,
             **(
                 {
                     "id": self.ids.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
-                    "style": {"containerType": "inline-size", "--pydf-form-cols": f"{cols}"}
-                    | (container_kwargs.pop("style", {})),
                 }
                 if not path
                 else {}
@@ -216,6 +228,7 @@ class ModelForm(html.Div):
         discriminator: str | None,
         read_only: bool | None,
         debounce_inputs: int | None,
+        form_cols: int,
     ) -> dict[str, Component]:
         """Render each field in the form."""
         from dash_pydantic_form.fields import get_default_repr
@@ -226,7 +239,7 @@ class ModelForm(html.Div):
         for field_name, field_info in subitem_cls.model_fields.items():
             if field_name in (excluded_fields or []):
                 continue
-            more_kwargs = {}
+            more_kwargs = {"form_cols": form_cols}
             if read_only:
                 more_kwargs["read_only"] = read_only
             if debounce_inputs:
@@ -314,6 +327,7 @@ class ModelForm(html.Div):
         aio_id: str,
         form_id: str,
         path: str,
+        form_cols: int,
     ):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
@@ -336,6 +350,7 @@ class ModelForm(html.Div):
                 data={
                     "sections": sections.model_dump(mode="json") if sections else None,
                     "fields_repr": fields_repr_dicts,
+                    "form_cols": form_cols,
                 },
                 id=cls.ids.form_specs_store(aio_id, form_id, path),
             )
@@ -607,4 +622,5 @@ def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict
         discriminator=ctx.triggered_id["field"],
         sections=sections,
         fields_repr=fields_repr,
+        form_cols=form_specs["form_cols"],
     )

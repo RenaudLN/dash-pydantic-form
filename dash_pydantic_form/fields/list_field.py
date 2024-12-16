@@ -59,6 +59,7 @@ class ListField(BaseField):
     sections: Sections | None = Field(default=None, description="Sub-form sections.")
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
+    form_cols: int = Field(default=4, description="Number of columns in the form.")
 
     full_width = True
 
@@ -101,6 +102,7 @@ class ListField(BaseField):
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
+        form_cols: int = 4,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -146,6 +148,7 @@ class ListField(BaseField):
                             sections=sections,
                             read_only=read_only,
                             discriminator=discriminator,
+                            form_cols=form_cols,
                         ),
                         id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                     ),
@@ -168,6 +171,7 @@ class ListField(BaseField):
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
+        form_cols: int = 4,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -187,6 +191,7 @@ class ListField(BaseField):
                         container_kwargs={"style": {"flex": 1}},
                         read_only=read_only,
                         discriminator=discriminator,
+                        form_cols=form_cols,
                     ),
                     id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                 ),
@@ -223,6 +228,7 @@ class ListField(BaseField):
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
+        form_cols: int = 4,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -277,6 +283,7 @@ class ListField(BaseField):
                                     sections=sections,
                                     read_only=read_only,
                                     discriminator=discriminator,
+                                    form_cols=form_cols,
                                 ),
                                 id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
                             ),
@@ -294,6 +301,7 @@ class ListField(BaseField):
                         title=str(value),
                         id=cls.ids.modal(aio_id, form_id, "", parent=new_parent),
                         style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
+                        styles={"content": {"containerType": "inline-size"}},
                         opened=opened,
                     ),
                 ],
@@ -413,6 +421,7 @@ class ListField(BaseField):
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
+                        form_cols=self.form_cols,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -451,6 +460,7 @@ class ListField(BaseField):
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
+                        form_cols=self.form_cols,
                     )
                     for i, _ in enumerate(value)
                 ],
@@ -501,6 +511,7 @@ class ListField(BaseField):
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
+                        form_cols=self.form_cols,
                     )
                     for i, val in enumerate(value)
                 ],
@@ -532,6 +543,7 @@ class ListField(BaseField):
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
             discriminator=discriminator,
+            form_cols=self.form_cols,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
