@@ -723,7 +723,7 @@ class SelectField(BaseField):
         if Type.classify(field_info.annotation) == Type.SCALAR:
             return _get_label(value, data, value_repr)
         if Type.classify(field_info.annotation) == Type.SCALAR_LIST:
-            return [dmc.Badge(_get_label(x, data, value_repr), radius="sm", variant="light", tt="unset") for x in value]
+            return [dmc.Badge(_get_label(x, data, x), radius="sm", variant="light", tt="unset") for x in value]
         return value_repr
 
 
