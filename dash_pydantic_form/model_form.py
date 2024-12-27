@@ -106,7 +106,7 @@ class IdAccess:
     @overload
     def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
     def __get__(self, obj, objtype=None):
-        """Returns the ``ModelFormIdsFactory`` cass if accessed via the ``ModelForm`` class directly (ModelForm.ids)
+        """Returns the ``ModelFormIdsFactory`` class if accessed via the ``ModelForm`` class directly (ModelForm.ids)
         or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
         """
         if obj is None:
@@ -135,7 +135,7 @@ class ModelForm(html.Div):
         with existing values.
     aio_id: str | None
         All-in-one component ID. A pseudo-random string will be auto-generated if not provided.
-    form_id: str
+    form_id: str | None
         Form ID, can be used to create multiple forms on the same page. When working with databases
         this could be the document / record ID. A pseudo-random string will be auto-generated if not provided.
     form_cols: int
