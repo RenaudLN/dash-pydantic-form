@@ -1,9 +1,11 @@
 import contextlib
+import dataclasses as dc
 import itertools
+import uuid
 import warnings
 from copy import deepcopy
 from functools import partial
-from typing import Annotated, Literal, Union, get_args, get_origin
+from typing import Annotated, Literal, Union, get_args, get_origin, overload
 
 import dash_mantine_components as dmc
 from dash import (
@@ -19,7 +21,7 @@ from dash import (
     dcc,
     html,
 )
-from dash.development.base_component import Component
+from dash.development.base_component import Component, rd
 from dash_iconify import DashIconify
 from pydantic import BaseModel
 
@@ -51,6 +53,77 @@ SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
 
 
+class ModelFormIdsFactory:
+    """Factory functions for model form ids."""
+
+    form = partial(form_base_id, "_pydf-form")
+    main = partial(form_base_id, "_pydf-main")
+    errors = partial(form_base_id, "_pydf-errors")
+    accordion = partial(form_base_id, "_pydf-accordion")
+    tabs = partial(form_base_id, "_pydf-tabs")
+    steps = partial(form_base_id, "_pydf-steps")
+    steps_save = partial(form_base_id, "_pydf-steps-save")
+    steps_next = partial(form_base_id, "_pydf-steps-next")
+    steps_previous = partial(form_base_id, "_pydf-steps-previous")
+    steps_nsteps = partial(form_base_id, "_pydf-steps-nsteps")
+    model_store = partial(form_base_id, "_pydf-model-store")
+    form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
+
+
+@dc.dataclass(frozen=True)
+class ModelFormIds:
+    """Model form ids."""
+
+    form: dict[str, str]
+    main: dict[str, str]
+    errors: dict[str, str]
+    accordion: dict[str, str]
+    tabs: dict[str, str]
+    steps: dict[str, str]
+    steps_save: dict[str, str]
+    steps_next: dict[str, str]
+    steps_previous: dict[str, str]
+    steps_nsteps: dict[str, str]
+    model_store: dict[str, str]
+    form_specs_store: dict[str, str]
+
+    @classmethod
+    def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
+        """Instanciation from aio_id and form_id."""
+        return cls(
+            *(
+                getattr(ModelFormIdsFactory, id_field.name)(aio_id, form_id)
+                for id_field in dc.fields(cls)
+            )
+        )
+
+
+class IdAccess:
+    """Descriptor for handling access to either instances or the factory of model form ids via ``ModelForm`` class."""
+
+    @overload
+    def __get__(self, obj: "ModelForm", objtype=None) -> ModelFormIds: ...
+    @overload
+    def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
+    def __get__(self, obj, objtype=None):
+        """Returns the ``ModelFormIdsFactory`` cass if accessed via the ``ModelForm`` class directly (ModelForm.ids)
+        or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
+        """
+        if obj is None:
+            # access via class
+            return ModelFormIdsFactory
+
+        # access via instance
+        return obj._ids
+
+    def __set__(self, obj: "ModelForm", value: ModelFormIds | tuple[str, str]):
+        """Sets another set of model form ids to a ``ModelForm`` object."""
+        if isinstance(value, tuple):
+            value = ModelFormIds.from_basic_ids(*value)
+
+        obj._ids = value
+
+
 class ModelForm(html.Div):
     """Create a Dash form from a pydantic model.
 
@@ -60,11 +133,11 @@ class ModelForm(html.Div):
         The model to create the form from, can be the model class or an instance of the class.
         If the class is passed, the form will be empty. If an instance is passed, the form will be pre-filled
         with existing values.
-    aio_id: str
-        All-in-one component ID
+    aio_id: str | None
+        All-in-one component ID. A pseudo-random string will be auto-generated if not provided.
     form_id: str
         Form ID, can be used to create multiple forms on the same page. When working with databases
-        this could be the document / record ID.
+        this could be the document / record ID. A pseudo-random string will be auto-generated if not provided.
     form_cols: int
         Number of columns in the form, defaults to 4.
     fields_repr: dict[str, dict | BaseField] | None
@@ -92,27 +165,13 @@ class ModelForm(html.Div):
         Deprecated, use `form_cols` instead.
     """
 
-    class ids:
-        """Model form ids."""
-
-        form = partial(form_base_id, "_pydf-form")
-        main = partial(form_base_id, "_pydf-main")
-        errors = partial(form_base_id, "_pydf-errors")
-        accordion = partial(form_base_id, "_pydf-accordion")
-        tabs = partial(form_base_id, "_pydf-tabs")
-        steps = partial(form_base_id, "_pydf-steps")
-        steps_save = partial(form_base_id, "_pydf-steps-save")
-        steps_next = partial(form_base_id, "_pydf-steps-next")
-        steps_previous = partial(form_base_id, "_pydf-steps-previous")
-        steps_nsteps = partial(form_base_id, "_pydf-steps-nsteps")
-        model_store = partial(form_base_id, "_pydf-model-store")
-        form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
+    ids = IdAccess()
 
     def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
         item: BaseModel | type[BaseModel],
-        aio_id: str,
-        form_id: str,
+        aio_id: str | None = None,
+        form_id: str | None = None,
         path: str = "",
         form_cols: int = 4,
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
@@ -129,6 +188,10 @@ class ModelForm(html.Div):
         with contextlib.suppress(Exception):
             if issubclass(item, BaseModel):
                 item = item.model_construct()
+
+        aio_id = aio_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
+        form_id = form_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
+        self._ids = ModelFormIds.from_basic_ids(aio_id, form_id)
 
         if cols is not None:
             warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
@@ -184,7 +247,7 @@ class ModelForm(html.Div):
             style=style,
             **(
                 {
-                    "id": self.ids.form(aio_id, form_id, path),
+                    "id": ModelFormIdsFactory.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
                 }
                 if not path
