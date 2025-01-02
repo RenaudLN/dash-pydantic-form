@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to omit ``aio_id`` and/or ``form_id`` in ``ModelForm``'s instanciation so they get auto-generated
 - Possibility to use the ModelForm instance ids in a callback
 
+### Fixed
+- Table fields required cells are not highlighted when '0' is input
+
 ## [0.10.1] - 2024-12-16
 ### Fixed
 - read_only was forced False on nested form elements when unset on the parent

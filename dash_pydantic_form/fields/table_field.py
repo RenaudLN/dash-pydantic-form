@@ -335,7 +335,7 @@ class TableField(BaseField):
             "headerName": field_repr.get_title(field_info, field_name=field_name),
             "required": required_field,
             "cellClass": {
-                "function": "(params.value == null || params.value == '') ? 'required_cell' : ''",
+                "function": "(params.value == null || params.value === '') ? 'required_cell' : ''",
             }
             if required_field
             else None,
