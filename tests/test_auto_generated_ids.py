@@ -56,24 +56,9 @@ def test_agi0001_auto_generation():
 
     form = ModelForm(Basic)
     assert form.id == form.ids.form  # type: ignore
-    assert form.ids.form == {
-        'part': '_pydf-form',
-        'aio_id': aio_id,
-        'form_id': form_id,
-        'parent': ''
-    }
-    assert form.ids.main == {
-        'part': '_pydf-main',
-        'aio_id': aio_id,
-        'form_id': form_id,
-        'parent': ''
-    }
-    assert form.ids.errors == {
-        'part': '_pydf-errors',
-        'aio_id': aio_id,
-        'form_id': form_id,
-        'parent': ''
-    }
+    assert form.ids.form == {"part": "_pydf-form", "aio_id": aio_id, "form_id": form_id, "parent": ""}
+    assert form.ids.main == {"part": "_pydf-main", "aio_id": aio_id, "form_id": form_id, "parent": ""}
+    assert form.ids.errors == {"part": "_pydf-errors", "aio_id": aio_id, "form_id": form_id, "parent": ""}
 
     check_ids_exist(form, list(get_field_ids(Basic, aio_id, form_id)))
     check_elem_values(
@@ -113,7 +98,7 @@ def test_agi0002_usage_in_browser_and_callback(dash_duo):
 
     app.layout = dmc.MantineProvider(
         [
-            form:=ModelForm(item),
+            form := ModelForm(item),
             dmc.Text(id="output"),
         ]
     )
