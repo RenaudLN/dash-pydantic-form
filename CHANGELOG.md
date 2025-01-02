@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- possibility to omit ``aio_id`` and/or ``form_id`` in ``ModelForm``'s instanciation so they get auto-generated
+- Possibility to omit ``aio_id`` and/or ``form_id`` in ``ModelForm``'s instanciation so they get auto-generated
+- Possibility to use the ModelForm instance ids in a callback
 
 ## [0.10.1] - 2024-12-16
 ### Fixed

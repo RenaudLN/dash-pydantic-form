@@ -90,15 +90,10 @@ class ModelFormIds:
     @classmethod
     def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
         """Instanciation from aio_id and form_id."""
-        return cls(
-            *(
-                getattr(ModelFormIdsFactory, id_field.name)(aio_id, form_id)
-                for id_field in dc.fields(cls)
-            )
-        )
+        return cls(*(getattr(ModelFormIdsFactory, id_field.name)(aio_id, form_id) for id_field in dc.fields(cls)))
 
 
-class IdAccess:
+class IdAccessor:
     """Descriptor for handling access to either instances or the factory of model form ids via ``ModelForm`` class."""
 
     @overload
@@ -113,8 +108,11 @@ class IdAccess:
             # access via class
             return ModelFormIdsFactory
 
-        # access via instance
-        return obj._ids
+        if isinstance(obj, ModelForm):
+            # access via instance
+            return obj._ids
+
+        raise RuntimeError("IdAccessor should only be defined on ModelForm or an instance of ModelForm")
 
     def __set__(self, obj: "ModelForm", value: ModelFormIds | tuple[str, str]):
         """Sets another set of model form ids to a ``ModelForm`` object."""
@@ -165,7 +163,8 @@ class ModelForm(html.Div):
         Deprecated, use `form_cols` instead.
     """
 
-    ids = IdAccess()
+    ids = IdAccessor()
+    _ids: ModelFormIds
 
     def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
@@ -191,7 +190,7 @@ class ModelForm(html.Div):
 
         aio_id = aio_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
         form_id = form_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
-        self._ids = ModelFormIds.from_basic_ids(aio_id, form_id)
+        self.ids = (aio_id, form_id)
 
         if cols is not None:
             warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
