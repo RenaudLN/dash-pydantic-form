@@ -349,6 +349,15 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             for vv in val:
                 new_val.append(_construct_handle_discriminated(vv, discriminator, sub_ann2))
             updated[key] = new_val
+        elif type_ == Type.DISCRIMINATED_MODEL_DICT and isinstance(val, dict):
+            new_val = {}
+            sub_ann = get_args(ann)[1]
+            # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
+            sub_ann2 = get_args(sub_ann)[0]
+            discriminator = get_args(sub_ann)[1].discriminator
+            for kk, vv in val.items():
+                new_val[kk] = _construct_handle_discriminated(vv, discriminator, sub_ann2)
+            updated[key] = new_val
 
     return data_model.model_construct(**updated)
 

@@ -47,7 +47,7 @@ class Cat(Pet):
 class Person(BaseModel):
     # name: str
     # age: int
-    pets: list[Annotated[Dog | Cat, Field(discriminator="species")]] = Field(default_factory=list)
+    pets: dict[str, Annotated[Dog | Cat, Field(discriminator="species")]] = Field(default_factory=list)
 
 
 app.layout = dmc.MantineProvider(dmc.Container(ModelForm(Person, aio_id="person", form_id="form"), py="xl"))

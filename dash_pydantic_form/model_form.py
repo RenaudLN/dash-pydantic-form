@@ -689,7 +689,10 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
     for i, part in enumerate(parts):
         if i == len(parts) - 1:
             pointer[part] = val
-        pointer = pointer[int(part) if part.isdigit() else part]
+        if part.isdigit():
+            pointer = list(pointer.values())[int(part)] if isinstance(pointer, dict) else pointer[int(part)]
+        else:
+            pointer = pointer[part]
 
     # Create an instance of the model sith the form data using model_construct_recursive
     # to build it out as much as possible without failing on validation
