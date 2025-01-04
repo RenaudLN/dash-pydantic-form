@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Table fields required cells are not highlighted when '0' is input
+- Sections render_kwargs are properly passed to renderers
+- Steps sections additional_steps can be serialised correctly
 
 ## [0.10.1] - 2024-12-16
 ### Fixed

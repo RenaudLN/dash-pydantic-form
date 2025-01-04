@@ -1,7 +1,9 @@
+import json
 from typing import Literal
 
 from dash_iconify import DashIconify
-from pydantic import BaseModel
+from plotly.io.json import to_json_plotly
+from pydantic import BaseModel, field_serializer
 
 SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
@@ -57,3 +59,8 @@ class Sections(BaseModel):
         """Model post init."""
         if self.render_kwargs is None:
             self.render_kwargs = {}
+
+    @field_serializer("render_kwargs")
+    def serialize_render_kwargs(self, value):
+        """Serialize render kwargs, allowing Dash object values."""
+        return json.loads(to_json_plotly(value))

@@ -382,7 +382,6 @@ class ModelForm(html.Div):
             path=path,
             field_inputs=field_inputs,
             sections=sections,
-            **sections.render_kwargs,
         )
 
         if sections.remaining_fields_position == "none" or not fields_not_in_sections:
@@ -459,9 +458,29 @@ class ModelForm(html.Div):
         path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
-        **_kwargs,
     ):
         """Render the form sections as accordion."""
+        kwargs = deepcopy(sections.render_kwargs or {})
+        accordion_styles = deep_merge(
+            {
+                "control": {"padding": "0.5rem"},
+                "label": {"padding": 0},
+                "item": {
+                    "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
+                    "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
+                    "marginBottom": "0.5rem",
+                    "borderRadius": "0.25rem",
+                },
+                "content": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "0.375rem",
+                    "padding": "0.125rem 0.5rem 0.5rem",
+                },
+            },
+            kwargs.pop("styles", {}),
+        )
+        multiple = kwargs.pop("multiple", True)
         return [
             dmc.Accordion(
                 [
@@ -482,26 +501,14 @@ class ModelForm(html.Div):
                     )
                     for section in sections.sections
                 ],
-                value=[section.name for section in sections.sections if section.default_open],
-                styles={
-                    "control": {"padding": "0.5rem"},
-                    "label": {"padding": 0},
-                    "item": {
-                        "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
-                        "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
-                        "marginBottom": "0.5rem",
-                        "borderRadius": "0.25rem",
-                    },
-                    "content": {
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "0.375rem",
-                        "padding": "0.125rem 0.5rem 0.5rem",
-                    },
-                },
+                value=[section.name for section in sections.sections if section.default_open]
+                if multiple
+                else next((section.name for section in sections.sections if section.default_open), None),
+                styles=accordion_styles,
                 id=cls.ids.accordion(aio_id, form_id, path),
-                multiple=True,
-            )
+                multiple=multiple,
+                **kwargs,
+            ),
         ]
 
     @classmethod
@@ -513,14 +520,16 @@ class ModelForm(html.Div):
         path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
-        **_kwargs,
     ):
         """Render the form sections as tabs."""
+        kwargs = deepcopy(sections.render_kwargs or {})
         value = sections.sections[0].name
         for section in sections.sections:
             if section.default_open:
                 value = section.name
                 break
+
+        tabs_styles = deep_merge({"panel": {"padding": "1rem 0.5rem 0"}}, kwargs.pop("styles", {}))
 
         return [
             dmc.Tabs(
@@ -546,10 +555,9 @@ class ModelForm(html.Div):
                     ],
                 ],
                 value=value,
-                styles={
-                    "panel": {"padding": "1rem 0.5rem 0"},
-                },
+                styles=tabs_styles,
                 id=cls.ids.tabs(aio_id, form_id, path),
+                **kwargs,
             )
         ]
 
@@ -562,11 +570,10 @@ class ModelForm(html.Div):
         path: str,
         field_inputs: dict[str, Component],
         sections: Sections,
-        additional_steps: list = None,
-        **kwargs,
     ):
         """Render the form sections as steps."""
-        additional_steps = additional_steps or []
+        kwargs = deepcopy(sections.render_kwargs or {})
+        additional_steps = kwargs.pop("additional_steps", [])
         stepper_styles = deep_merge(
             {
                 "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 2rem"},
@@ -576,13 +583,13 @@ class ModelForm(html.Div):
                 "stepBody": {"padding-top": "0.6875rem"},
                 "stepCompletedIcon": {"&>svg": {"width": 12}},
             },
-            kwargs.get("styles", {}),
+            kwargs.pop("styles", {}),
         )
         stepper = dmc.Stepper(
             id=cls.ids.steps(aio_id, form_id, path),
             active=0,
-            orientation="vertical",
-            size="sm",
+            orientation=kwargs.pop("orientation", "vertical"),
+            size=kwargs.pop("size", "sm"),
             styles=stepper_styles,
             children=[
                 dmc.StepperStep(
