@@ -5,6 +5,7 @@ import uuid
 import warnings
 from copy import deepcopy
 from functools import partial
+from types import UnionType
 from typing import Annotated, Literal, Union, get_args, get_origin, overload
 
 import dash_mantine_components as dmc
@@ -20,10 +21,12 @@ from dash import (
     ctx,
     dcc,
     html,
+    no_update,
 )
 from dash.development.base_component import Component, rd
 from dash_iconify import DashIconify
 from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 
 from . import ids as common_ids
 from .fields import BaseField, fields
@@ -38,6 +41,7 @@ from .utils import (
     get_subitem,
     get_subitem_cls,
     handle_discriminated,
+    is_subclass,
     model_construct_recursive,
 )
 
@@ -58,6 +62,7 @@ class ModelFormIdsFactory:
 
     form = partial(form_base_id, "_pydf-form")
     main = partial(form_base_id, "_pydf-main")
+    wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
     errors = partial(form_base_id, "_pydf-errors")
     accordion = partial(form_base_id, "_pydf-accordion")
     tabs = partial(form_base_id, "_pydf-tabs")
@@ -168,7 +173,7 @@ class ModelForm(html.Div):
 
     def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
-        item: BaseModel | type[BaseModel],
+        item: BaseModel | type[BaseModel] | Annotated[UnionType, FieldInfo],
         aio_id: str | None = None,
         form_id: str | None = None,
         path: str = "",
@@ -183,14 +188,22 @@ class ModelForm(html.Div):
         debounce_inputs: int | None = None,
         locale: str = None,
         cols: int = None,
+        data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None = None,
     ) -> None:
-        with contextlib.suppress(Exception):
-            if issubclass(item, BaseModel):
-                item = item.model_construct()
+        if data_model is None:
+            data_model = type(item) if isinstance(item, BaseModel) else item
+        if is_subclass(item, BaseModel):
+            item = item.model_construct()
+        if not isinstance(item, BaseModel):
+            item = None
+        if get_origin(data_model) is Annotated:
+            if discriminator is None:
+                discriminator = next((f.discriminator for f in get_args(data_model) if isinstance(f, FieldInfo)), None)
+            data_model = get_args(data_model)[0]
 
         aio_id = aio_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
         form_id = form_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
-        self.ids = (aio_id, form_id)
+        self.ids = ModelFormIds.from_basic_ids(aio_id, form_id)
 
         if cols is not None:
             warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
@@ -198,7 +211,9 @@ class ModelForm(html.Div):
 
         fields_repr = fields_repr or {}
 
-        subitem_cls, disc_vals = self.get_discriminated_subitem_cls(item=item, path=path, discriminator=discriminator)
+        subitem_cls, disc_vals = self.get_discriminated_subitem_cls(
+            item=item, path=path, discriminator=discriminator, data_model=data_model
+        )
         with language_context(locale):
             field_inputs = self.render_fields(
                 item=item,
@@ -228,11 +243,11 @@ class ModelForm(html.Div):
                 self.get_meta_children(
                     fields_repr=fields_repr,
                     sections=sections,
-                    item=item,
                     aio_id=aio_id,
                     form_id=form_id,
                     path=path,
                     form_cols=form_cols,
+                    data_model=data_model,
                 )
             )
 
@@ -242,7 +257,7 @@ class ModelForm(html.Div):
             style |= {"containerType": "inline-size"}
 
         super().__init__(
-            children=children,
+            children=html.Div(children, id=ModelFormIdsFactory.wrapper(aio_id, form_id, discriminator or "", path)),
             style=style,
             **(
                 {
@@ -257,18 +272,22 @@ class ModelForm(html.Div):
 
     @staticmethod
     def get_discriminated_subitem_cls(
-        *, item: BaseModel, path: str, discriminator: str
+        *,
+        item: BaseModel | None,
+        path: str,
+        discriminator: str | None,
+        data_model: type[BaseModel] | UnionType,
     ) -> tuple[type[BaseModel], tuple]:
         """Get the subitem of a model at a given parent, handling type unions."""
-        subitem_cls = get_subitem_cls(item.__class__, path, item=item)
-        if get_origin(subitem_cls) is Annotated:
-            subitem_cls = get_args(subitem_cls)[0]
+        subitem_cls = (
+            get_subitem_cls(item.__class__, path, item=item) if is_subclass(data_model, BaseModel) else data_model
+        )
 
         # Handle type unions
         disc_vals = None
         discriminator_value = None
         if Type.classify(subitem_cls, discriminator) == Type.DISCRIMINATED_MODEL:
-            subitem = get_subitem(item, path)
+            subitem = get_subitem(item, path) if item is not None else None
             discriminator_value = None if subitem is None else getattr(subitem, discriminator, None)
             subitem_cls, disc_vals = handle_discriminated(
                 item.__class__, path, subitem_cls, discriminator, discriminator_value
@@ -385,18 +404,24 @@ class ModelForm(html.Div):
         *,
         fields_repr: dict[str, dict | BaseField],
         sections: Sections | None,
-        item: BaseModel,
         aio_id: str,
         form_id: str,
         path: str,
         form_cols: int,
+        data_model: type[BaseModel] | UnionType,
     ):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
         if not path:
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
-            children.append(dcc.Store(data=str(item.__class__), id=cls.ids.model_store(aio_id, form_id)))
+            if is_subclass(data_model, BaseModel):
+                model_name = str(data_model)
+            elif get_origin(data_model) in [Union, UnionType]:
+                model_name = [str(x) for x in get_args(data_model)]
+            else:
+                raise ValueError("data_model must be a pydantic BaseModel or Union of models")
+            children.append(dcc.Store(data=model_name, id=cls.ids.model_store(aio_id, form_id)))
 
         fields_repr_dicts = (
             {
@@ -646,27 +671,43 @@ clientside_callback(
 
 
 @callback(
-    Output(fields.Model.ids.form_wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
     Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "discriminator"), "value"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
     State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
     State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
     prevent_initial_call=True,
 )
-def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict):
+def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict):
     """Update discriminated form."""
     path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
+    discriminator = ctx.triggered_id["field"]
     parts = path.split(SEP)
     # Update the form data with the new value as it wouldn't have been updated yet
     pointer = form_data
     for i, part in enumerate(parts):
         if i == len(parts) - 1:
             pointer[part] = val
-        pointer = pointer[int(part) if part.isdigit() else part]
+        if part.isdigit():
+            pointer = list(pointer.values())[int(part)] if isinstance(pointer, dict) else pointer[int(part)]
+        else:
+            pointer = pointer[part]
 
     # Create an instance of the model sith the form data using model_construct_recursive
     # to build it out as much as possible without failing on validation
-    model_cls = get_model_cls(model_name)
+    if isinstance(model_name, str):
+        model_cls = get_model_cls(model_name)
+    else:
+        if not (disc_val := form_data.get(discriminator)):
+            return no_update
+        model_union = [get_model_cls(x) for x in model_name]
+        model_cls = next(
+            (x for x in model_union if x.model_fields[discriminator].default == disc_val),
+            None,
+        )
+        if model_cls is None:
+            return no_update
+
     item = model_construct_recursive(form_data, model_cls)
 
     # Retrieve fields-repr and sections from the stored data
@@ -676,13 +717,16 @@ def update_discriminated(val, form_data: dict, model_name: str, form_specs: dict
             fields_repr[k] = BaseField.from_dict(v)
     sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
 
-    return ModelForm(
+    form = ModelForm(
         item=item,
         aio_id=ctx.triggered_id["aio_id"],
         form_id=ctx.triggered_id["form_id"],
         path=ctx.triggered_id["parent"],
-        discriminator=ctx.triggered_id["field"],
+        discriminator=discriminator,
         sections=sections,
         fields_repr=fields_repr,
         form_cols=form_specs["form_cols"],
+        data_model=None if isinstance(model_name, str) else Union[tuple(model_union)],  # noqa: UP007
     )
+
+    return form.children.children

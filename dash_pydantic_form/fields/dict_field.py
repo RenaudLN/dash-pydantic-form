@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Literal
+from typing import Literal, get_args
 
 import dash_mantine_components as dmc
 from dash import dcc, html
@@ -176,8 +176,18 @@ class DictField(ListField):
         type_ = Type.classify(field_info.annotation, field_info.discriminator)
         if type_ in [Type.MODEL_LIST, Type.MODEL_DICT] and self.render_type == "scalar":
             raise ValueError("Cannot render model list as scalar")
-        if type_ not in [Type.MODEL_LIST, Type.MODEL_DICT] and self.render_type != "scalar":
+        if (
+            type_
+            not in [Type.MODEL_LIST, Type.MODEL_DICT, Type.DISCRIMINATED_MODEL_LIST, Type.DISCRIMINATED_MODEL_DICT]
+            and self.render_type != "scalar"
+        ):
             raise ValueError("Cannot render non model list as non scalar")
+
+        discriminator = (
+            get_args(get_args(field_info.annotation)[1])[1].discriminator
+            if type_ in [Type.DISCRIMINATED_MODEL_LIST, Type.DISCRIMINATED_MODEL_DICT]
+            else None
+        )
 
         value: list = self.get_value(item, field, parent) or []
 
@@ -197,6 +207,7 @@ class DictField(ListField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                        discriminator=discriminator,
                     )
                     for i, key in enumerate(value)
                 ],
@@ -235,6 +246,7 @@ class DictField(ListField):
                         sections=self.sections,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
+                        discriminator=discriminator,
                     )
                     for i, key in enumerate(value)
                 ],
@@ -294,6 +306,7 @@ class DictField(ListField):
             items_deletable=self.items_deletable,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
+            discriminator=discriminator,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)

@@ -60,7 +60,7 @@ def get_default_repr(field_info: FieldInfo | None, annotation: type | None = Non
             kwargs.update(render_type="scalar")
         return fields.List(**kwargs)
 
-    if type_ in [Type.MODEL_DICT, Type.SCALAR_DICT, Type.LITERAL_DICT]:
+    if type_ in [Type.MODEL_DICT, Type.SCALAR_DICT, Type.LITERAL_DICT, Type.DISCRIMINATED_MODEL_DICT]:
         if type_ in [Type.SCALAR_DICT, Type.LITERAL_DICT]:
             kwargs.update(render_type="scalar")
         return fields.Dict(**kwargs)

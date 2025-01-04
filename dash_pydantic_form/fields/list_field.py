@@ -75,7 +75,6 @@ class ListField(BaseField):
     class ids(BaseField.ids):
         """Model list field ids."""
 
-        form_wrapper = partial(common_ids.field_dependent_id, "_pydf-model-form-wrapper")
         wrapper = partial(common_ids.field_dependent_id, "_pydf-list-field-wrapper")
         delete = partial(common_ids.field_dependent_id, "_pydf-list-field-delete")
         edit = partial(common_ids.field_dependent_id, "_pydf-list-field-edit")
@@ -138,19 +137,16 @@ class ListField(BaseField):
                     pos="relative",
                 ),
                 dmc.AccordionPanel(
-                    html.Div(
-                        ModelForm(
-                            item=item,
-                            aio_id=aio_id,
-                            form_id=form_id,
-                            path=new_parent,
-                            fields_repr=fields_repr,
-                            sections=sections,
-                            read_only=read_only,
-                            discriminator=discriminator,
-                            form_cols=form_cols,
-                        ),
-                        id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
+                    ModelForm(
+                        item=item,
+                        aio_id=aio_id,
+                        form_id=form_id,
+                        path=new_parent,
+                        fields_repr=fields_repr,
+                        sections=sections,
+                        read_only=read_only,
+                        discriminator=discriminator,
+                        form_cols=form_cols,
                     ),
                 ),
             ],
@@ -180,20 +176,17 @@ class ListField(BaseField):
         new_parent = get_fullpath(parent, field, index)
         return dmc.Group(
             [
-                html.Div(
-                    ModelForm(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        path=new_parent,
-                        fields_repr=fields_repr,
-                        sections=sections,
-                        container_kwargs={"style": {"flex": 1}},
-                        read_only=read_only,
-                        discriminator=discriminator,
-                        form_cols=form_cols,
-                    ),
-                    id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
+                ModelForm(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    path=new_parent,
+                    fields_repr=fields_repr,
+                    sections=sections,
+                    container_kwargs={"style": {"flex": 1}},
+                    read_only=read_only,
+                    discriminator=discriminator,
+                    form_cols=form_cols,
                 ),
             ]
             + items_deletable
@@ -273,19 +266,16 @@ class ListField(BaseField):
                     ),
                     dmc.Modal(
                         [
-                            html.Div(
-                                ModelForm(
-                                    item=item,
-                                    aio_id=aio_id,
-                                    form_id=form_id,
-                                    path=new_parent,
-                                    fields_repr=fields_repr,
-                                    sections=sections,
-                                    read_only=read_only,
-                                    discriminator=discriminator,
-                                    form_cols=form_cols,
-                                ),
-                                id=cls.ids.form_wrapper(aio_id, form_id, discriminator or "", parent=new_parent),
+                            ModelForm(
+                                item=item,
+                                aio_id=aio_id,
+                                form_id=form_id,
+                                path=new_parent,
+                                fields_repr=fields_repr,
+                                sections=sections,
+                                read_only=read_only,
+                                discriminator=discriminator,
+                                form_cols=form_cols,
                             ),
                             dmc.Group(
                                 dmc.Button(
