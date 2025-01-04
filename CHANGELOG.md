@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Possibility to omit ``aio_id`` and/or ``form_id`` in ``ModelForm``'s instanciation so they get auto-generated
 - Possibility to use the ModelForm instance ids in a callback
-- Possibility to use discriminated unions for the top level ModelForm
+- Discriminated unions at the top level ModelForm
+- Dict of discriminated unions
 
 ### Fixed
 - Table fields required cells are not highlighted when '0' is input
