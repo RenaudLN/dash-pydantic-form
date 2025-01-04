@@ -81,7 +81,6 @@ class ModelFormIds:
 
     form: dict[str, str]
     main: dict[str, str]
-    # wrapper: dict[str, str]
     errors: dict[str, str]
     accordion: dict[str, str]
     tabs: dict[str, str]
@@ -717,8 +716,6 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
         with contextlib.suppress(KeyError):
             fields_repr[k] = BaseField.from_dict(v)
     sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
-    # fields_repr.setdefault(discriminator, {})
-    # fields_repr[discriminator].setdefault("data", [x.model_fields[discriminator].default for x in model_union])
 
     form = ModelForm(
         item=item,
