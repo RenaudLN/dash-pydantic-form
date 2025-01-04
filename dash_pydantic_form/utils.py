@@ -31,11 +31,19 @@ class Type(Enum):
     SCALAR_DICT = "scalar_dict"
     LITERAL_DICT = "literal_dict"
     UNKOWN_DICT = "unkown_dict"
+    DISCRIMINATED_MODEL_DICT = "discriminated_model_dict"
 
     @classmethod
     def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911, PLR0912
         """Classify a value as a field type."""
         annotation = get_non_null_annotation(annotation)
+
+        if get_origin(annotation) is Annotated and get_origin(get_args(annotation)[0]) in [Union, UnionType]:
+            if discriminator is None:
+                discriminator = next(
+                    (f.discriminator for f in get_args(annotation)[1:] if isinstance(f, FieldInfo)), None
+                )
+            annotation = get_args(annotation)[0]
 
         if is_subclass(annotation, str | Number | bool | date | time):
             return cls.SCALAR
@@ -56,15 +64,7 @@ class Type(Enum):
             ann_args = get_args(annotation)
             if not ann_args:
                 return cls.UNKOWN_LIST
-            if get_origin(ann_args[0]) is Annotated:
-                sub_ann = get_args(ann_args[0])[0]
-                info = get_args(ann_args[0])[1]
-                if isinstance(info, FieldInfo):
-                    args_type = Type.classify(sub_ann, discriminator=info.discriminator, depth=1)
-                else:
-                    args_type = Type.classify(sub_ann, depth=1)
-            else:
-                args_type = Type.classify(ann_args[0], depth=1)
+            args_type = Type.classify(ann_args[0], depth=1)
             if args_type == Type.SCALAR:
                 return cls.SCALAR_LIST
             if args_type == Type.LITERAL:
@@ -86,6 +86,8 @@ class Type(Enum):
                 return cls.LITERAL_DICT
             if args_type == Type.MODEL:
                 return cls.MODEL_DICT
+            if args_type == Type.DISCRIMINATED_MODEL:
+                return cls.DISCRIMINATED_MODEL_DICT
             return cls.UNKOWN_DICT
 
         return cls.UNKNOWN
@@ -263,6 +265,13 @@ def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, 
     """Handle a discriminated model."""
     all_vals = set()
     out = None
+    if get_origin(annotation) is Annotated:
+        if disc_field is None:
+            disc_field = next(
+                (f.discriminator for f in get_args(annotation)[1:] if isinstance(f, FieldInfo)),
+                None,
+            )
+        annotation = get_args(annotation)[0]
     for possible in get_args(annotation):
         if not get_origin(possible.model_fields[disc_field].annotation) == Literal:
             raise ValueError("Discriminator must be a Literal")

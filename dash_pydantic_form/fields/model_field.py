@@ -8,7 +8,6 @@ from dash import (
     Input,
     Output,
     clientside_callback,
-    html,
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
@@ -52,7 +51,6 @@ class ModelField(BaseField):
     class ids(BaseField.ids):
         """Model field ids."""
 
-        form_wrapper = partial(common_ids.field_dependent_id, "_pydf-model-form-wrapper")
         edit = partial(common_ids.field_dependent_id, "_pydf-model-field-edit")
         modal = partial(common_ids.field_dependent_id, "_pydf-model-field-modal")
         modal_save = partial(common_ids.field_dependent_id, "_pydf-model-field-modal-save")
@@ -153,21 +151,16 @@ class ModelField(BaseField):
                     dmc.AccordionPanel(
                         [
                             *([dmc.Text(description, size="xs", c="dimmed")] * bool(title) * bool(description)),
-                            html.Div(
-                                ModelForm(
-                                    item=item,
-                                    aio_id=aio_id,
-                                    form_id=form_id,
-                                    path=get_fullpath(parent, field),
-                                    fields_repr=self.fields_repr,
-                                    sections=self.sections,
-                                    discriminator=field_info.discriminator,
-                                    read_only=self.read_only,
-                                    form_cols=self.form_cols,
-                                ),
-                                id=self.ids.form_wrapper(
-                                    aio_id, form_id, field_info.discriminator or "", parent=get_fullpath(parent, field)
-                                ),
+                            ModelForm(
+                                item=item,
+                                aio_id=aio_id,
+                                form_id=form_id,
+                                path=get_fullpath(parent, field),
+                                fields_repr=self.fields_repr,
+                                sections=self.sections,
+                                discriminator=field_info.discriminator,
+                                read_only=self.read_only,
+                                form_cols=self.form_cols,
                             ),
                         ],
                     ),

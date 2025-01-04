@@ -5,7 +5,7 @@ import dash_mantine_components as dmc
 from dash import Dash
 from pydantic import BaseModel, Field
 
-from dash_pydantic_form import ModelForm
+from dash_pydantic_form import ModelForm, fields
 
 
 class Pet(BaseModel):
@@ -31,7 +31,15 @@ server = app.server
 
 app.layout = dmc.MantineProvider(
     dmc.Container(
-        ModelForm(PetUnion, aio_id="test", form_id="test"),
+        ModelForm(
+            Cat(name="Cookie"),
+            aio_id="test",
+            form_id="test",
+            data_model=PetUnion,
+            fields_repr={
+                "species": fields.RadioItems(options_labels={"cat": "Cat", "dog": "Dog"}),
+            },
+        ),
         py="xl",
     ),
 )

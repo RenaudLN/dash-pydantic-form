@@ -226,3 +226,30 @@ def test_du0006_list_discriminated_union(dash_duo):
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent="pets:0"), False)
     set_select(dash_duo, ids.value_field(aio_id, form_id, "species", parent="pets:0", meta="discriminator"), "dog")
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="pets:0"), False)
+
+
+def test_du0007_top_level_union(dash_duo):
+    """Test a top level discriminated union."""
+
+    class Cat(BaseModel):
+        species: Literal["cat"] = "cat"
+        meows: bool = True
+
+    class Dog(BaseModel):
+        species: Literal["dog"] = "dog"
+        barks: bool = True
+
+    PetUnion = Annotated[Cat | Dog, Field(discriminator="species")]
+
+    app = Dash(__name__)
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(Cat(), aio_id=aio_id, form_id=form_id, data_model=PetUnion))
+    check_ids_exist(
+        app.layout,
+        [ids.checked_field(aio_id, form_id, "meows", parent="")],
+    )
+    dash_duo.start_server(app)
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent=""), False)
+    set_select(dash_duo, ids.value_field(aio_id, form_id, "species", parent="", meta="discriminator"), "dog")
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent=""), False)

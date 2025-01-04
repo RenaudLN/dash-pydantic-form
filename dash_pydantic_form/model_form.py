@@ -258,7 +258,7 @@ class ModelForm(html.Div):
             style |= {"containerType": "inline-size"}
 
         super().__init__(
-            children=html.Div(children, id=self.__class__.ids.wrapper(aio_id, form_id, discriminator or "", path)),
+            children=html.Div(children, id=ModelFormIdsFactory.wrapper(aio_id, form_id, discriminator or "", path)),
             style=style,
             **(
                 {
@@ -280,7 +280,9 @@ class ModelForm(html.Div):
         data_model: type[BaseModel] | UnionType,
     ) -> tuple[type[BaseModel], tuple]:
         """Get the subitem of a model at a given parent, handling type unions."""
-        subitem_cls = get_subitem_cls(item.__class__, path, item=item) if isinstance(item, BaseModel) else data_model
+        subitem_cls = (
+            get_subitem_cls(item.__class__, path, item=item) if is_subclass(data_model, BaseModel) else data_model
+        )
 
         # Handle type unions
         disc_vals = None
@@ -415,7 +417,7 @@ class ModelForm(html.Div):
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
-                model_name = str(data_model.__class__)
+                model_name = str(data_model)
             elif get_origin(data_model) in [Union, UnionType]:
                 model_name = [str(x) for x in get_args(data_model)]
             else:
@@ -712,10 +714,10 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
         with contextlib.suppress(KeyError):
             fields_repr[k] = BaseField.from_dict(v)
     sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
-    fields_repr.setdefault(discriminator, {})
-    fields_repr[discriminator].setdefault("data", [x.model_fields[discriminator].default for x in model_union])
+    # fields_repr.setdefault(discriminator, {})
+    # fields_repr[discriminator].setdefault("data", [x.model_fields[discriminator].default for x in model_union])
 
-    return ModelForm(
+    form = ModelForm(
         item=item,
         aio_id=ctx.triggered_id["aio_id"],
         form_id=ctx.triggered_id["form_id"],
@@ -724,4 +726,7 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
         sections=sections,
         fields_repr=fields_repr,
         form_cols=form_specs["form_cols"],
+        data_model=None if isinstance(model_name, str) else Union[tuple(model_union)],  # noqa: UP007
     )
+
+    return form.children.children
