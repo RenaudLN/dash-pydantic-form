@@ -480,6 +480,7 @@ class ModelForm(html.Div):
             },
             kwargs.pop("styles", {}),
         )
+        multiple = kwargs.pop("multiple", True)
         return [
             dmc.Accordion(
                 [
@@ -500,10 +501,12 @@ class ModelForm(html.Div):
                     )
                     for section in sections.sections
                 ],
-                value=[section.name for section in sections.sections if section.default_open],
+                value=[section.name for section in sections.sections if section.default_open]
+                if multiple
+                else next((section.name for section in sections.sections if section.default_open), None),
                 styles=accordion_styles,
                 id=cls.ids.accordion(aio_id, form_id, path),
-                multiple=kwargs.pop("multiple", True),
+                multiple=multiple,
                 **kwargs,
             ),
         ]
