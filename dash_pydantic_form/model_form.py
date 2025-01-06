@@ -166,6 +166,11 @@ class ModelForm(html.Div):
         If left to None, will default to system locale, and fallback to English.
     cols: int
         Deprecated, use `form_cols` instead.
+    data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None
+        The data model or union of models to create the form from, this is mostly used for discriminated unions.
+    fields_order: list[str] | None
+        List of field names to order the fields in the form. The fields will be displayed in the order provided.
+        All fields not in the list will be displayed in ther model order, after the ones defined here.
     """
 
     ids = IdAccessor()
@@ -189,6 +194,7 @@ class ModelForm(html.Div):
         locale: str = None,
         cols: int = None,
         data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None = None,
+        fields_order: list[str] | None = None,
     ) -> None:
         if data_model is None:
             data_model = type(item) if isinstance(item, BaseModel) else item
@@ -229,6 +235,11 @@ class ModelForm(html.Div):
                 debounce_inputs=debounce_inputs,
                 form_cols=form_cols,
             )
+            # Re-order fields as per fields_order
+            if fields_order:
+                field_inputs = {f: field_inputs[f] for f in fields_order if f in field_inputs} | {
+                    f: r for f, r in field_inputs.items() if f not in fields_order
+                }
 
             if not sections or not any(
                 [f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields
