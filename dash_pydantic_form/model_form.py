@@ -423,7 +423,7 @@ class ModelForm(html.Div):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
         if not path:
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id), storage_type="local"))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
                 model_name = str(data_model)
@@ -671,6 +671,8 @@ clientside_callback(
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
+    State(ModelForm.ids.form(MATCH, MATCH), "id"),
+    State(ModelForm.ids.main(MATCH, MATCH), "data"),
 )
 
 clientside_callback(
@@ -689,7 +691,19 @@ clientside_callback(
 
 
 @callback(
-    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, parent=""), "children", allow_duplicate=True),
+    Input(ModelForm.ids.form(MATCH, MATCH, parent=""), "data-update"),
+    State(ModelForm.ids.model_store(MATCH, MATCH, parent=""), "data"),
+    State(ModelForm.ids.form_specs_store(MATCH, MATCH, parent=""), "data"),
+    prevent_initial_call=True,
+)
+def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
+    """Update contents with ids.form data-update."""
+    return update_form_wrapper_contents(form_data, None, model_name, form_specs)
+
+
+@callback(
+    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
     Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "discriminator"), "value"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
     State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
@@ -697,7 +711,7 @@ clientside_callback(
     prevent_initial_call=True,
 )
 def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict):
-    """Update discriminated form."""
+    """Update contents when discriminator input changes."""
     path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
     discriminator = ctx.triggered_id["field"]
     parts = path.split(SEP)
@@ -710,8 +724,17 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
             pointer = list(pointer.values())[int(part)] if isinstance(pointer, dict) else pointer[int(part)]
         else:
             pointer = pointer[part]
+    return update_form_wrapper_contents(form_data, discriminator, model_name, form_specs)
 
-    # Create an instance of the model sith the form data using model_construct_recursive
+
+def update_form_wrapper_contents(
+    form_data: dict,
+    discriminator: str | None,
+    model_name: str | list[str],
+    form_specs: dict,
+):
+    """Update the form wrapper contents."""
+    # Create an instance of the model with the form data using model_construct_recursive
     # to build it out as much as possible without failing on validation
     if isinstance(model_name, str):
         model_cls = get_model_cls(model_name)

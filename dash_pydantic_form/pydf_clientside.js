@@ -21,6 +21,8 @@ function waitForElem(id) {
   });
 }
 
+const sortedJson = (obj) => JSON.stringify(obj, Object.keys(obj).sort())
+
 dash_clientside.pydf = {
   getValues: () => {
     const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
@@ -59,6 +61,18 @@ dash_clientside.pydf = {
         })
         return acc
     }, {})
+    if (
+      !dash_clientside.callback_context.triggered.length
+      && dash_clientside.callback_context.outputs_list.id.parent == ""
+      && !!dash_clientside.callback_context.states_list[1].value
+    ) {
+      const oldData = dash_clientside.callback_context.states_list[1].value
+      if (sortedJson(oldData) !== sortedJson(formData)) {
+        dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": oldData})
+        console.log("Found old data different from current", oldData)
+        return dash_clientside.no_update
+      }
+    }
     return formData
   },
   updateFieldVisibility: (value, checked) => {
