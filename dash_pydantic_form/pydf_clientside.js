@@ -21,7 +21,11 @@ function waitForElem(id) {
   });
 }
 
-const sortedJson = (obj) => JSON.stringify(obj, Object.keys(obj).sort())
+const sortedJson = (obj) => {
+  const allKeys = new Set()
+  JSON.stringify(obj, (key, value) => (allKeys.add(key), value))
+  return JSON.stringify(obj, Array.from(allKeys).sort())
+}
 
 dash_clientside.pydf = {
   getValues: () => {
@@ -61,17 +65,24 @@ dash_clientside.pydf = {
         })
         return acc
     }, {})
-    if (
-      !dash_clientside.callback_context.triggered.length
-      && dash_clientside.callback_context.outputs_list.id.parent == ""
-      && !!dash_clientside.callback_context.states_list[1].value
-    ) {
-      const oldData = dash_clientside.callback_context.states_list[1].value
-      if (sortedJson(oldData) !== sortedJson(formData)) {
-        dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": oldData})
-        console.log("Found old data different from current", oldData)
-        return dash_clientside.no_update
+    // Handle the storing/retrieval of form data if requested
+    if (JSON.parse(dash_clientside.callback_context.states_list[0].value)){
+      const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list.id)}`
+      // If this is the first time the form is rendered, try retrieving the stored data
+      // and update the form if it is different
+      if (
+        !dash_clientside.callback_context.triggered.length
+        && dash_clientside.callback_context.outputs_list.id.parent == ""
+      ) {
+        const oldData = localStorage.getItem(storageKey)
+        if (oldData !== sortedJson(formData)) {
+          dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
+          console.log("Found old data different from current", JSON.parse(oldData))
+          return dash_clientside.no_update
+        }
       }
+      // Store the latest form data
+      localStorage.setItem(storageKey, sortedJson(formData))
     }
     return formData
   },

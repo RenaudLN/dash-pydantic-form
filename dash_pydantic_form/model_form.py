@@ -171,6 +171,8 @@ class ModelForm(html.Div):
     fields_order: list[str] | None
         List of field names to order the fields in the form. The fields will be displayed in the order provided.
         All fields not in the list will be displayed in ther model order, after the ones defined here.
+    store_progress: bool
+        Whether to store the progress of the form in the local store, to allow picking up where the user left off.
     """
 
     ids = IdAccessor()
@@ -195,6 +197,7 @@ class ModelForm(html.Div):
         cols: int = None,
         data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None = None,
         fields_order: list[str] | None = None,
+        store_progress: bool = False,
     ) -> None:
         if data_model is None:
             data_model = type(item) if isinstance(item, BaseModel) else item
@@ -274,6 +277,7 @@ class ModelForm(html.Div):
                 {
                     "id": ModelFormIdsFactory.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
+                    "data-storeprogress": store_progress,
                 }
                 if not path
                 else {}
@@ -423,7 +427,7 @@ class ModelForm(html.Div):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
         if not path:
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id), storage_type="local"))
+            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
                 model_name = str(data_model)
@@ -671,8 +675,7 @@ clientside_callback(
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
-    State(ModelForm.ids.form(MATCH, MATCH), "id"),
-    State(ModelForm.ids.main(MATCH, MATCH), "data"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
 )
 
 clientside_callback(
@@ -691,14 +694,16 @@ clientside_callback(
 
 
 @callback(
-    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, parent=""), "children", allow_duplicate=True),
-    Input(ModelForm.ids.form(MATCH, MATCH, parent=""), "data-update"),
-    State(ModelForm.ids.model_store(MATCH, MATCH, parent=""), "data"),
-    State(ModelForm.ids.form_specs_store(MATCH, MATCH, parent=""), "data"),
+    Output(ModelForm.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
+    Input(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-update"),
+    State(ModelForm.ids.model_store(MATCH, MATCH, MATCH), "data"),
+    State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
     prevent_initial_call=True,
 )
 def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
     """Update contents with ids.form data-update."""
+    if not form_data:
+        return no_update
     return update_form_wrapper_contents(form_data, None, model_name, form_specs)
 
 
