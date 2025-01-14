@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `fields_order` in `ModelForm` to allow changing the fields order without sections nor re-arranging the model fields
+- Allow to update the form content via the ids.form data-update attribute
+- Allow to store form edition progress and retrieve it on page load
 
 ### Fixed
 - Issue with visibility filter when other fields start with the same path prefix

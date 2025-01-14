@@ -21,6 +21,12 @@ function waitForElem(id) {
   });
 }
 
+const sortedJson = (obj) => {
+  const allKeys = new Set()
+  JSON.stringify(obj, (key, value) => (allKeys.add(key), value))
+  return JSON.stringify(obj, Array.from(allKeys).sort())
+}
+
 dash_clientside.pydf = {
   getValues: () => {
     const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
@@ -59,6 +65,26 @@ dash_clientside.pydf = {
         })
         return acc
     }, {})
+    // Handle the storing/retrieval of form data if requested
+    if (JSON.parse(dash_clientside.callback_context.states_list[0].value)){
+      const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list.id)}`
+      // If this is the first time the form is rendered, try retrieving the stored data
+      // and update the form if it is different
+      if (
+        // No data in the ids.main data
+        !dash_clientside.callback_context.states_list[1].value
+        // And top-level form
+        && dash_clientside.callback_context.outputs_list.id.parent == ""
+      ) {
+        const oldData = localStorage.getItem(storageKey)
+        if (oldData && oldData !== sortedJson(formData)) {
+          dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
+          return dash_clientside.no_update
+        }
+      }
+      // Store the latest form data
+      localStorage.setItem(storageKey, sortedJson(formData))
+    }
     return formData
   },
   updateFieldVisibility: (value, checked) => {
