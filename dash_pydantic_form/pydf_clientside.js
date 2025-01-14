@@ -77,7 +77,6 @@ dash_clientside.pydf = {
         const oldData = localStorage.getItem(storageKey)
         if (oldData !== sortedJson(formData)) {
           dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
-          console.log("Found old data different from current", JSON.parse(oldData))
           return dash_clientside.no_update
         }
       }
