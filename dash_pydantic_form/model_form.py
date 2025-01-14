@@ -676,6 +676,7 @@ clientside_callback(
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
+    State(ModelForm.ids.main(MATCH, MATCH), "data"),
 )
 
 clientside_callback(

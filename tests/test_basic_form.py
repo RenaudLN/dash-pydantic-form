@@ -176,3 +176,33 @@ def test_bf0005_use_repr_types():
     matches, _ = find_ids(form, [ids.value_field(aio_id, form_id, "e")], whole_elem=True)
     assert len(matches) == 1
     assert isinstance(matches[0], dmc.TextInput)
+
+
+def test_store_progress(dash_duo):
+    """Test that the store_progress=True option works."""
+    app = Dash(__name__)
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(Basic, aio_id=aio_id, form_id=form_id, store_progress=True))
+
+    dash_duo.start_server(app)
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), basic_data["a"])
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "b"), basic_data["b"])
+
+    for field in ["a", "b"]:
+        fid = ids.value_field(aio_id, form_id, field)
+        str_id = stringify_id(fid)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
+        assert elem.get_property("value") == str(basic_data[field])
+
+    dash_duo.driver.refresh()
+    dash_duo.wait_for_page()
+
+    for field in ["a", "b"]:
+        fid = ids.value_field(aio_id, form_id, field)
+        str_id = stringify_id(fid)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
+        assert elem.get_property("value") == str(basic_data[field])
+
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "b"), "test")
+    assert elem.get_property("value") == "test"

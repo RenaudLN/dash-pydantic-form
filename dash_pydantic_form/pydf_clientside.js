@@ -71,11 +71,13 @@ dash_clientside.pydf = {
       // If this is the first time the form is rendered, try retrieving the stored data
       // and update the form if it is different
       if (
-        !dash_clientside.callback_context.triggered.length
+        // No data in the ids.main data
+        !dash_clientside.callback_context.states_list[1].value
+        // And top-level form
         && dash_clientside.callback_context.outputs_list.id.parent == ""
       ) {
         const oldData = localStorage.getItem(storageKey)
-        if (oldData !== sortedJson(formData)) {
+        if (oldData && oldData !== sortedJson(formData)) {
           dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
           return dash_clientside.no_update
         }
