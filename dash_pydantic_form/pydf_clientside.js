@@ -33,7 +33,7 @@ dash_clientside.pydf = {
       .map(x => x.id.meta.split("|")[0])
     const formData = inputs.reduce((acc, val) => {
         const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
-        if (hiddenPaths.some(p => key.startsWith(p))) return acc
+        if (hiddenPaths.some(p => key.startsWith(`${p}:`) || key === p)) return acc
         const parts = key.split(":")
         let pointer = acc
         const matchingDictKeys = Object.fromEntries(

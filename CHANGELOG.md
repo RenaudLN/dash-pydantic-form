@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `fields_order` in `ModelForm` to allow changing the fields order without sections nor re-arranging the model fields
 
+### Fixed
+- Issue with visibility filter when other fields start with the same path prefix
+
 ## [0.11.0] - 2024-12-16
 ### Added
 - Possibility to omit ``aio_id`` and/or ``form_id`` in ``ModelForm``'s instanciation so they get auto-generated
