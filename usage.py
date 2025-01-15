@@ -200,6 +200,7 @@ app.layout = dmc.MantineProvider(
     defaultColorScheme="auto",
     children=dmc.AppShell(
         [
+            dmc.NotificationProvider(),
             dmc.AppShellMain(
                 dmc.Container(
                     [
@@ -229,7 +230,7 @@ app.layout = dmc.MantineProvider(
                             # submit_on_enter=True,
                             # debounce_inputs=200,
                             # locale="fr",
-                            store_progress=True,
+                            store_progress="session",
                             form_cols=12,
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},

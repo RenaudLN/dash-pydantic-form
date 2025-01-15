@@ -65,9 +65,11 @@ dash_clientside.pydf = {
         })
         return acc
     }, {})
+    const storeProgress = dash_clientside.callback_context.states_list[0].value
     // Handle the storing/retrieval of form data if requested
-    if (JSON.parse(dash_clientside.callback_context.states_list[0].value)){
+    if (storeProgress === true || storeProgress === "session" || storeProgress === "local") {
       const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list.id)}`
+      const store = storeProgress === "session" ? sessionStorage : localStorage
       // If this is the first time the form is rendered, try retrieving the stored data
       // and update the form if it is different
       if (
@@ -76,16 +78,64 @@ dash_clientside.pydf = {
         // And top-level form
         && dash_clientside.callback_context.outputs_list.id.parent == ""
       ) {
-        const oldData = localStorage.getItem(storageKey)
+        const oldData = store.getItem(storageKey)
         if (oldData && oldData !== sortedJson(formData)) {
-          dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
-          return dash_clientside.no_update
+          // dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
+          const formId = dash_clientside.callback_context.states_list[0].id
+          const notificationsId = dash_clientside.callback_context.states_list[2].id
+          const wrapper = ReactDOM.createRoot(document.getElementById(sortedJson(notificationsId)))
+          wrapper.render(
+            React.createElement(
+              dash_html_components.Div,
+              {style: {
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0, 0, 0, 0.5)",
+                backdropFilter: "blur(4px)",
+                zIndex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                padding: "1rem",
+              }},
+              [
+                React.createElement(
+                  dash_html_components.Div, {}, "Stored data found, would you like to restore it?",
+                ),
+                React.createElement(
+                  dash_html_components.Div, {style: {display: "flex", gap: "0.5rem", marginTop: "0.5rem"}}, [
+                    React.createElement(
+                      dash_html_components.Button,
+                      {onClick: () => {
+                        dash_clientside.set_props(formId, {"data-update": JSON.parse(oldData)})
+                        wrapper.unmount()
+                      }},
+                      "Yes",
+                    ),
+                    React.createElement(
+                      dash_html_components.Button,
+                      {onClick: () => {
+                        wrapper.unmount()
+                      }},
+                      "No",
+                    ),
+                  ],
+                ),
+              ]
+            ),
+            wrapper,
+          )
+          // return dash_clientside.no_update
         }
       }
       // Store the latest form data
-      localStorage.setItem(storageKey, sortedJson(formData))
+      store.setItem(storageKey, sortedJson(formData))
     }
     return formData
+  },
+  restoreData: (_trigger, data) => {
+    if (!data) return dash_clientside.no_update
+    return JSON.parse(data)
   },
   updateFieldVisibility: (value, checked) => {
 

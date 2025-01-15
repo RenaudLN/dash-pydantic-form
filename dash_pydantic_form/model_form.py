@@ -62,6 +62,7 @@ class ModelFormIdsFactory:
 
     form = partial(form_base_id, "_pydf-form")
     main = partial(form_base_id, "_pydf-main")
+    notifications = partial(form_base_id, "_pydf-notifications")
     wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
     errors = partial(form_base_id, "_pydf-errors")
     accordion = partial(form_base_id, "_pydf-accordion")
@@ -81,6 +82,7 @@ class ModelFormIds:
 
     form: dict[str, str]
     main: dict[str, str]
+    notifications: dict[str, str]
     errors: dict[str, str]
     accordion: dict[str, str]
     tabs: dict[str, str]
@@ -171,8 +173,9 @@ class ModelForm(html.Div):
     fields_order: list[str] | None
         List of field names to order the fields in the form. The fields will be displayed in the order provided.
         All fields not in the list will be displayed in ther model order, after the ones defined here.
-    store_progress: bool
+    store_progress: bool | Literal["local", "session"]
         Whether to store the progress of the form in the local store, to allow picking up where the user left off.
+        If set to True or "local" will store to local storage, if set to "session" will store to session storage.
     """
 
     ids = IdAccessor()
@@ -266,7 +269,7 @@ class ModelForm(html.Div):
             )
 
         container_kwargs = container_kwargs or {}
-        style = {"--pydf-form-cols": f"{form_cols}"} | container_kwargs.pop("style", {})
+        style = {"--pydf-form-cols": f"{form_cols}"} | container_kwargs.pop("style", {}) | {"position": "relative"}
         if not path:
             style |= {"containerType": "inline-size"}
 
@@ -427,6 +430,7 @@ class ModelForm(html.Div):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
         if not path:
+            children.append(html.Div(id=cls.ids.notifications(aio_id, form_id), **{"data-notifystored": True}))
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
@@ -677,6 +681,15 @@ clientside_callback(
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
+    State(ModelForm.ids.notifications(MATCH, MATCH), "data-notifystored"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="restoreData"),
+    Output(ModelForm.ids.form(MATCH, MATCH), "data-update", allow_duplicate=True),
+    Input(ModelForm.ids.notifications(MATCH, MATCH) | {"part": "_pydf-restore-form-btn"}, "n_clicks"),
+    # State(ModelForm.ids.notifications(MATCH, MATCH) | {"part": "_pydf-restore-form-btn"}, "data-x"),
+    prevent_initial_call=True,
 )
 
 clientside_callback(
