@@ -290,7 +290,7 @@ class TransferListField(BaseField):
                     "borderRight": "none",
                 },
             ),
-            label="Transfer all",
+            label=_("Transfer all"),
             id=cls.ids.transfer_all_tooltip(**id_data, side=side),
         )
 
@@ -317,7 +317,7 @@ class TransferListField(BaseField):
                 | ({"borderRight": "none"} if not show_transfer_all and side == "right" else {})
                 | ({"borderLeft": "none"} if not show_transfer_all and side == "left" else {}),
             ),
-            label="Transfer selected",
+            label=_("Transfer selected"),
             id=cls.ids.transfer_tooltip(**id_data, side=side),
         )
 

@@ -491,16 +491,16 @@ class ModelForm(html.Div):
         return dmc.Stack(
             dmc.Card(
                 [
-                    dmc.Text("Found previous form data. Do you want to restore it?", size="sm", mb="1.25rem"),
+                    dmc.Text(_("Found previous form data. Do you want to restore it?"), size="sm", mb="1.25rem"),
                     dmc.Group(
                         [
                             dmc.Button(
-                                "Restore",
+                                _("Restore"),
                                 size="compact-sm",
                                 id=cls.ids.restore_btn(aio_id, form_id),
                             ),
                             dmc.Button(
-                                "Cancel",
+                                _("Cancel"),
                                 size="compact-sm",
                                 variant="outline",
                                 id=cls.ids.cancel_restore_btn(aio_id, form_id),

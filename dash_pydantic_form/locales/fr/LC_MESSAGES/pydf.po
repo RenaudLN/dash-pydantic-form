@@ -3,6 +3,15 @@ msgstr ""
 "Language: fr\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
+msgid "Found previous form data. Do you want to restore it?"
+msgstr "Données de formulaire précédemment entrées. Voulez-vous les restaurer ?"
+
+msgid "Restore"
+msgstr "Restaurer"
+
+msgid "Cancel"
+msgstr "Annuler"
+
 msgid "Back"
 msgstr "Précédent"
 
@@ -20,6 +29,9 @@ msgstr "Cliquer pour choisir un {path_type}"
 
 msgid "Click to select a directory"
 msgstr "Cliquer pour choisir un dossier"
+
+msgid "Enter glob pattern"
+msgstr "Entrez un modèle glob"
 
 msgid "Select a {path_type}"
 msgstr "Choix de {path_type}"
@@ -62,6 +74,18 @@ msgstr "Ajouter via CSV"
 
 msgid "Add row"
 msgstr "Ajouter une ligne"
+
+msgid "Wrong column names"
+msgstr "Noms de colonnes incorrects"
+
+msgid "CSV upload failed, the file should contain the following columns: "
+msgstr "L'upload du CSV a échoué, le fichier doit contenir les colonnes suivantes : "
+
+msgid "Transfer all"
+msgstr "Tout transférer"
+
+msgid "Transfer selected"
+msgstr "Transférer la sélection"
 
 msgid "Showing first {max_items} items, refine your search for more..."
 msgstr "Les {max_items} premiers résultats sont affichés, affinez votre recherche pour en voir plus..."

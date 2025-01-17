@@ -122,7 +122,7 @@ class PathField(BaseField):
                     id=self.ids.glob(aio_id, form_id, field, parent),
                     styles={"input": {"borderRadius": "0 0.25rem 0.25rem 0"}},
                     debounce=350,
-                    placeholder="Enter glob pattern",
+                    placeholder=_("Enter glob pattern"),
                     flex=1,
                     ml=-1,
                 ),
