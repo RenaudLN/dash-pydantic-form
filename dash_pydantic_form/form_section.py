@@ -1,9 +1,11 @@
-import json
-from typing import Literal
+import warnings
+from typing import TYPE_CHECKING, Literal
 
 from dash_iconify import DashIconify
-from plotly.io.json import to_json_plotly
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from dash_pydantic_form.form_layouts.form_layout import FormLayout
 
 SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
@@ -32,35 +34,19 @@ class FormSection(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
 
-class Sections(BaseModel):
-    """Form sections model.
+def Sections(
+    sections: list[FormSection],
+    remaining_fields_position: Position = "top",
+    render: SectionRender = "accordion",
+    render_kwargs: dict | None = None,
+) -> "FormLayout":
+    """Adapter from Sections to FormLayouts for backward compatibility."""
+    from dash_pydantic_form.form_layouts import FormLayout
 
-    Parameters
-    ----------
-    sections: list[FormSection]
-        List of FormSection.
-    remaining_fields_position: Literal["top", "bottom", "none"]
-        Position of the fields not listed in the sections. Default "top".
-    render: Literal["accordion", "tabs", "steps"]
-        how the sections should be rendered. Possible values: "accordion", "tabs", "steps".
-        Default "accordion".
-    render_kwargs: dict | None
-        Additional render kwargs passed to the section render functions, optional.
-        See `ModelForm.render_accordion_sections`, `ModelForm.render_tabs_sections` and
-        `ModelForm.render_steps_sections`
-    """
-
-    sections: list[FormSection]
-    remaining_fields_position: Position = "top"
-    render: SectionRender = "accordion"
-    render_kwargs: dict | None = None
-
-    def model_post_init(self, _context):
-        """Model post init."""
-        if self.render_kwargs is None:
-            self.render_kwargs = {}
-
-    @field_serializer("render_kwargs")
-    def serialize_render_kwargs(self, value):
-        """Serialize render kwargs, allowing Dash object values."""
-        return json.loads(to_json_plotly(value))
+    warnings.warn("Sections is deprecated, use FormLayouts instead.", DeprecationWarning, stacklevel=1)
+    return FormLayout.load(
+        sections=sections,
+        remaining_fields_position=remaining_fields_position,
+        layout=render,
+        render_kwargs=render_kwargs,
+    )

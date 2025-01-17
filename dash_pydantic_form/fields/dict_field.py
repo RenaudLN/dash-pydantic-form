@@ -12,7 +12,7 @@ from pydantic.fields import FieldInfo
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.fields.list_field import ListField
-from dash_pydantic_form.form_section import Sections
+from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import Type, get_fullpath
 
@@ -38,7 +38,7 @@ class DictField(ListField):
         parent: str,
         index: int,
         fields_repr: dict[str, dict | BaseField] | None = None,
-        sections: Sections | None = None,
+        form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         key: str | None = None,
@@ -54,7 +54,7 @@ class DictField(ListField):
             index=index,
             value=kwargs.pop("value", None),
             fields_repr=fields_repr,
-            sections=sections,
+            form_layout=form_layout,
             items_deletable=items_deletable,
             read_only=read_only,
             **kwargs,
@@ -77,7 +77,7 @@ class DictField(ListField):
         key: str | None = None,
         opened: bool = False,
         fields_repr: dict[str, dict | BaseField] | None = None,
-        sections: Sections | None = None,
+        form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         **kwargs,
@@ -93,7 +93,7 @@ class DictField(ListField):
             value=kwargs.pop("value", None),
             opened=opened,
             fields_repr=fields_repr,
-            sections=sections,
+            form_layout=form_layout,
             items_deletable=items_deletable,
             read_only=read_only,
             **kwargs,
@@ -204,7 +204,7 @@ class DictField(ListField):
                         index=i,
                         key=key,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
@@ -243,7 +243,7 @@ class DictField(ListField):
                         index=i,
                         key=key,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
@@ -271,7 +271,7 @@ class DictField(ListField):
                         index=i,
                         key=key,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         input_kwargs=self.input_kwargs,
@@ -302,7 +302,7 @@ class DictField(ListField):
             value="-",
             opened=True,
             fields_repr=self.fields_repr,
-            sections=self.sections,
+            form_layout=self.form_layout,
             items_deletable=self.items_deletable,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,

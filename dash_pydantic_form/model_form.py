@@ -1,6 +1,5 @@
 import contextlib
 import dataclasses as dc
-import itertools
 import uuid
 import warnings
 from copy import deepcopy
@@ -24,18 +23,17 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
-from dash_iconify import DashIconify
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from . import ids as common_ids
 from .fields import BaseField, fields
-from .form_section import Sections
+from .form_layouts import FormLayout
 from .i18n import _, language_context
+from .ids import form_base_id
 from .utils import (
     SEP,
     Type,
-    deep_merge,
     get_fullpath,
     get_model_cls,
     get_subitem,
@@ -44,12 +42,6 @@ from .utils import (
     is_subclass,
     model_construct_recursive,
 )
-
-
-def form_base_id(part: str, aio_id: str, form_id: str, parent: str = ""):
-    """Form parts id."""
-    return {"part": part, "aio_id": aio_id, "form_id": form_id, "parent": parent}
-
 
 Children_ = Component | str | int | float
 Children = Children_ | list[Children_]
@@ -67,13 +59,6 @@ class ModelFormIdsFactory:
     cancel_restore_btn = partial(form_base_id, "_pydf-cancel-restore-btn")
     wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
     errors = partial(form_base_id, "_pydf-errors")
-    accordion = partial(form_base_id, "_pydf-accordion")
-    tabs = partial(form_base_id, "_pydf-tabs")
-    steps = partial(form_base_id, "_pydf-steps")
-    steps_save = partial(form_base_id, "_pydf-steps-save")
-    steps_next = partial(form_base_id, "_pydf-steps-next")
-    steps_previous = partial(form_base_id, "_pydf-steps-previous")
-    steps_nsteps = partial(form_base_id, "_pydf-steps-nsteps")
     model_store = partial(form_base_id, "_pydf-model-store")
     form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
 
@@ -88,13 +73,6 @@ class ModelFormIds:
     restore_btn: dict[str, str]
     cancel_restore_btn: dict[str, str]
     errors: dict[str, str]
-    accordion: dict[str, str]
-    tabs: dict[str, str]
-    steps: dict[str, str]
-    steps_save: dict[str, str]
-    steps_next: dict[str, str]
-    steps_previous: dict[str, str]
-    steps_nsteps: dict[str, str]
     model_store: dict[str, str]
     form_specs_store: dict[str, str]
 
@@ -153,8 +131,10 @@ class ModelForm(html.Div):
         Mapping between field name and field representation. If not provided, default field
         representations will be used based on the field annotation.
         See `fields.get_default_repr`.
-    sections: Sections | None
-        List of form sections (optional). See `Sections`.
+    sections: FormLayout | None
+        DEPRECATED - List of form sections (optional). See `Sections`.
+    form_layout: FormLayout | None
+        Form layout
     submit_on_enter: bool
         Whether to submit the form on enter. Default False.
         Note: this may break the behaviour of some fields (e.g. editable table), use with caution.
@@ -193,7 +173,8 @@ class ModelForm(html.Div):
         path: str = "",
         form_cols: int = 4,
         fields_repr: dict[str, Union["BaseField", dict]] | None = None,
-        sections: Sections | None = None,
+        sections: FormLayout | None = None,
+        form_layout: FormLayout | None = None,
         submit_on_enter: bool = False,
         discriminator: str | None = None,
         excluded_fields: list[str] | None = None,
@@ -225,6 +206,10 @@ class ModelForm(html.Div):
         if cols is not None:
             warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
             form_cols = cols
+        if sections is not None:
+            warnings.warn("sections is deprecated, use form_layout instead", DeprecationWarning, stacklevel=1)
+            if form_layout is None:
+                form_layout = sections
 
         fields_repr = fields_repr or {}
 
@@ -252,19 +237,15 @@ class ModelForm(html.Div):
                     f: r for f, r in field_inputs.items() if f not in fields_order
                 }
 
-            if not sections or not any(
-                [f for f in field_inputs if f in s.fields] for s in sections.sections if s.fields
-            ):
-                children = [self.grid(list(field_inputs.values()))]
+            if not form_layout:
+                children = [FormLayout.grid(list(field_inputs.values()))]
             else:
-                children = self.handle_sections(
-                    field_inputs=field_inputs, sections=sections, aio_id=aio_id, form_id=form_id, path=path
-                )
+                children = form_layout.render(aio_id=aio_id, form_id=form_id, path=path, field_inputs=field_inputs)
 
             children.extend(
-                self.get_meta_children(
+                self._get_meta_children(
                     fields_repr=fields_repr,
-                    sections=sections,
+                    form_layout=form_layout,
                     aio_id=aio_id,
                     form_id=form_id,
                     path=path,
@@ -380,56 +361,11 @@ class ModelForm(html.Div):
         return field_inputs
 
     @classmethod
-    def handle_sections(  # noqa: PLR0913
-        cls,
-        *,
-        field_inputs: dict[str, Component],
-        sections: Sections,
-        aio_id: str,
-        form_id: str,
-        path: str,
-    ):
-        """Handle the sections."""
-        fields_not_in_sections = set(field_inputs) - set(
-            itertools.chain.from_iterable(s.fields for s in sections.sections)
-        )
-
-        if sections.render == "accordion":
-            render_function = cls.render_accordion_sections
-        elif sections.render == "tabs":
-            render_function = cls.render_tabs_sections
-        elif sections.render == "steps":
-            render_function = cls.render_steps_sections
-        else:
-            raise ValueError("Only 'accordion', 'tabs' and 'steps' are supported for `section_render_type`.")
-
-        sections_render = render_function(
-            aio_id=aio_id,
-            form_id=form_id,
-            path=path,
-            field_inputs=field_inputs,
-            sections=sections,
-        )
-
-        if sections.remaining_fields_position == "none" or not fields_not_in_sections:
-            children = sections_render
-        elif sections.remaining_fields_position == "top":
-            children = [
-                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
-            ] + sections_render
-        else:
-            children = sections_render + [
-                cls.grid([v for k, v in field_inputs.items() if k in fields_not_in_sections], mb="sm")
-            ]
-
-        return children
-
-    @classmethod
-    def get_meta_children(  # noqa: PLR0913
+    def _get_meta_children(  # noqa: PLR0913
         cls,
         *,
         fields_repr: dict[str, dict | BaseField],
-        sections: Sections | None,
+        form_layout: FormLayout | None,
         aio_id: str,
         form_id: str,
         path: str,
@@ -470,7 +406,7 @@ class ModelForm(html.Div):
         children.append(
             dcc.Store(
                 data={
-                    "sections": sections.model_dump(mode="json") if sections else None,
+                    "form_layout": form_layout.model_dump(mode="json") if form_layout else None,
                     "fields_repr": fields_repr_dicts,
                     "form_cols": form_cols,
                 },
@@ -479,11 +415,6 @@ class ModelForm(html.Div):
         )
 
         return children
-
-    @classmethod
-    def grid(cls, children: Children, **kwargs):
-        """Create the responsive grid for a field."""
-        return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
 
     @classmethod
     def get_restore_data_overlay(cls, aio_id: str, form_id: str):
@@ -519,209 +450,6 @@ class ModelForm(html.Div):
             align="center",
         )
 
-    @classmethod
-    def render_accordion_sections(  # noqa: PLR0913
-        cls,
-        *,
-        aio_id: str,
-        form_id: str,
-        path: str,
-        field_inputs: dict[str, Component],
-        sections: Sections,
-    ):
-        """Render the form sections as accordion."""
-        kwargs = deepcopy(sections.render_kwargs or {})
-        accordion_styles = deep_merge(
-            {
-                "control": {"padding": "0.5rem"},
-                "label": {"padding": 0},
-                "item": {
-                    "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
-                    "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
-                    "marginBottom": "0.5rem",
-                    "borderRadius": "0.25rem",
-                },
-                "content": {
-                    "display": "flex",
-                    "flexDirection": "column",
-                    "gap": "0.375rem",
-                    "padding": "0.125rem 0.5rem 0.5rem",
-                },
-            },
-            kwargs.pop("styles", {}),
-        )
-        multiple = kwargs.pop("multiple", True)
-        return [
-            dmc.Accordion(
-                [
-                    dmc.AccordionItem(
-                        [
-                            dmc.AccordionControl(
-                                dmc.Text(
-                                    ([DashIconify(icon=section.icon)] if section.icon else []) + [section.name],
-                                    style={"display": "flex", "alignItems": "center", "gap": "0.5rem"},
-                                    fw=600,
-                                ),
-                            ),
-                            dmc.AccordionPanel(
-                                cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
-                            ),
-                        ],
-                        value=section.name,
-                    )
-                    for section in sections.sections
-                ],
-                value=[section.name for section in sections.sections if section.default_open]
-                if multiple
-                else next((section.name for section in sections.sections if section.default_open), None),
-                styles=accordion_styles,
-                id=cls.ids.accordion(aio_id, form_id, path),
-                multiple=multiple,
-                **kwargs,
-            ),
-        ]
-
-    @classmethod
-    def render_tabs_sections(  # noqa: PLR0913
-        cls,
-        *,
-        aio_id: str,
-        form_id: str,
-        path: str,
-        field_inputs: dict[str, Component],
-        sections: Sections,
-    ):
-        """Render the form sections as tabs."""
-        kwargs = deepcopy(sections.render_kwargs or {})
-        value = sections.sections[0].name
-        for section in sections.sections:
-            if section.default_open:
-                value = section.name
-                break
-
-        tabs_styles = deep_merge({"panel": {"padding": "1rem 0.5rem 0"}}, kwargs.pop("styles", {}))
-
-        return [
-            dmc.Tabs(
-                [
-                    dmc.TabsList(
-                        [
-                            dmc.TabsTab(
-                                dmc.Text(
-                                    ([DashIconify(icon=section.icon)] if section.icon else []) + [section.name],
-                                    style={"display": "flex", "alignItems": "center", "gap": "0.5rem"},
-                                ),
-                                value=section.name,
-                            )
-                            for section in sections.sections
-                        ]
-                    ),
-                    *[
-                        dmc.TabsPanel(
-                            cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
-                            value=section.name,
-                        )
-                        for section in sections.sections
-                    ],
-                ],
-                value=value,
-                styles=tabs_styles,
-                id=cls.ids.tabs(aio_id, form_id, path),
-                **kwargs,
-            )
-        ]
-
-    @classmethod
-    def render_steps_sections(  # noqa: PLR0913
-        cls,
-        *,
-        aio_id: str,
-        form_id: str,
-        path: str,
-        field_inputs: dict[str, Component],
-        sections: Sections,
-    ):
-        """Render the form sections as steps."""
-        kwargs = deepcopy(sections.render_kwargs or {})
-        additional_steps = kwargs.pop("additional_steps", [])
-        stepper_styles = deep_merge(
-            {
-                "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 2rem"},
-                "content": {"flex": 1, "padding": 0},
-                "steps": {"minWidth": 180},
-                "step": {"cursor": "pointer"},
-                "stepBody": {"padding-top": "0.6875rem"},
-                "stepCompletedIcon": {"&>svg": {"width": 12}},
-            },
-            kwargs.pop("styles", {}),
-        )
-        stepper = dmc.Stepper(
-            id=cls.ids.steps(aio_id, form_id, path),
-            active=0,
-            orientation=kwargs.pop("orientation", "vertical"),
-            size=kwargs.pop("size", "sm"),
-            styles=stepper_styles,
-            children=[
-                dmc.StepperStep(
-                    label=section.name,
-                    icon=DashIconify(icon=section.icon) if section.icon else None,
-                    children=cls.grid([field_inputs[field] for field in section.fields if field in field_inputs]),
-                )
-                for section in sections.sections
-            ]
-            + additional_steps,
-            **kwargs,
-        )
-
-        return [
-            html.Div(
-                [
-                    stepper,
-                    dmc.Group(
-                        [
-                            dmc.Button(
-                                _("Back"),
-                                id=cls.ids.steps_previous(aio_id, form_id, path),
-                                disabled=True,
-                                size="compact-md",
-                                leftSection=DashIconify(icon="carbon:arrow-left", height=16),
-                            ),
-                            dmc.Button(
-                                _("Next"),
-                                id=cls.ids.steps_next(aio_id, form_id, path),
-                                size="compact-md",
-                                rightSection=DashIconify(icon="carbon:arrow-right", height=16),
-                            ),
-                        ],
-                        style={
-                            "position": "absolute",
-                            "top": f"calc({78 * (len(sections.sections) + len(additional_steps))}px + 1rem)",
-                        },
-                    ),
-                    dcc.Store(data=len(sections.sections), id=cls.ids.steps_nsteps(aio_id, form_id, path)),
-                ],
-                style={"position": "relative"},
-            )
-        ]
-
-
-clientside_callback(
-    ClientsideFunction(namespace="pydf", function_name="stepsPreviousNext"),
-    Output(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
-    Input(ModelForm.ids.steps_previous(MATCH, MATCH, MATCH), "n_clicks"),
-    Input(ModelForm.ids.steps_next(MATCH, MATCH, MATCH), "n_clicks"),
-    State(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
-    State(ModelForm.ids.steps_nsteps(MATCH, MATCH, MATCH), "data"),
-    prevent_inital_call=True,
-)
-
-clientside_callback(
-    ClientsideFunction(namespace="pydf", function_name="stepsDisable"),
-    Output(ModelForm.ids.steps_previous(MATCH, MATCH, MATCH), "disabled"),
-    Output(ModelForm.ids.steps_next(MATCH, MATCH, MATCH), "disabled"),
-    Input(ModelForm.ids.steps(MATCH, MATCH, MATCH), "active"),
-    State(ModelForm.ids.steps_nsteps(MATCH, MATCH, MATCH), "data"),
-)
 
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="getValues"),
@@ -835,12 +563,12 @@ def update_form_wrapper_contents(
 
     item = model_construct_recursive(form_data, model_cls)
 
-    # Retrieve fields-repr and sections from the stored data
+    # Retrieve fields-repr and form_layout from the stored data
     fields_repr: dict[str, BaseField] = form_specs["fields_repr"] or {}
     for k, v in fields_repr.items():
         with contextlib.suppress(KeyError):
             fields_repr[k] = BaseField.from_dict(v)
-    sections = Sections(**form_specs["sections"]) if form_specs["sections"] else None
+    form_layout = FormLayout.load(**form_specs["form_layout"]) if form_specs["form_layout"] else None
 
     form = ModelForm(
         item=item,
@@ -848,7 +576,7 @@ def update_form_wrapper_contents(
         form_id=ctx.triggered_id["form_id"],
         path=ctx.triggered_id["parent"],
         discriminator=discriminator,
-        sections=sections,
+        form_layout=form_layout,
         fields_repr=fields_repr,
         form_cols=form_specs["form_cols"],
         data_model=None if isinstance(model_name, str) else Union[tuple(model_union)],  # noqa: UP007

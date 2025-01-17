@@ -8,7 +8,7 @@ from dash import MATCH, Dash, Input, Output, State, _dash_renderer, callback, cl
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
-from dash_pydantic_form import FormSection, ModelForm, Sections, fields, get_model_cls, ids
+from dash_pydantic_form import FormLayout, FormSection, ModelForm, fields, get_model_cls, ids
 from dash_pydantic_form.quantity import Quantity
 from dash_pydantic_form.utils import SEP
 
@@ -259,7 +259,7 @@ app.layout = dmc.MantineProvider(
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },
-                            sections=Sections(
+                            form_layout=FormLayout.load(
                                 sections=[
                                     FormSection(name="General", fields=["name", "age", "mini_bio"], default_open=True),
                                     FormSection(
@@ -269,7 +269,7 @@ app.layout = dmc.MantineProvider(
                                     ),
                                     FormSection(name="Other", fields=["pets", "jobs"], default_open=True),
                                 ],
-                                render="accordion",
+                                layout="accordion",
                             ),
                         ),
                     ],

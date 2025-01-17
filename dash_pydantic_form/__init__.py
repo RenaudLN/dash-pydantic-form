@@ -4,6 +4,7 @@ from importlib.metadata import version
 from pydantic import BaseModel
 
 from dash_pydantic_form.fields import fields
+from dash_pydantic_form.form_layouts import FormLayout
 from dash_pydantic_form.form_section import FormSection, Sections
 from dash_pydantic_form.model_form import ModelForm
 from dash_pydantic_form.utils import from_form_data, get_model_cls
@@ -31,4 +32,13 @@ _js_dist = [
 
 __version__ = version(__package__)
 
-__all__ = ["FormSection", "ModelForm", "Sections", "get_model_cls", "fields", "from_form_data", "__version__"]
+__all__ = [
+    "FormLayout",
+    "FormSection",
+    "ModelForm",
+    "Sections",
+    "get_model_cls",
+    "fields",
+    "from_form_data",
+    "__version__",
+]

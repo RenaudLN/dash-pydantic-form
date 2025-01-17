@@ -16,7 +16,7 @@ from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
-from dash_pydantic_form.form_section import Sections
+from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import get_fullpath
 
@@ -27,7 +27,7 @@ class ModelField(BaseField):
     Optional attributes:
     * render_type (one of 'accordion', 'modal', default 'accordion')
     * fields_repr, mapping between field name and field representation
-    * sections, list of FormSection for the NestedModel form
+    * form_layout, FormLayout for the NestedModel form
     """
 
     render_type: Literal["accordion", "modal"] = Field(
@@ -37,7 +37,7 @@ class ModelField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    sections: Sections | None = Field(default=None, description="Sub-form sections.")
+    form_layout: FormLayout | None = Field(default=None, description="Sub-form sections.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
 
     full_width = True
@@ -47,6 +47,8 @@ class ModelField(BaseField):
         super().model_post_init(_context)
         if self.fields_repr is None:
             self.fields_repr = {}
+        if self.form_layout is None and self.model_extra and self.model_extra.get("sections") is not None:
+            self.form_layout = self.model_extra["sections"]
 
     class ids(BaseField.ids):
         """Model field ids."""
@@ -100,7 +102,7 @@ class ModelField(BaseField):
                                 form_id=form_id,
                                 path=new_parent,
                                 fields_repr=self.fields_repr,
-                                sections=self.sections,
+                                form_layout=self.form_layout,
                                 read_only=self.read_only,
                                 form_cols=self.form_cols,
                             ),
@@ -157,7 +159,7 @@ class ModelField(BaseField):
                                 form_id=form_id,
                                 path=get_fullpath(parent, field),
                                 fields_repr=self.fields_repr,
-                                sections=self.sections,
+                                form_layout=self.form_layout,
                                 discriminator=field_info.discriminator,
                                 read_only=self.read_only,
                                 form_cols=self.form_cols,
