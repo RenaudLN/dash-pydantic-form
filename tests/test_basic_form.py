@@ -178,12 +178,13 @@ def test_bf0005_use_repr_types():
     assert isinstance(matches[0], dmc.TextInput)
 
 
-def test_store_progress(dash_duo):
+def test_store_progress_auto(dash_duo):
     """Test that the store_progress=True option works."""
     app = Dash(__name__)
     aio_id = "basic"
     form_id = "form"
-    app.layout = dmc.MantineProvider(ModelForm(Basic, aio_id=aio_id, form_id=form_id, store_progress=True))
+    form = ModelForm(Basic, aio_id=aio_id, form_id=form_id, store_progress="session", restore_behavior="auto")
+    app.layout = dmc.MantineProvider(form)
 
     dash_duo.start_server(app)
     set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), basic_data["a"])
@@ -206,3 +207,46 @@ def test_store_progress(dash_duo):
 
     set_input(dash_duo, ids.value_field(aio_id, form_id, "b"), "test")
     assert elem.get_property("value") == "test"
+
+
+def test_store_progress_notify(dash_duo):
+    """Test that the store_progress=True option works."""
+    app = Dash(__name__)
+    aio_id = "basic"
+    form_id = "form"
+    form = ModelForm(Basic, aio_id=aio_id, form_id=form_id, store_progress="session", restore_behavior="notify")
+    app.layout = dmc.MantineProvider(form)
+
+    dash_duo.start_server(app)
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "a"), basic_data["a"])
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "b"), basic_data["b"])
+
+    for field in ["a", "b"]:
+        fid = ids.value_field(aio_id, form_id, field)
+        str_id = stringify_id(fid)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
+        assert elem.get_property("value") == str(basic_data[field])
+
+    dash_duo.driver.refresh()
+    dash_duo.wait_for_page()
+
+    elem = dash_duo.driver.find_element(By.ID, stringify_id(form.ids.restore_btn))
+    elem.click()
+
+    for field in ["a", "b"]:
+        fid = ids.value_field(aio_id, form_id, field)
+        str_id = stringify_id(fid)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
+        assert elem.get_property("value") == str(basic_data[field])
+
+    dash_duo.driver.refresh()
+    dash_duo.wait_for_page()
+
+    elem = dash_duo.driver.find_element(By.ID, stringify_id(form.ids.cancel_restore_btn))
+    elem.click()
+
+    for field in ["a", "b"]:
+        fid = ids.value_field(aio_id, form_id, field)
+        str_id = stringify_id(fid)
+        elem = dash_duo.driver.find_element(By.ID, str_id)
+        assert elem.get_property("value") == ""
