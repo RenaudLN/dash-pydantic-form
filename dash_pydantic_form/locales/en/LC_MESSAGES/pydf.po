@@ -3,11 +3,20 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 
+msgid "Found previous form data. Do you want to restore it?"
+msgstr "Found previous form data. Do you want to restore it?"
+
+msgid "Restore"
+msgstr "Restore"
+
+msgid "Cancel"
+msgstr "Cancel"
+
 msgid "Back"
-msgstr ""
+msgstr "Back"
 
 msgid "Next"
-msgstr ""
+msgstr "Next"
 
 msgid "Add"
 msgstr "Add"
@@ -21,6 +30,9 @@ msgstr "Click to select a {path_type}"
 msgid "Click to select a directory"
 msgstr "Click to select a directory"
 
+msgid "Enter glob pattern"
+msgstr "Enter glob pattern"
+
 msgid "Select a {path_type}"
 msgstr "Select a {path_type}"
 
@@ -31,7 +43,7 @@ msgid "Select {path_type}"
 msgstr "Select {path_type}"
 
 msgid "No match"
-msgstr ""
+msgstr "No match"
 
 msgid "directory"
 msgstr "directory"
@@ -59,6 +71,18 @@ msgstr "Upload CSV"
 
 msgid "Add row"
 msgstr "Add row"
+
+msgid "Wrong column names"
+msgstr "Wrong column names"
+
+msgid "CSV upload failed, the file should contain the following columns: "
+msgstr "CSV upload failed, the file should contain the following columns: "
+
+msgid "Transfer all"
+msgstr "Transfer all"
+
+msgid "Transfer selected"
+msgstr "Transfer selected"
 
 msgid "Showing first {max_items} items, refine your search for more..."
 msgstr "Showing first {max_items} items, refine your search for more..."

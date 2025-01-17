@@ -1,35 +1,20 @@
 window.dash_clientside = window.dash_clientside || {}
 
-function waitForElem(id) {
-  return new Promise(resolve => {
-      if (document.getElementById(id)) {
-          return resolve(document.getElementById(id));
-      }
-
-      const observer = new MutationObserver(mutations => {
-          if (document.getElementById(id)) {
-              observer.disconnect();
-              resolve(document.getElementById(id));
-          }
-      });
-
-      // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
-      observer.observe(document.body, {
-          childList: true,
-          subtree: true
-      });
-  });
-}
-
-const sortedJson = (obj) => {
-  const allKeys = new Set()
-  JSON.stringify(obj, (key, value) => (allKeys.add(key), value))
-  return JSON.stringify(obj, Array.from(allKeys).sort())
-}
-
 dash_clientside.pydf = {
-  getValues: () => {
-    const inputs = dash_clientside.callback_context.inputs_list[0].concat(dash_clientside.callback_context.inputs_list[1])
+  getValues: (
+    _values,
+    _checked,
+    _keys,
+    _visibiilty_wrappers,
+    _trigger,
+    formId,
+    storeProgress,
+    currentFormData,
+    restoreWrapperId,
+    restoreBehavior,
+  ) => {
+    const inputs = dash_clientside.callback_context.inputs_list[0]
+      .concat(dash_clientside.callback_context.inputs_list[1])
     const dictItemKeys = dash_clientside.callback_context.inputs_list[2].reduce((current, x) => {
       current[`${x.id.parent}:${x.id.field}:${x.id.meta}`.replace(/^:/, "")] = x.value
       return current
@@ -37,55 +22,50 @@ dash_clientside.pydf = {
     const hiddenPaths = dash_clientside.callback_context.inputs_list[3]
       .filter(x => x.value.display == "none")
       .map(x => x.id.meta.split("|")[0])
-    const formData = inputs.reduce((acc, val) => {
-        const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
-        if (hiddenPaths.some(p => key.startsWith(`${p}:`) || key === p)) return acc
-        const parts = key.split(":")
-        let pointer = acc
-        const matchingDictKeys = Object.fromEntries(
-          Object.entries(dictItemKeys)
-          .filter(entry => key.startsWith(entry[0]))
-          .map(([k, v]) => [k.split(":").length, v])
-        )
-        parts.forEach((part, i) => {
-            // Update the list key if it is a dict entry
-            const nextMatch = Number(Object.keys(matchingDictKeys).sort().filter(x => x >= i + 1)[0] || -1)
-            if (i + 1 == nextMatch) {
-              part = matchingDictKeys[i + 1] || part
-            }
-            if (i === parts.length - 1) {
-              pointer[part] = val.value
-            } else {
-                const prt = i + 1 !== nextMatch && /^\d+$/.test(part) ? Number(part) : part
-                if (!pointer[prt]) {
-                    pointer[prt] = i + 2 !== nextMatch && /^\d+$/.test(parts[i + 1]) ? [] : {}
-                }
-                pointer = pointer[prt]
-            }
-        })
-        return acc
-    }, {})
+    const formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys)
+
     // Handle the storing/retrieval of form data if requested
-    if (JSON.parse(dash_clientside.callback_context.states_list[0].value)){
+    if (storeProgress === true || storeProgress === "session" || storeProgress === "local") {
       const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list.id)}`
+      const store = storeProgress === "session" ? sessionStorage : localStorage
       // If this is the first time the form is rendered, try retrieving the stored data
       // and update the form if it is different
       if (
         // No data in the ids.main data
-        !dash_clientside.callback_context.states_list[1].value
+        !currentFormData
         // And top-level form
         && dash_clientside.callback_context.outputs_list.id.parent == ""
+        // And not triggered by data-getvalue
+        && !(
+          dash_clientside.callback_context.triggered.length > 0
+          && dash_clientside.callback_context.triggered[0].prop_id.includes("getvalue")
+        )
       ) {
-        const oldData = localStorage.getItem(storageKey)
+        const oldData = store.getItem(storageKey)
         if (oldData && oldData !== sortedJson(formData)) {
-          dash_clientside.set_props(dash_clientside.callback_context.states_list[0].id, {"data-update": JSON.parse(oldData)})
-          return dash_clientside.no_update
+          if (restoreBehavior === "notify") {
+            dash_clientside.set_props(formId, {"data-restored": JSON.parse(oldData)})
+            dash_clientside.set_props(restoreWrapperId, {style: null})
+            return dash_clientside.no_update
+          } else if (restoreBehavior === "auto") {
+            dash_clientside.set_props(formId, {"data-update": JSON.parse(oldData)})
+            return dash_clientside.no_update
+          }
         }
       }
       // Store the latest form data
-      localStorage.setItem(storageKey, sortedJson(formData))
+      store.setItem(storageKey, sortedJson(formData))
     }
+
     return formData
+  },
+  restoreData: (trigger, data) => {
+    if (!data || !trigger) return Array(3).fill(dash_clientside.no_update)
+    return [data, {display: "none"}, null]
+  },
+  cancelRestoreData: (trigger) => {
+    if (!trigger) return Array(3).fill(dash_clientside.no_update)
+    return [{display: "none"}, null, 1]
   },
   updateFieldVisibility: (value, checked) => {
 
@@ -267,6 +247,65 @@ dash_clientside.pydf = {
     }
     return [false, `${prefix}${path}`, `${prefix}${path}`]
   }
+}
+
+function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
+  const formData = inputs.reduce((acc, val) => {
+    const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
+    if (hiddenPaths.some(p => key.startsWith(`${p}:`) || key === p)) return acc
+    const parts = key.split(":")
+    let pointer = acc
+    const matchingDictKeys = Object.fromEntries(
+      Object.entries(dictItemKeys)
+      .filter(entry => key.startsWith(entry[0]))
+      .map(([k, v]) => [k.split(":").length, v])
+    )
+    parts.forEach((part, i) => {
+        // Update the list key if it is a dict entry
+        const nextMatch = Number(Object.keys(matchingDictKeys).sort().filter(x => x >= i + 1)[0] || -1)
+        if (i + 1 == nextMatch) {
+          part = matchingDictKeys[i + 1] || part
+        }
+        if (i === parts.length - 1) {
+          pointer[part] = val.value
+        } else {
+            const prt = i + 1 !== nextMatch && /^\d+$/.test(part) ? Number(part) : part
+            if (!pointer[prt]) {
+                pointer[prt] = i + 2 !== nextMatch && /^\d+$/.test(parts[i + 1]) ? [] : {}
+            }
+            pointer = pointer[prt]
+        }
+    })
+    return acc
+  }, {})
+  return formData
+}
+
+function waitForElem(id) {
+  return new Promise(resolve => {
+      if (document.getElementById(id)) {
+          return resolve(document.getElementById(id));
+      }
+
+      const observer = new MutationObserver(mutations => {
+          if (document.getElementById(id)) {
+              observer.disconnect();
+              resolve(document.getElementById(id));
+          }
+      });
+
+      // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
+      observer.observe(document.body, {
+          childList: true,
+          subtree: true
+      });
+  });
+}
+
+const sortedJson = (obj) => {
+  const allKeys = new Set()
+  JSON.stringify(obj, (key, value) => (allKeys.add(key), value))
+  return JSON.stringify(obj, Array.from(allKeys).sort())
 }
 
 // Return a : separated string of the args

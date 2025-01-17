@@ -471,9 +471,9 @@ class TableField(BaseField):
 
             return no_update, dmc.Notification(
                 color="red",
-                title="Wrong column names",
-                message="CSV upload failed, the file should contain the following columns: "
-                f"{', '.join(required_columns)}",
+                title=_("Wrong column names"),
+                message=_("CSV upload failed, the file should contain the following columns: ")
+                + f"{', '.join(required_columns)}",
                 id=uuid.uuid4().hex,
                 action="show",
             )

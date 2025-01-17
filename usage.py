@@ -186,7 +186,7 @@ bob = Employee(
             },
         },
     },
-    pets=[{"name": "Rex", "species": "cat"}],
+    pets=[{"name": "Rex", "species": "dog"}],
     jobs=["Engineer", "Lawyer"],
     # resume_file="gs://ecmwf-open-data/20240406/06z/ifs/0p4-beta/scda",
 )
@@ -200,6 +200,7 @@ app.layout = dmc.MantineProvider(
     defaultColorScheme="auto",
     children=dmc.AppShell(
         [
+            dmc.NotificationProvider(),
             dmc.AppShellMain(
                 dmc.Container(
                     [
@@ -229,7 +230,8 @@ app.layout = dmc.MantineProvider(
                             # submit_on_enter=True,
                             # debounce_inputs=200,
                             # locale="fr",
-                            store_progress=True,
+                            store_progress="session",
+                            restore_behavior="notify",
                             form_cols=12,
                             fields_repr={
                                 "name": {"placeholder": "Enter your name"},

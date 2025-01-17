@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 20:21+1100\n"
+"POT-Creation-Date: 2025-01-17 22:55+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,84 +17,116 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: dash_pydantic_form/model_form.py:494
+msgid "Found previous form data. Do you want to restore it?"
+msgstr ""
+
 #: dash_pydantic_form/model_form.py:498
+msgid "Restore"
+msgstr ""
+
+#: dash_pydantic_form/model_form.py:503
+msgid "Cancel"
+msgstr ""
+
+#: dash_pydantic_form/model_form.py:683
 msgid "Back"
 msgstr ""
 
-#: dash_pydantic_form/model_form.py:505
+#: dash_pydantic_form/model_form.py:690
 msgid "Next"
 msgstr ""
 
-#: dash_pydantic_form/fields/dict_field.py:336
-#: dash_pydantic_form/fields/list_field.py:548
+#: dash_pydantic_form/fields/dict_field.py:349
+#: dash_pydantic_form/fields/list_field.py:576
 msgid "Add"
 msgstr ""
 
-#: dash_pydantic_form/fields/list_field.py:269
+#: dash_pydantic_form/fields/list_field.py:282
 #: dash_pydantic_form/fields/model_field.py:109
 msgid "Save"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:75
+#: dash_pydantic_form/fields/path_field.py:76
 #, python-brace-format
 msgid "Click to select a {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:114
+#: dash_pydantic_form/fields/path_field.py:115
 msgid "Click to select a directory"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:173
+#: dash_pydantic_form/fields/path_field.py:125
+msgid "Enter glob pattern"
+msgstr ""
+
+#: dash_pydantic_form/fields/path_field.py:174
 #, python-brace-format
 msgid "Select a {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:174
+#: dash_pydantic_form/fields/path_field.py:175
 msgid "glob"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:275
+#: dash_pydantic_form/fields/path_field.py:276
 msgid "Filter with prefix"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:363
+#: dash_pydantic_form/fields/path_field.py:364
 #, python-brace-format
 msgid "Select {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:370
+#: dash_pydantic_form/fields/path_field.py:371
 msgid "No match"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:109
+#: dash_pydantic_form/fields/table_field.py:116
 msgid "Drag & drop a csv file or "
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:110
+#: dash_pydantic_form/fields/table_field.py:117
 msgid "select it"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:115
+#: dash_pydantic_form/fields/table_field.py:122
 msgid "CSV columns"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:118
+#: dash_pydantic_form/fields/table_field.py:125
 msgid "REQUIRED"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:145
+#: dash_pydantic_form/fields/table_field.py:152
 msgid "OPTIONAL"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:188
+#: dash_pydantic_form/fields/table_field.py:195
 msgid "Upload CSV"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:201
+#: dash_pydantic_form/fields/table_field.py:208
 msgid "Add row"
 msgstr ""
 
-#: dash_pydantic_form/fields/transferlist_field.py:330
+#: dash_pydantic_form/fields/table_field.py:474
+msgid "Wrong column names"
+msgstr ""
+
+#: dash_pydantic_form/fields/table_field.py:475
+msgid "CSV upload failed, the file should contain the following columns: "
+msgstr ""
+
+#: dash_pydantic_form/fields/transferlist_field.py:293
+msgid "Transfer all"
+msgstr ""
+
+#: dash_pydantic_form/fields/transferlist_field.py:320
+msgid "Transfer selected"
+msgstr ""
+
+#: dash_pydantic_form/fields/transferlist_field.py:332
 #, python-brace-format
 msgid "Showing first {max_items} items, refine your search for more..."
 msgstr ""

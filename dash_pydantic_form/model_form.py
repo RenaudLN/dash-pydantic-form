@@ -62,6 +62,9 @@ class ModelFormIdsFactory:
 
     form = partial(form_base_id, "_pydf-form")
     main = partial(form_base_id, "_pydf-main")
+    restore_wrapper = partial(form_base_id, "_pydf-restore-wrapper")
+    restore_btn = partial(form_base_id, "_pydf-restore-btn")
+    cancel_restore_btn = partial(form_base_id, "_pydf-cancel-restore-btn")
     wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
     errors = partial(form_base_id, "_pydf-errors")
     accordion = partial(form_base_id, "_pydf-accordion")
@@ -81,6 +84,9 @@ class ModelFormIds:
 
     form: dict[str, str]
     main: dict[str, str]
+    restore_wrapper: dict[str, str]
+    restore_btn: dict[str, str]
+    cancel_restore_btn: dict[str, str]
     errors: dict[str, str]
     accordion: dict[str, str]
     tabs: dict[str, str]
@@ -171,8 +177,9 @@ class ModelForm(html.Div):
     fields_order: list[str] | None
         List of field names to order the fields in the form. The fields will be displayed in the order provided.
         All fields not in the list will be displayed in ther model order, after the ones defined here.
-    store_progress: bool
+    store_progress: bool | Literal["local", "session"]
         Whether to store the progress of the form in the local store, to allow picking up where the user left off.
+        If set to True or "local" will store to local storage, if set to "session" will store to session storage.
     """
 
     ids = IdAccessor()
@@ -197,7 +204,8 @@ class ModelForm(html.Div):
         cols: int = None,
         data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None = None,
         fields_order: list[str] | None = None,
-        store_progress: bool = False,
+        store_progress: bool | Literal["local", "session"] = False,
+        restore_behavior: Literal["auto", "notify"] = "notify",
     ) -> None:
         if data_model is None:
             data_model = type(item) if isinstance(item, BaseModel) else item
@@ -262,11 +270,12 @@ class ModelForm(html.Div):
                     path=path,
                     form_cols=form_cols,
                     data_model=data_model,
+                    restore_behavior=restore_behavior,
                 )
             )
 
         container_kwargs = container_kwargs or {}
-        style = {"--pydf-form-cols": f"{form_cols}"} | container_kwargs.pop("style", {})
+        style = {"--pydf-form-cols": f"{form_cols}"} | container_kwargs.pop("style", {}) | {"position": "relative"}
         if not path:
             style |= {"containerType": "inline-size"}
 
@@ -278,6 +287,9 @@ class ModelForm(html.Div):
                     "id": ModelFormIdsFactory.form(aio_id, form_id, path),
                     "data-submitonenter": submit_on_enter,
                     "data-storeprogress": store_progress,
+                    "data-getvalues": None,
+                    "data-restored": None,
+                    "data-update": None,
                 }
                 if not path
                 else {}
@@ -423,10 +435,19 @@ class ModelForm(html.Div):
         path: str,
         form_cols: int,
         data_model: type[BaseModel] | UnionType,
+        restore_behavior: Literal["auto", "notify"],
     ):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
         if not path:
+            children.append(
+                html.Div(
+                    cls.get_restore_data_overlay(aio_id, form_id),
+                    id=cls.ids.restore_wrapper(aio_id, form_id),
+                    style={"display": "none"},
+                    **{"data-behavior": restore_behavior},
+                )
+            )
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
@@ -463,6 +484,40 @@ class ModelForm(html.Div):
     def grid(cls, children: Children, **kwargs):
         """Create the responsive grid for a field."""
         return dmc.SimpleGrid(children, className="pydantic-form-grid " + kwargs.pop("className", ""), **kwargs)
+
+    @classmethod
+    def get_restore_data_overlay(cls, aio_id: str, form_id: str):
+        """Get the overlay for restoring data."""
+        return dmc.Stack(
+            dmc.Card(
+                [
+                    dmc.Text(_("Found previous form data. Do you want to restore it?"), size="sm", mb="1.25rem"),
+                    dmc.Group(
+                        [
+                            dmc.Button(
+                                _("Restore"),
+                                size="compact-sm",
+                                id=cls.ids.restore_btn(aio_id, form_id),
+                            ),
+                            dmc.Button(
+                                _("Cancel"),
+                                size="compact-sm",
+                                variant="outline",
+                                id=cls.ids.cancel_restore_btn(aio_id, form_id),
+                            ),
+                        ],
+                        justify="center",
+                    ),
+                ],
+                shadow="lg",
+                withBorder=True,
+            ),
+            pos="absolute",
+            style={"inset": 0, "backdropFilter": "blur(3px)", "zIndex": 1},
+            bg="color-mix(in srgb, var(--mantine-color-body), #0000 25%)",
+            p="2rem",
+            align="center",
+        )
 
     @classmethod
     def render_accordion_sections(  # noqa: PLR0913
@@ -675,8 +730,31 @@ clientside_callback(
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
+    Input(ModelForm.ids.form(MATCH, MATCH), "data-getvalues"),
+    State(ModelForm.ids.form(MATCH, MATCH), "id"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
+    State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "id"),
+    State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "data-behavior"),
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="restoreData"),
+    Output(ModelForm.ids.form(MATCH, MATCH), "data-update", allow_duplicate=True),
+    Output(ModelForm.ids.restore_wrapper(MATCH, MATCH), "style", allow_duplicate=True),
+    Output(ModelForm.ids.form(MATCH, MATCH), "data-restored", allow_duplicate=True),
+    Input(ModelForm.ids.restore_btn(MATCH, MATCH), "n_clicks"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-restored"),
+    prevent_initial_call=True,
+)
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="cancelRestoreData"),
+    Output(ModelForm.ids.restore_wrapper(MATCH, MATCH), "style", allow_duplicate=True),
+    Output(ModelForm.ids.form(MATCH, MATCH), "data-restored", allow_duplicate=True),
+    Output(ModelForm.ids.form(MATCH, MATCH), "data-getvalues", allow_duplicate=True),
+    Input(ModelForm.ids.cancel_restore_btn(MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
 )
 
 clientside_callback(
