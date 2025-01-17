@@ -15,7 +15,17 @@ from .form_layout import FormLayout, Position
 
 
 class TabsFormLayout(FormLayout):
-    """Tabs form layout."""
+    """Tabs form layout.
+
+    Parameters
+    ----------
+    render_kwargs: dict | None
+        Kwargs to pass to the render method.
+    sections: list[FormSection]
+        List of form sections.
+    remaining_fields_position: Position
+        Position of the remaining fields, one of 'top', 'bottom' or 'none'.
+    """
 
     class ids:
         """Tabs form ids."""
@@ -42,7 +52,7 @@ class TabsFormLayout(FormLayout):
                 value = section.name
                 break
 
-        tabs_styles = deep_merge({"panel": {"padding": "1rem 0.5rem 0"}}, kwargs.pop("styles", {}))
+        tabs_styles = deep_merge({"panel": {"padding": "1rem 0.5rem"}}, kwargs.pop("styles", {}))
 
         tabs = dmc.Tabs(
             [

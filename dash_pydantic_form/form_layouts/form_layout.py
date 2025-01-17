@@ -15,7 +15,13 @@ Position = Literal["top", "bottom", "none"]
 
 
 class FormLayout(BaseModel, ABC):
-    """Abstract form layout class, base for all form layouts."""
+    """Abstract form layout class, base for all form layouts.
+
+    Parameters
+    ----------
+    render_kwargs: dict | None
+        Kwargs to pass to the render method.
+    """
 
     render_kwargs: dict | None = None
     layout: str

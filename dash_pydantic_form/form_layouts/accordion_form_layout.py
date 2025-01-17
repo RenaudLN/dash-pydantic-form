@@ -15,7 +15,17 @@ from .form_layout import FormLayout, Position
 
 
 class AccordionFormLayout(FormLayout):
-    """Accordion form layout."""
+    """Accordion form layout.
+
+    Parameters
+    ----------
+    render_kwargs: dict | None
+        Kwargs to pass to the render method.
+    sections: list[FormSection]
+        List of form sections.
+    remaining_fields_position: Position
+        Position of the remaining fields, one of 'top', 'bottom' or 'none'.
+    """
 
     class ids:
         """Accordion form ids."""

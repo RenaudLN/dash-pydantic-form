@@ -17,7 +17,17 @@ from .form_layout import FormLayout, Position
 
 
 class StepsFormLayout(FormLayout):
-    """Steps form layout."""
+    """Steps form layout.
+
+    Parameters
+    ----------
+    render_kwargs: dict | None
+        Kwargs to pass to the render method.
+    sections: list[FormSection]
+        List of form sections.
+    remaining_fields_position: Position
+        Position of the remaining fields, one of 'top', 'bottom' or 'none'.
+    """
 
     class ids:
         """Steps form ids."""
@@ -44,7 +54,7 @@ class StepsFormLayout(FormLayout):
         additional_steps = kwargs.pop("additional_steps", [])
         stepper_styles = deep_merge(
             {
-                "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 2rem"},
+                "root": {"display": "flex", "gap": "1.5rem", "padding": "0.75rem 0 3rem"},
                 "content": {"flex": 1, "padding": 0},
                 "steps": {"minWidth": 180},
                 "step": {"cursor": "pointer"},
@@ -80,13 +90,13 @@ class StepsFormLayout(FormLayout):
                             _("Back"),
                             id=self.ids.steps_previous(aio_id, form_id, path),
                             disabled=True,
-                            size="compact-md",
+                            size="compact-sm",
                             leftSection=DashIconify(icon="carbon:arrow-left", height=16),
                         ),
                         dmc.Button(
                             _("Next"),
                             id=self.ids.steps_next(aio_id, form_id, path),
-                            size="compact-md",
+                            size="compact-sm",
                             rightSection=DashIconify(icon="carbon:arrow-right", height=16),
                         ),
                     ],
