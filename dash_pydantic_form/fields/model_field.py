@@ -37,7 +37,7 @@ class ModelField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    form_layout: FormLayout | None = Field(default=None, description="Sub-form sections.")
+    form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
 
     full_width = True

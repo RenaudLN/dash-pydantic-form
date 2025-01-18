@@ -56,7 +56,7 @@ class ListField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    form_layout: FormLayout | None = Field(default=None, description="Sub-form sections.")
+    form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")

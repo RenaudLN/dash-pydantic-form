@@ -132,9 +132,10 @@ class ModelForm(html.Div):
         representations will be used based on the field annotation.
         See `fields.get_default_repr`.
     sections: FormLayout | None
-        DEPRECATED - List of form sections (optional). See `Sections`.
+        DEPRECATED: Use form_layout.
     form_layout: FormLayout | None
-        Form layout
+        Defines how to render the form layout, built-in layouts are `accordion`, `tabs` and `steps`.
+        If not provided, default to rendering the fields in a grid.
     submit_on_enter: bool
         Whether to submit the form on enter. Default False.
         Note: this may break the behaviour of some fields (e.g. editable table), use with caution.
