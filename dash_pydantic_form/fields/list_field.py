@@ -23,7 +23,7 @@ from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
-from dash_pydantic_form.form_section import Sections
+from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import (
     Type,
@@ -40,7 +40,7 @@ class ListField(BaseField):
         new render types can be defined by extending this class and overriding
         the following methods: _contents_renderer and render_type_item_mapper
     * fields_repr, mapping between field name and field representation
-    * sections, list of FormSection for the NestedModel form
+    * form_layout, FormLayout, representing how to render the form
     * items_deletable, whether the items can be deleted (bool, default True)
     * items_creatable, whether new items can be created (bool, default True)
     """
@@ -56,7 +56,7 @@ class ListField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    sections: Sections | None = Field(default=None, description="Sub-form sections.")
+    form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
@@ -71,6 +71,8 @@ class ListField(BaseField):
         if self.read_only:
             self.items_deletable = False
             self.items_creatable = False
+        if self.form_layout is None and self.model_extra and self.model_extra.get("sections") is not None:
+            self.form_layout = self.model_extra["sections"]
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -97,7 +99,7 @@ class ListField(BaseField):
         index: int,
         value: BaseModel,
         fields_repr: dict[str, dict | BaseField] | None = None,
-        sections: Sections | None = None,
+        form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
@@ -143,7 +145,7 @@ class ListField(BaseField):
                         form_id=form_id,
                         path=new_parent,
                         fields_repr=fields_repr,
-                        sections=sections,
+                        form_layout=form_layout,
                         read_only=read_only,
                         discriminator=discriminator,
                         form_cols=form_cols,
@@ -163,7 +165,7 @@ class ListField(BaseField):
         parent: str,
         index: int,
         fields_repr: dict[str, dict | BaseField] | None = None,
-        sections: Sections | None = None,
+        form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
@@ -182,7 +184,7 @@ class ListField(BaseField):
                     form_id=form_id,
                     path=new_parent,
                     fields_repr=fields_repr,
-                    sections=sections,
+                    form_layout=form_layout,
                     container_kwargs={"style": {"flex": 1}},
                     read_only=read_only,
                     discriminator=discriminator,
@@ -217,7 +219,7 @@ class ListField(BaseField):
         value: BaseModel,
         opened: bool = False,
         fields_repr: dict[str, dict | BaseField] | None = None,
-        sections: Sections | None = None,
+        form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         discriminator: str | None = None,
@@ -272,7 +274,7 @@ class ListField(BaseField):
                                 form_id=form_id,
                                 path=new_parent,
                                 fields_repr=fields_repr,
-                                sections=sections,
+                                form_layout=form_layout,
                                 read_only=read_only,
                                 discriminator=discriminator,
                                 form_cols=form_cols,
@@ -407,7 +409,7 @@ class ListField(BaseField):
                         index=i,
                         value=val,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
@@ -446,7 +448,7 @@ class ListField(BaseField):
                         parent=parent,
                         index=i,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
@@ -468,7 +470,7 @@ class ListField(BaseField):
                         parent=parent,
                         index=i,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         input_kwargs=self.input_kwargs,
@@ -497,7 +499,7 @@ class ListField(BaseField):
                         index=i,
                         value=val,
                         fields_repr=self.fields_repr,
-                        sections=self.sections,
+                        form_layout=self.form_layout,
                         items_deletable=self.items_deletable,
                         read_only=self.read_only,
                         discriminator=discriminator,
@@ -528,7 +530,7 @@ class ListField(BaseField):
             value="-",
             opened=True,
             fields_repr=self.fields_repr,
-            sections=self.sections,
+            form_layout=self.form_layout,
             items_deletable=self.items_deletable,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,

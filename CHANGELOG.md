@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stored form data can now be restored automatically or with user confirmation
 - Added missing translations for a few text items
 
+### Changed
+- Sections is deprecated, use FormLayout instead
+- FormLayout allows to define custom form layout renderers, default existing layouts are accordion, tabs and steps, as previously
+
 ## [0.12.0] - 2025-01-15
 ### Added
 - `fields_order` in `ModelForm` to allow changing the fields order without sections nor re-arranging the model fields

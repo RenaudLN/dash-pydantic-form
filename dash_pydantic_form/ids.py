@@ -8,6 +8,11 @@ def form_dependent_id(component: str, aio_id: str | _Wildcard, form_id: str | _W
     return {"component": component, "aio_id": aio_id, "form_id": form_id}
 
 
+def form_base_id(part: str, aio_id: str | _Wildcard, form_id: str | _Wildcard, parent: str | _Wildcard = ""):
+    """Form parts id."""
+    return {"part": part, "aio_id": aio_id, "form_id": form_id, "parent": parent}
+
+
 def field_dependent_id(  # noqa: PLR0913
     component: str,
     aio_id: str | _Wildcard,
