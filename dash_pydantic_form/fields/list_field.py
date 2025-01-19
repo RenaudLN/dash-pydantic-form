@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Callable
 from functools import partial
-from typing import Literal, get_args
+from typing import Any, get_args
 
 import dash_mantine_components as dmc
 from dash import (
@@ -27,6 +27,7 @@ from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import (
     Type,
+    deep_merge,
     get_fullpath,
     get_subitem_cls,
 )
@@ -45,7 +46,7 @@ class ListField(BaseField):
     * items_creatable, whether new items can be created (bool, default True)
     """
 
-    render_type: Literal["accordion", "modal", "list", "scalar"] = Field(
+    render_type: str = Field(
         default="accordion",
         description=(
             "How to render the list of items. One  of 'accordion', 'modal', 'list' for a list of models. "
@@ -60,6 +61,7 @@ class ListField(BaseField):
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
+    wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the render method.")
 
     full_width = True
 
@@ -73,6 +75,13 @@ class ListField(BaseField):
             self.items_creatable = False
         if self.form_layout is None and self.model_extra and self.model_extra.get("sections") is not None:
             self.form_layout = self.model_extra["sections"]
+        try:
+            self.render_type_item_mapper(self.render_type)
+            self.render_type_items_mapper(self.render_type)
+        except AttributeError as exc:
+            raise ValueError(f"Unknown render type {self.render_type}") from exc
+        if self.wrapper_kwargs is None:
+            self.wrapper_kwargs = {}
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -155,6 +164,73 @@ class ListField(BaseField):
         )
 
     @classmethod
+    def accordion_items(  # noqa: PLR0913
+        cls,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        value: list[BaseModel],
+        fields_repr: dict[str, dict | BaseField] | None = None,
+        form_layout: FormLayout | None = None,
+        items_deletable: bool = True,
+        read_only: bool | None = None,
+        discriminator: str | None = None,
+        form_cols: int = 4,
+        wrapper_class_name: str,
+        wrapper_kwargs: dict,
+        **_kwargs,
+    ):
+        """Create a list of accordion items."""
+        wrapper_class_name = wrapper_class_name + " " + wrapper_kwargs.pop("className", "")
+        styles = deep_merge(
+            {
+                "control": {"padding": "0.5rem"},
+                "label": {"padding": 0},
+                "item": {
+                    "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
+                    "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
+                    "marginBottom": "0.5rem",
+                    "borderRadius": "0.25rem",
+                },
+                "content": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "0.375rem",
+                    "padding": "0.125rem 0.5rem 0.5rem",
+                },
+            },
+            wrapper_kwargs.pop("styles", {}),
+        )
+        return dmc.Accordion(
+            [
+                cls.accordion_item(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    field=field,
+                    parent=parent,
+                    index=i,
+                    value=val,
+                    fields_repr=fields_repr,
+                    form_layout=form_layout,
+                    items_deletable=items_deletable,
+                    read_only=read_only,
+                    discriminator=discriminator,
+                    form_cols=form_cols,
+                )
+                for i, val in enumerate(value)
+            ],
+            id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
+            value=None,
+            styles=styles,
+            className=wrapper_class_name,
+            **wrapper_kwargs,
+        )
+
+    @classmethod
     def list_item(  # noqa: PLR0913
         cls,
         *,
@@ -204,6 +280,51 @@ class ListField(BaseField):
             gap="sm",
             align="top",
             className="pydf-model-list-list-item",
+        )
+
+    @classmethod
+    def list_items(  # noqa: PLR0913
+        cls,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        value: list[BaseModel],
+        fields_repr: dict[str, dict | BaseField] | None = None,
+        form_layout: FormLayout | None = None,
+        items_deletable: bool = True,
+        read_only: bool | None = None,
+        discriminator: str | None = None,
+        form_cols: int = 4,
+        wrapper_class_name: str,
+        wrapper_kwargs: dict,
+        **_kwargs,
+    ):
+        """Create a list of list items."""
+        wrapper_class_name = wrapper_class_name + " " + wrapper_kwargs.pop("className", "")
+        return dmc.Stack(
+            [
+                cls.list_item(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    field=field,
+                    parent=parent,
+                    index=i,
+                    fields_repr=fields_repr,
+                    form_layout=form_layout,
+                    items_deletable=items_deletable,
+                    read_only=read_only,
+                    discriminator=discriminator,
+                    form_cols=form_cols,
+                )
+                for i, _ in enumerate(value)
+            ],
+            id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
+            className=wrapper_class_name,
+            **wrapper_kwargs,
         )
 
     @classmethod
@@ -307,6 +428,62 @@ class ListField(BaseField):
         )
 
     @classmethod
+    def modal_items(  # noqa: PLR0913
+        cls,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        value: list[BaseModel],
+        fields_repr: dict[str, dict | BaseField] | None = None,
+        form_layout: FormLayout | None = None,
+        items_deletable: bool = True,
+        read_only: bool | None = None,
+        discriminator: str | None = None,
+        form_cols: int = 4,
+        wrapper_class_name: str,
+        wrapper_kwargs: dict,
+        **_kwargs,
+    ):
+        """Create a list of modal items."""
+        wrapper_class_name = wrapper_class_name + " " + wrapper_kwargs.pop("className", "")
+        style = deep_merge(
+            {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                "gap": "0.5rem",
+                "overflow": "hidden",
+            },
+            wrapper_kwargs.pop("style", {}),
+        )
+        return html.Div(
+            [
+                cls.modal_item(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    field=field,
+                    parent=parent,
+                    index=i,
+                    value=val,
+                    fields_repr=fields_repr,
+                    form_layout=form_layout,
+                    items_deletable=items_deletable,
+                    read_only=read_only,
+                    discriminator=discriminator,
+                    form_cols=form_cols,
+                )
+                for i, val in enumerate(value)
+            ],
+            id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
+            style=style,
+            className=wrapper_class_name,
+            **wrapper_kwargs,
+        )
+
+    @classmethod
     def scalar_item(  # noqa: PLR0913
         cls,
         *,
@@ -316,6 +493,7 @@ class ListField(BaseField):
         field: str,
         parent: str,
         index: int,
+        value: Any,  # noqa: ARG003
         items_deletable: bool = True,
         read_only: bool | None = None,
         input_kwargs: dict,
@@ -359,17 +537,70 @@ class ListField(BaseField):
             wrap="none",
         )
 
-    def _contents_renderer(self, renderer_type: str) -> Callable:
-        """Create a renderer for the model list field."""
-        raise NotImplementedError(
-            "Only the default renderers (accordion, list, modals) are implemented. "
-            "Override this method to create custom renderers."
+    @classmethod
+    def scalar_items(  # noqa: PLR0913
+        cls,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str,
+        value: list[BaseModel],
+        fields_repr: dict[str, dict | BaseField] | None = None,
+        form_layout: FormLayout | None = None,
+        items_deletable: bool = True,
+        read_only: bool | None = None,
+        input_kwargs: dict,
+        wrapper_class_name: str,
+        wrapper_kwargs: dict,
+        **_kwargs,
+    ):
+        """Create a list of scalar items."""
+        wrapper_class_name = wrapper_class_name + " " + wrapper_kwargs.pop("className", "")
+        style = deep_merge(
+            {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                "gap": "0.5rem",
+                "overflow": "hidden",
+                "alignItems": "top",
+            },
+            wrapper_kwargs.pop("style", {}),
+        )
+        return html.Div(
+            [
+                cls.scalar_item(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    field=field,
+                    parent=parent,
+                    index=i,
+                    value=val,
+                    fields_repr=fields_repr,
+                    form_layout=form_layout,
+                    items_deletable=items_deletable,
+                    read_only=read_only,
+                    input_kwargs=input_kwargs,
+                )
+                for i, val in enumerate(value)
+            ],
+            id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
+            className=wrapper_class_name,
+            style=style,
+            **wrapper_kwargs,
         )
 
     @classmethod
     def render_type_item_mapper(cls, render_type: str) -> dict[str, Callable]:
         """Mapping between render type and renderer function."""
         return getattr(cls, f"{render_type}_item")
+
+    @classmethod
+    def render_type_items_mapper(cls, render_type: str) -> dict[str, Callable]:
+        """Mapping between render type and renderer function."""
+        return getattr(cls, f"{render_type}_items")
 
     def _render(  # noqa: PLR0913
         self,
@@ -396,128 +627,24 @@ class ListField(BaseField):
 
         value: list = self.get_value(item, field, parent) or []
 
-        class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
-        if self.render_type == "accordion":
-            contents = dmc.Accordion(
-                [
-                    self.accordion_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        value=val,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        discriminator=discriminator,
-                        form_cols=self.form_cols,
-                    )
-                    for i, val in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                value=None,
-                styles={
-                    "control": {"padding": "0.5rem"},
-                    "label": {"padding": 0},
-                    "item": {
-                        "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
-                        "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
-                        "marginBottom": "0.5rem",
-                        "borderRadius": "0.25rem",
-                    },
-                    "content": {
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "0.375rem",
-                        "padding": "0.125rem 0.5rem 0.5rem",
-                    },
-                },
-                className=class_name,
-            )
-        elif self.render_type == "list":
-            contents = dmc.Stack(
-                [
-                    self.list_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        discriminator=discriminator,
-                        form_cols=self.form_cols,
-                    )
-                    for i, _ in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                className=class_name,
-            )
-        elif self.render_type == "scalar":
-            contents = html.Div(
-                [
-                    self.scalar_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        input_kwargs=self.input_kwargs,
-                    )
-                    for i, _ in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                className=class_name,
-                style={
-                    "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-                    "gap": "0.5rem",
-                    "overflow": "hidden",
-                    "alignItems": "top",
-                },
-            )
-        elif self.render_type == "modal":
-            contents = html.Div(
-                [
-                    self.modal_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        value=val,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        discriminator=discriminator,
-                        form_cols=self.form_cols,
-                    )
-                    for i, val in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                style={
-                    "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-                    "gap": "0.5rem",
-                    "overflow": "hidden",
-                },
-                className=class_name,
-            )
-        else:
-            contents = self._contents_renderer(self.render_type)
+        wrapper_class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
+        contents = self.render_type_items_mapper(self.render_type)(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            field=field,
+            parent=parent,
+            value=value,
+            fields_repr=self.fields_repr,
+            form_layout=self.form_layout,
+            items_deletable=self.items_deletable,
+            read_only=self.read_only,
+            input_kwargs=self.input_kwargs,
+            discriminator=discriminator,
+            form_cols=self.form_cols,
+            wrapper_class_name=wrapper_class_name,
+            wrapper_kwargs=self.wrapper_kwargs,
+        )
 
         # Create a template item to be used clientside when adding new items
         template = self.render_type_item_mapper(self.render_type)(

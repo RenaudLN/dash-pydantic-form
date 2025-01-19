@@ -29,10 +29,13 @@ class FormLayout(BaseModel, ABC):
     @abstractmethod
     def render(  # noqa: PLR0913
         self,
+        *,
+        field_inputs: dict[str, Component],
         aio_id: str,
         form_id: str,
         path: str,
-        field_inputs: dict[str, Component],
+        read_only: bool,
+        form_cols: int,
     ):
         """Render the form layout."""
         raise NotImplementedError

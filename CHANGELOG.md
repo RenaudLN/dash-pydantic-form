@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `wrapper_kwargs` parameter in List and Dict fields
+- `read_only` and `form_cols` passed to FormLayout.render
+
+### Changed
+- Improved List and Dict fields structure
+- Keyword-only params in FormLayout
 
 ## [0.13.0] - 2025-01-18
 ### Added
