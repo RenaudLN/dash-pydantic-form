@@ -23,10 +23,10 @@ LINK_COLOR = "color-mix(in srgb, var(--mantine-color-body), var(--mantine-color-
 NODE_COLOR = "color-mix(in srgb, var(--mantine-color-body), var(--mantine-color-text) 15%)"
 
 
-class Custom2FormLayout(FormLayout):
-    """Custom form layout."""
+class TreeFormLayout(FormLayout):
+    """Tree form layout."""
 
-    layout: Literal["custom2"] = "custom2"
+    layout: Literal["tree"] = "tree"
 
     def render(  # noqa: PLR0913
         self,
@@ -47,7 +47,7 @@ class Custom2FormLayout(FormLayout):
                     base,
                     dmc.ActionIcon(
                         DashIconify(icon="carbon:add"),
-                        ml=-14,
+                        ml=-13,
                         mt="-0.5rem",
                         id=fields.List.ids.add(aio_id, form_id, "children", parent=path),
                     ),
@@ -172,7 +172,7 @@ class Custom2FormLayout(FormLayout):
 
 
 node_repr_kwargs = {
-    "form_layout": Custom2FormLayout(),
+    "form_layout": TreeFormLayout(),
     "render_type": "list",
     "items_deletable": False,
     "items_creatable": False,
@@ -212,8 +212,9 @@ class Node2(BaseModel):  # noqa: D101
 
 
 class Tree(BaseModel):  # noqa: D101
+    name: str
     children: list[Node] = Field(
-        title="",
+        title="Components",
         default_factory=list,
         repr_kwargs=node_repr_kwargs,
     )
@@ -231,7 +232,7 @@ form = ModelForm(
     form_id=FORM_ID,
     store_progress="session",
     restore_behavior="auto",
-    form_layout=Custom2FormLayout(),
+    form_layout=TreeFormLayout(),
     # read_only=True,
     container_kwargs={"style": {"paddingInline": "2rem"}},
 )
