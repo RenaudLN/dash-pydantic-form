@@ -38,10 +38,12 @@ class AccordionFormLayout(FormLayout):
 
     def render(  # noqa: PLR0913
         self,
+        *,
+        field_inputs: dict[str, Component],
         aio_id: str,
         form_id: str,
         path: str,
-        field_inputs: dict[str, Component],
+        **_kwargs,
     ):
         """Render the sections in an accordion."""
         kwargs = deepcopy(self.render_kwargs)

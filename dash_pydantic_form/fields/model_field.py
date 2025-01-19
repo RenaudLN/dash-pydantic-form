@@ -200,13 +200,11 @@ class ModelField(BaseField):
         field_info: FieldInfo | None = None,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
-        if self.render_type == "accordion":
-            input_ = self.accordion_item(item, aio_id, form_id, field, parent, field_info)
-        elif self.render_type == "modal":
-            input_ = self.modal_item(item, aio_id, form_id, field, parent, field_info)
-        else:
-            raise ValueError("Unknown render type.")
-        return input_
+        try:
+            renderer = getattr(self, f"{self.render_type}_item")
+        except AttributeError as exc:
+            raise ValueError(f"Unknown render type: {self.render_type}") from exc
+        return renderer(item, aio_id, form_id, field, parent, field_info)
 
     # Open a model modal when editing an item
     clientside_callback(

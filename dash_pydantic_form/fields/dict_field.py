@@ -41,7 +41,7 @@ class DictField(ListField):
         form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
-        key: str | None = None,
+        value: str | None = None,
         **kwargs,
     ):
         """Create an item with bare forms for the model dict field."""
@@ -60,7 +60,7 @@ class DictField(ListField):
             **kwargs,
         )
         contents.children[0].children[0] = cls.key_input(
-            aio_id, form_id, field, parent, index, key=key, read_only=read_only, w="calc(100% - 3.5rem)"
+            aio_id, form_id, field, parent, index, key=value, read_only=read_only, w="calc(100% - 3.5rem)"
         )
         return contents
 
@@ -74,7 +74,7 @@ class DictField(ListField):
         field: str,
         parent: str,
         index: int,
-        key: str | None = None,
+        value: str | None = None,
         opened: bool = False,
         fields_repr: dict[str, dict | BaseField] | None = None,
         form_layout: FormLayout | None = None,
@@ -99,7 +99,7 @@ class DictField(ListField):
             **kwargs,
         )
         contents.children.children[0] = cls.key_input(
-            aio_id, form_id, field, parent, index, key=key, read_only=read_only, style={"flex": 1}
+            aio_id, form_id, field, parent, index, key=value, read_only=read_only, style={"flex": 1}
         )
         return contents
 
@@ -113,7 +113,7 @@ class DictField(ListField):
         field: str,
         parent: str,
         index: int,
-        key: str | None = None,
+        value: str | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
         input_kwargs: dict,
@@ -130,11 +130,12 @@ class DictField(ListField):
             items_deletable=items_deletable,
             read_only=read_only,
             input_kwargs=input_kwargs,
+            value="",
             **kwargs,
         )
         contents.children = [
             cls.key_input(
-                aio_id, form_id, field, parent, index, key=key, read_only=read_only, style={"flex": "0 0 30%"}
+                aio_id, form_id, field, parent, index, key=value, read_only=read_only, style={"flex": "0 0 30%"}
             ),
             dmc.Text(":", pl="0.25rem", pr="0.5rem", fw=500, lh=2),
         ] + contents.children
@@ -191,105 +192,24 @@ class DictField(ListField):
 
         value: list = self.get_value(item, field, parent) or []
 
-        class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
-        if self.render_type == "accordion":
-            contents = dmc.Accordion(
-                [
-                    self.accordion_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        key=key,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        discriminator=discriminator,
-                    )
-                    for i, key in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                value=None,
-                styles={
-                    "control": {"padding": "0.5rem"},
-                    "label": {"padding": 0},
-                    "item": {
-                        "border": "1px solid color-mix(in srgb, var(--mantine-color-gray-light), transparent 40%)",
-                        "background": "color-mix(in srgb, var(--mantine-color-gray-light), transparent 80%)",
-                        "marginBottom": "0.5rem",
-                        "borderRadius": "0.25rem",
-                    },
-                    "content": {
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "0.375rem",
-                        "padding": "0.125rem 0.5rem 0.5rem",
-                    },
-                },
-                className=class_name,
-            )
-        elif self.render_type == "modal":
-            contents = html.Div(
-                [
-                    self.modal_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        key=key,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        discriminator=discriminator,
-                    )
-                    for i, key in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                style={
-                    "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-                    "gap": "0.5rem",
-                    "overflow": "hidden",
-                },
-                className=class_name,
-            )
-        elif self.render_type == "scalar":
-            contents = html.Div(
-                [
-                    self.scalar_item(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        field=field,
-                        parent=parent,
-                        index=i,
-                        key=key,
-                        fields_repr=self.fields_repr,
-                        form_layout=self.form_layout,
-                        items_deletable=self.items_deletable,
-                        read_only=self.read_only,
-                        input_kwargs=self.input_kwargs,
-                    )
-                    for i, key in enumerate(value)
-                ],
-                id=self.ids.wrapper(aio_id, form_id, field, parent=parent),
-                className=class_name,
-                style={
-                    "display": "grid",
-                    "gridTemplateColumns": "repeat(auto-fit, minmax(min(100%, 400px), 1fr))",
-                    "gap": "0.5rem",
-                    "overflow": "hidden",
-                    "alignItems": "top",
-                },
-            )
-        else:
-            contents = self._contents_renderer(self.render_type)
+        wrapper_class_name = "pydf-model-list-wrapper" + (" required" if self.is_required(field_info) else "")
+        contents = self.render_type_items_mapper(self.render_type)(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            field=field,
+            parent=parent,
+            value=value,
+            fields_repr=self.fields_repr,
+            form_layout=self.form_layout,
+            items_deletable=self.items_deletable,
+            read_only=self.read_only,
+            input_kwargs=self.input_kwargs,
+            discriminator=discriminator,
+            form_cols=self.form_cols,
+            wrapper_class_name=wrapper_class_name,
+            wrapper_kwargs=self.wrapper_kwargs,
+        )
 
         # Create a template item to be used clientside when adding new items
         template = self.render_type_item_mapper(self.render_type)(
@@ -307,6 +227,7 @@ class DictField(ListField):
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
             discriminator=discriminator,
+            form_cols=self.form_cols,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)

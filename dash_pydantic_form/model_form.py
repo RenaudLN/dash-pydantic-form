@@ -241,7 +241,14 @@ class ModelForm(html.Div):
             if not form_layout:
                 children = [FormLayout.grid(list(field_inputs.values()))]
             else:
-                children = form_layout.render(aio_id=aio_id, form_id=form_id, path=path, field_inputs=field_inputs)
+                children = form_layout.render(
+                    field_inputs=field_inputs,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    path=path,
+                    read_only=read_only,
+                    form_cols=form_cols,
+                )
 
             children.extend(
                 self._get_meta_children(
