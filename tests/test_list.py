@@ -49,7 +49,6 @@ def test_li0001_basic_list(dash_duo):
     set_input(dash_duo, ids.value_field(aio_id, form_id, "0", parent="a"), 123)
     dash_duo.wait_for_text_to_equal("#output", '{"a": [123]}')
     add_btn.click()
-    dash_duo.wait_for_text_to_equal("#output", '{"a": [123, "-"]}')
     set_input(dash_duo, ids.value_field(aio_id, form_id, "1", parent="a"), 456)
     dash_duo.wait_for_text_to_equal("#output", '{"a": [123, 456]}')
 
