@@ -20,16 +20,20 @@ from dash_iconify import DashIconify
 from plotly.io.json import to_json_plotly
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.utils import (
+    SEP,
     Type,
     deep_merge,
     get_fullpath,
+    get_subitem,
     get_subitem_cls,
+    model_construct_recursive,
 )
 
 
@@ -646,9 +650,22 @@ class ListField(BaseField):
             wrapper_kwargs=self.wrapper_kwargs,
         )
 
+        template_item = model_construct_recursive(item.model_dump(), item.__class__)
+        if isinstance(subitem := get_subitem(item, parent), BaseModel):
+            pointer = template_item
+            if parent:
+                for part in parent.split(SEP):
+                    pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
+            default_val = None
+            if subitem.model_fields[field].default is not PydanticUndefined:
+                default_val = subitem.model_fields[field].default
+            if subitem.model_fields[field].default_factory is not None:
+                default_val = subitem.model_fields[field].default_factory()
+            setattr(pointer, field, default_val)
+
         # Create a template item to be used clientside when adding new items
         template = self.render_type_item_mapper(self.render_type)(
-            item=item.__class__.model_construct(),
+            item=template_item,
             aio_id=aio_id,
             form_id=form_id,
             field=field,
