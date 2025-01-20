@@ -224,7 +224,7 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
     if isinstance(second_part, str) and second_part.isdigit():
         second_part = int(second_part)
 
-    field_info = model.model_fields[first_part]
+    field_info = model.model_fields[first_part] if is_subclass(model, BaseModel) else (item.model_fields[first_part])
     first_annotation = get_non_null_annotation(field_info.annotation)
     try:
         subitem = get_subitem(item, first_part) if item is not None else None
