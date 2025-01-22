@@ -349,7 +349,7 @@ class ModelForm(html.Div):
                 more_kwargs |= {"n_cols": "var(--pydf-form-cols)", "field_id_meta": "discriminator"}
             if field_name in fields_repr:
                 if isinstance(fields_repr[field_name], dict):
-                    field_repr = get_default_repr(field_info, **fields_repr[field_name], **more_kwargs)
+                    field_repr = get_default_repr(field_info, **(fields_repr[field_name] | more_kwargs))
                 else:
                     field_repr = fields_repr[field_name]
                     if more_kwargs:
