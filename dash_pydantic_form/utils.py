@@ -330,6 +330,9 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
     for key, val in data.items():
         if key not in data_model.model_fields:
             continue
+        if val is None:
+            updated[key] = None
+            continue
 
         field_info = data_model.model_fields[key]
         ann = get_non_null_annotation(field_info.annotation)
@@ -345,7 +348,7 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             sub_ann = get_args(ann)[0]
             # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
             sub_ann2 = get_args(sub_ann)[0]
-            discriminator = get_args(sub_ann)[1].discriminator
+            discriminator = next((f.discriminator for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None)
             for vv in val:
                 new_val.append(_construct_handle_discriminated(vv, discriminator, sub_ann2))
             updated[key] = new_val
@@ -354,7 +357,7 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             sub_ann = get_args(ann)[1]
             # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
             sub_ann2 = get_args(sub_ann)[0]
-            discriminator = get_args(sub_ann)[1].discriminator
+            discriminator = next((f.discriminator for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None)
             for kk, vv in val.items():
                 new_val[kk] = _construct_handle_discriminated(vv, discriminator, sub_ann2)
             updated[key] = new_val

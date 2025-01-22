@@ -18,7 +18,7 @@ from dash import (
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from plotly.io.json import to_json_plotly
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -68,6 +68,16 @@ class ListField(BaseField):
     wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the render method.")
 
     full_width = True
+
+    @field_validator("form_layout", mode="before")
+    @classmethod
+    def validate_form_layout(cls, v):
+        """Validate form layout."""
+        if isinstance(v, dict):
+            return FormLayout.load(**v)
+        if isinstance(v, FormLayout):
+            return v
+        raise ValueError("form_layout must be a FormLayout or a dict that can be converted to a FormLayout")
 
     def model_post_init(self, _context):
         """Model post init."""
