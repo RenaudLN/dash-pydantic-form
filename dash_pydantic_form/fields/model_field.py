@@ -28,6 +28,9 @@ class ModelField(BaseField):
     * render_type (one of 'accordion', 'modal', default 'accordion')
     * fields_repr, mapping between field name and field representation
     * form_layout, FormLayout for the NestedModel form
+    * form_cols, number of columns in the form
+    * excluded_fields, list of field names to exclude from the form altogether
+    * fields_order, list of field names in the order they should be rendered
     """
 
     render_type: Literal["accordion", "modal"] = Field(
@@ -39,6 +42,8 @@ class ModelField(BaseField):
     )
     form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
+    excluded_fields: list[str] | None = (Field(default=None, description="Fields excluded from the sub-form"),)
+    fields_order: list[str] | None = (Field(default=None, description="Order of fields in the sub-form"),)
 
     full_width = True
 
@@ -105,6 +110,8 @@ class ModelField(BaseField):
                                 form_layout=self.form_layout,
                                 read_only=self.read_only,
                                 form_cols=self.form_cols,
+                                excluded_fields=self.excluded_fields,
+                                fields_order=self.fields_order,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -163,6 +170,8 @@ class ModelField(BaseField):
                                 discriminator=field_info.discriminator,
                                 read_only=self.read_only,
                                 form_cols=self.form_cols,
+                                excluded_fields=self.excluded_fields,
+                                fields_order=self.fields_order,
                             ),
                         ],
                     ),
