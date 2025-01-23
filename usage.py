@@ -241,7 +241,7 @@ app.layout = dmc.MantineProvider(
                                     "visible": ("_root_:office", "==", "au"),
                                     "excluded_fields": ["private_field"],
                                 },
-                                "pets": fields.List(
+                                "pets": fields.Table(
                                     fields_repr={
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },
@@ -258,6 +258,8 @@ app.layout = dmc.MantineProvider(
                                         }
                                     },
                                     grid_kwargs={"dashGridOptions": {"suppressCellFocus": False}},
+                                    excluded_fields=["alive"],
+                                    fields_order=["species"],
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },

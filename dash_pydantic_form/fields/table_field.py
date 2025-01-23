@@ -63,6 +63,8 @@ class TableField(BaseField):
         description="Additional keyword arguments passed to the AGGrid instance. "
         "columnDefs passed here will not be considered, use column_defs_overrides.",
     )
+    excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
+    fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
 
     full_width = True
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -223,6 +225,24 @@ class TableField(BaseField):
         grid_kwargs = self.grid_kwargs
         grid_kwargs.pop("columnDefs", None)
         grid_kwargs.pop("rowData", None)
+        column_defs = [  # Generate a column def depending on the field type
+            self._generate_field_column(
+                field_name=field_name,
+                field_repr=get_field_repr(field_name),
+                field_info=template.model_fields[field_name],
+                required_field=field_name in required_fields,
+                editable=not self.read_only,
+            )
+            for field_name in template.model_fields
+            if field_name not in (self.excluded_fields or [])
+        ]
+        if self.fields_order:
+            column_defs = [
+                next(col for col in column_defs if col["field"] == field)
+                for field in self.fields_order
+                if field in template.model_fields
+            ] + [col for col in column_defs if col["field"] not in self.fields_order]
+
         return html.Div(
             [
                 html.Div(
@@ -268,16 +288,7 @@ class TableField(BaseField):
                         if self.rows_editable
                         else []
                     )
-                    + [  # Generate a column def depending on the field type
-                        self._generate_field_column(
-                            field_name=field_name,
-                            field_repr=get_field_repr(field_name),
-                            field_info=template.model_fields[field_name],
-                            required_field=field_name in required_fields,
-                            editable=not self.read_only,
-                        )
-                        for field_name in template.model_fields
-                    ],
+                    + column_defs,
                     defaultColDef={"resizable": True, "sortable": True, "filter": True}
                     | grid_kwargs.pop("defaultColDef", {})
                     | {"editable": not self.read_only},
