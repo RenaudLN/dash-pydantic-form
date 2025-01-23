@@ -42,8 +42,8 @@ class ModelField(BaseField):
     )
     form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
-    excluded_fields: list[str] | None = (Field(default=None, description="Fields excluded from the sub-form"),)
-    fields_order: list[str] | None = (Field(default=None, description="Order of fields in the sub-form"),)
+    excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
+    fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
 
     full_width = True
 

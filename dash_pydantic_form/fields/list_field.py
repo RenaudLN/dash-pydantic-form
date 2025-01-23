@@ -66,8 +66,8 @@ class ListField(BaseField):
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
     wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the items wrapper.")
-    excluded_fields: list[str] | None = (Field(default=None, description="Fields excluded from the sub-form"),)
-    fields_order: list[str] | None = (Field(default=None, description="Order of fields in the sub-form"),)
+    excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
+    fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
 
     full_width = True
 

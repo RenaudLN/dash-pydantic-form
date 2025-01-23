@@ -126,6 +126,7 @@ class Metadata(BaseModel):
             "fields_repr": {"type": fields.RadioItems(options_labels={"home_office": "Home", "work_office": "Work"})}
         },
     )
+    private_field: str | None = None
 
 
 class Employee(BaseModel):
@@ -238,8 +239,9 @@ app.layout = dmc.MantineProvider(
                                 "metadata": {
                                     "render_type": "accordion",
                                     "visible": ("_root_:office", "==", "au"),
+                                    "excluded_fields": ["private_field"],
                                 },
-                                "pets": fields.Table(
+                                "pets": fields.List(
                                     fields_repr={
                                         "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
                                     },
