@@ -53,7 +53,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install .[dev] --no-cache-dir
-          pytest -v tests/* --junitxml=test-reports/report.xml
+          pytest -v tests/* --junitxml=test-reports/report.xml --headless
         env:
           DISPLAY: :99
 
