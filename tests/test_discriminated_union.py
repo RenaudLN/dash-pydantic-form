@@ -5,13 +5,14 @@ from dash import Dash
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
 
-from dash_pydantic_form import ModelForm, ids
+from dash_pydantic_form import ModelForm, fields, ids
 from tests.utils import (
     check_ids_absent,
     check_ids_exist,
     set_checkbox,
     set_input,
     set_select,
+    stringify_id,
 )
 
 
@@ -253,3 +254,51 @@ def test_du0007_top_level_union(dash_duo):
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent=""), False)
     set_select(dash_duo, ids.value_field(aio_id, form_id, "species", parent="", meta="discriminator"), "dog")
     set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent=""), False)
+
+
+def test_du0008_list_union_in_list_union(dash_duo):
+    """Test a list of discriminated unions in a list of discriminated unions."""
+
+    class Cat(BaseModel):
+        species: Literal["cat"]
+        meows: bool = True
+
+    class Dog(BaseModel):
+        species: Literal["dog"]
+        barks: bool = True
+
+    class Base1(BaseModel):
+        kind: Literal["base1"] = "base1"
+        pets: list[Annotated[Cat | Dog, Field(discriminator="species")]] = Field(default_factory=list)
+
+    class Base2(BaseModel):
+        kind: Literal["base2"] = "base2"
+        name: str
+        pets: list[Annotated[Cat | Dog, Field(discriminator="species")]] = Field(default_factory=list)
+
+    class Wrapper(BaseModel):
+        bases: list[Annotated[Base1 | Base2, Field(discriminator="kind")]] = Field(default_factory=list)
+
+    app = Dash(__name__)
+    item = Wrapper(bases=[{"kind": "base1", "pets": [{"species": "cat"}]}])
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(item, aio_id=aio_id, form_id=form_id))
+    check_ids_exist(
+        app.layout,
+        [ids.checked_field(aio_id, form_id, "meows", parent="bases:0:pets:0")],
+    )
+    dash_duo.start_server(app)
+    for elem in dash_duo.driver.find_elements(By.CSS_SELECTOR, ".mantine-Accordion-control"):
+        elem.click()
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "meows", parent="bases:0:pets:0"), False)
+    set_select(
+        dash_duo, ids.value_field(aio_id, form_id, "species", parent="bases:0:pets:0", meta="discriminator"), "dog"
+    )
+    set_checkbox(dash_duo, ids.checked_field(aio_id, form_id, "barks", parent="bases:0:pets:0"), False)
+
+    add_base_btn = dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "bases")))
+    add_base_btn.click()
+    dash_duo.driver.find_elements(By.CSS_SELECTOR, ".mantine-Accordion-control")[-1].click()
+    set_select(dash_duo, ids.value_field(aio_id, form_id, "kind", parent="bases:1", meta="discriminator"), "base2")
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "name", parent="bases:1"), "yay")

@@ -11,7 +11,7 @@ from dash import (
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
@@ -46,6 +46,16 @@ class ModelField(BaseField):
     fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
 
     full_width = True
+
+    @field_validator("form_layout", mode="before")
+    @classmethod
+    def validate_form_layout(cls, v):
+        """Validate form layout."""
+        if isinstance(v, FormLayout):
+            return v
+        if isinstance(v, dict):
+            return FormLayout.load(**v)
+        raise ValueError("form_layout must be a FormLayout or a dict that can be converted to a FormLayout")
 
     def model_post_init(self, _context):
         """Model post init."""
