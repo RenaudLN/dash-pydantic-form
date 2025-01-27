@@ -177,6 +177,16 @@ class Quantity(BaseModel):
             "L": 0.001,
             "gal": 0.00378541,
         },
+        # Speed
+        ISUnits(m=1, s=-1): {
+            "m/s": 1,
+            "mph": 0.44704,
+            "kph": 1 / 3.6,
+        },
+        # Acceleration
+        ISUnits(m=1, s=-2): {
+            "m/s^2": 1,
+        },
     }
     names: ClassVar[dict[ISUnits, NameData]] = {
         ISUnits(): {"category": "Unitless", "unit": ""},
@@ -192,6 +202,8 @@ class Quantity(BaseModel):
         ISUnits(kg=1, m=2, s=-3): {"category": "Power", "unit": "W"},
         ISUnits(m=2): {"category": "Area", "unit": "m^2"},
         ISUnits(m=3): {"category": "Volume", "unit": "m^3"},
+        ISUnits(m=1, s=-1): {"category": "Speed", "unit": "m/s"},
+        ISUnits(m=1, s=-2): {"category": "Acceleration", "unit": "m/s^2"},
     }
 
     def __init__(self, value: float, unit: str):
