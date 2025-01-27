@@ -48,6 +48,10 @@ class ListField(BaseField):
     * form_layout, FormLayout, representing how to render the form
     * items_deletable, whether the items can be deleted (bool, default True)
     * items_creatable, whether new items can be created (bool, default True)
+    * form_cols, number of columns in the form
+    * wrapper_kwargs, kwargs to pass to the <render_type>_items method's wrapper object
+    * excluded_fields, list of field names to exclude from the form altogether
+    * fields_order, list of field names in the order they should be rendered
     """
 
     render_type: str = Field(
@@ -65,7 +69,9 @@ class ListField(BaseField):
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
-    wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the render method.")
+    wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the items wrapper.")
+    excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
+    fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
 
     full_width = True
 
@@ -127,6 +133,8 @@ class ListField(BaseField):
         read_only: bool | None = None,
         discriminator: str | None = None,
         form_cols: int = 4,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -172,6 +180,8 @@ class ListField(BaseField):
                         read_only=read_only,
                         discriminator=discriminator,
                         form_cols=form_cols,
+                        excluded_fields=excluded_fields,
+                        fields_order=fields_order,
                     ),
                 ),
             ],
@@ -195,6 +205,8 @@ class ListField(BaseField):
         form_cols: int = 4,
         wrapper_class_name: str,
         wrapper_kwargs: dict,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create a list of accordion items."""
@@ -234,6 +246,8 @@ class ListField(BaseField):
                     read_only=read_only,
                     discriminator=discriminator,
                     form_cols=form_cols,
+                    excluded_fields=excluded_fields,
+                    fields_order=fields_order,
                 )
                 for i, val in enumerate(value)
             ],
@@ -260,6 +274,8 @@ class ListField(BaseField):
         read_only: bool | None = None,
         discriminator: str | None = None,
         form_cols: int = 4,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -279,6 +295,8 @@ class ListField(BaseField):
                     read_only=read_only,
                     discriminator=discriminator,
                     form_cols=form_cols,
+                    excluded_fields=excluded_fields,
+                    fields_order=fields_order,
                 ),
             ]
             + items_deletable
@@ -314,6 +332,8 @@ class ListField(BaseField):
         form_cols: int = 4,
         wrapper_class_name: str,
         wrapper_kwargs: dict,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create a list of list items."""
@@ -333,6 +353,8 @@ class ListField(BaseField):
                     read_only=read_only,
                     discriminator=discriminator,
                     form_cols=form_cols,
+                    excluded_fields=excluded_fields,
+                    fields_order=fields_order,
                 )
                 for i, _ in enumerate(value)
             ],
@@ -359,6 +381,8 @@ class ListField(BaseField):
         read_only: bool | None = None,
         discriminator: str | None = None,
         form_cols: int = 4,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -413,6 +437,8 @@ class ListField(BaseField):
                                 read_only=read_only,
                                 discriminator=discriminator,
                                 form_cols=form_cols,
+                                excluded_fields=excluded_fields,
+                                fields_order=fields_order,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -459,6 +485,8 @@ class ListField(BaseField):
         form_cols: int = 4,
         wrapper_class_name: str,
         wrapper_kwargs: dict,
+        excluded_fields: list[str] | None = None,
+        fields_order: list[str] | None = None,
         **_kwargs,
     ):
         """Create a list of modal items."""
@@ -488,6 +516,8 @@ class ListField(BaseField):
                     read_only=read_only,
                     discriminator=discriminator,
                     form_cols=form_cols,
+                    excluded_fields=excluded_fields,
+                    fields_order=fields_order,
                 )
                 for i, val in enumerate(value)
             ],
@@ -658,6 +688,8 @@ class ListField(BaseField):
             form_cols=self.form_cols,
             wrapper_class_name=wrapper_class_name,
             wrapper_kwargs=self.wrapper_kwargs,
+            excluded_fields=self.excluded_fields,
+            fields_order=self.fields_order,
         )
 
         template_item = model_construct_recursive(item.model_dump(), item.__class__)
@@ -690,6 +722,8 @@ class ListField(BaseField):
             input_kwargs=self.input_kwargs,
             discriminator=discriminator,
             form_cols=self.form_cols,
+            excluded_fields=self.excluded_fields,
+            fields_order=self.fields_order,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)

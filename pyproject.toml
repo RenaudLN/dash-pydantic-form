@@ -23,7 +23,6 @@ dev = [
     "pre-commit",
     "pytest",
     "dash[testing]",
-    "selenium",
 ]
 
 [project.urls]
