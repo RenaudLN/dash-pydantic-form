@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `excluded_fields` and `fields_order` available in Model, List and Table fields
+- Speed and Acceleration categories in Quantity
 
 ## [0.13.3] - 2025-01-20
 ### Fixed
