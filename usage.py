@@ -9,8 +9,7 @@ from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import AccordionFormLayout, FormSection, ModelForm, fields, get_model_cls, ids
-from dash_pydantic_form.quantity import Quantity
-from dash_pydantic_utils import SEP
+from dash_pydantic_utils import SEP, Quantity
 
 _dash_renderer._set_react_version("18.2.0")
 app = Dash(
