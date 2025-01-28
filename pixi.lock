@@ -1302,9 +1302,9 @@ packages:
   timestamp: 1737915769976
 - kind: pypi
   name: dash-pydantic-form
-  version: 0.13.4.dev6+g32d2591.d20250128
+  version: 0.14.0rc1.post1.dev0+g7b93fb9.d20250128
   path: packages/dash-pydantic-form
-  sha256: 4b76e7a1a968a1850ef5cab65574d579be71cf7680280df2ee285fa3736f32a8
+  sha256: d5251a2a37e20b6ddb25b0bcb88de2192b0230aa62d14dd3a2698ccec0a971da
   requires_dist:
   - dash-ag-grid>=31
   - dash-iconify
@@ -1321,9 +1321,9 @@ packages:
   editable: true
 - kind: pypi
   name: dash-pydantic-utils
-  version: 0.13.4.dev6+g32d2591.d20250128
+  version: 0.14.0rc1.post1.dev0+g7b93fb9.d20250128
   path: packages/dash-pydantic-utils
-  sha256: decdfe7bd9317b95df4084fbcff86c300efb3bf556503b113111112aeb41b8fd
+  sha256: 3f43878038fb2c0a50447f944de4ee792edf08cf945859a5662689130ccb98df
   requires_dist:
   - pydantic==2.*
   - dash[testing] ; extra == 'dev'
