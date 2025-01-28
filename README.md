@@ -341,3 +341,17 @@ form = ModelForm(
 ## Creating custom fields
 
 *To be written*
+
+## Contributing
+
+This project uses [pixi](https://pixi.sh/latest/) to manage the environment. Install the pixi cli with
+
+```sh
+curl -fsSL https://pixi.sh/install.sh | bash
+```
+
+Then install the environment with
+
+```sh
+pixi install
+```
