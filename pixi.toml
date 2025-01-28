@@ -55,5 +55,3 @@ dash_testing_stub = ">=0.0.2"
 [feature.dev.tasks]
 lint = "pre-commit run --all-files"
 test = "pytest tests --headless"
-publish-form = "python3 -m build --wheel packages/dash-pydantic-form && twine upload packages/dash-pydantic-form/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN_FORM}} --non-interactive"
-publish-utils = "python3 -m build --wheel packages/dash-pydantic-utils && twine upload packages/dash-pydantic-utils/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN_FORM}} --non-interactive"

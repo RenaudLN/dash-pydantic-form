@@ -62,5 +62,8 @@ jobs:
 
       - name: Build and Publish package
         run: |
-          pixi r publish-utils
-          pixi r publish-form
+          python3 -m build --wheel packages/dash-pydantic-utils
+          python3 -m build --wheel packages/dash-pydantic-form
+          twine upload packages/dash-pydantic-utils/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN_UTILS}} --non-interactive
+          twine upload packages/dash-pydantic-form/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
+        shell: pixi shell
