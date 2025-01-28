@@ -7,9 +7,6 @@ import dash_mantine_components as dmc
 import pytest
 from dash import Dash, Input, Output
 from pydantic import BaseModel, Field
-
-from dash_pydantic_form import ModelForm, ids
-from dash_pydantic_form.model_form import rd
 from tests.utils import (
     check_elem_values,
     check_ids_exist,
@@ -18,6 +15,9 @@ from tests.utils import (
     set_input,
     set_select,
 )
+
+from dash_pydantic_form import ModelForm, ids
+from dash_pydantic_form.model_form import rd
 
 
 class E(Enum):

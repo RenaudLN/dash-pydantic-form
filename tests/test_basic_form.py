@@ -7,8 +7,6 @@ import dash_mantine_components as dmc
 from dash import Dash, Input, Output
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
-
-from dash_pydantic_form import ModelForm, fields, ids
 from tests.utils import (
     check_elem_values,
     check_ids_exist,
@@ -19,6 +17,8 @@ from tests.utils import (
     set_select,
     stringify_id,
 )
+
+from dash_pydantic_form import ModelForm, fields, ids
 
 
 class E(Enum):
