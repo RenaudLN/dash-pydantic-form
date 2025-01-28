@@ -17,6 +17,7 @@ from pandas.core.dtypes.missing import isna, notna
 from pandas.core.indexers import check_array_indexer
 from pandas.util._decorators import cache_readonly
 
+from .quantity import ISUnits
 from .quantity import Quantity as Quantity_
 
 
@@ -113,6 +114,12 @@ class QuantityDtype(NumericDtype):
         if not all(isinstance(dtype, QuantityDtype) for dtype in dtypes):
             raise ValueError("No common dtype between Quantity and non-Quantity types")
         raise ValueError("No common dtype between Quantity with different units")
+
+    def __eq__(self, other):
+        return isinstance(other, QuantityDtype) and self.unit == other.unit
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 class QuantityArray(NumericArray):
@@ -247,3 +254,19 @@ class QuantityAccessor:
         return pd.DataFrame(
             new_value, index=self._obj.index, columns=self._obj.columns, dtype=QuantityDtype(unit=other_unit)
         )
+
+    def find(self, unit: str | None = None, category: str | None = None, i_s_units: ISUnits | str | None = None):
+        if not any([unit, category, i_s_units]):
+            return self._obj[[col for col, dtype in self._obj.dtypes.items() if isinstance(dtype, QuantityDtype)]]
+
+        if unit:
+            return self._obj[self._obj.dtypes[self._obj.dtypes == QuantityDtype(unit)].index]
+        if isinstance(i_s_units, str):
+            i_s_units = ISUnits.from_str(i_s_units)
+        cols = []
+        for col, dtype in self._obj.dtypes.items():
+            if isinstance(dtype, QuantityDtype):
+                col_i_s_units, _, col_category = Quantity.get_unit_info(dtype.unit)
+                if (category and col_category == category) or (i_s_units and col_i_s_units == i_s_units):
+                    cols.append(col)
+        return self._obj[cols]
