@@ -57,8 +57,8 @@ jobs:
 
       - name: Create .mo translations
         run: |
-          msgfmt -o dash_pydantic_form/locales/en/LC_MESSAGES/pydf.mo dash_pydantic_form/locales/en/LC_MESSAGES/pydf.po
-          msgfmt -o dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.mo dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.po
+          msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.po
+          msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.po
 
       - name: Build and Publish package
         run: |
