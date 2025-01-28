@@ -6,7 +6,7 @@ from typing import Literal, get_origin
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
-from dash_pydantic_form.utils import Type, get_non_null_annotation, is_subclass
+from dash_pydantic_utils import Type, get_non_null_annotation, is_subclass
 
 from . import all_fields as fields
 from .base_fields import BaseField, VisibilityFilter

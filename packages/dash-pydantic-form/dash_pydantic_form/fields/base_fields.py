@@ -18,7 +18,7 @@ from pydantic.types import annotated_types
 from pydantic_core import PydanticUndefined
 
 from dash_pydantic_form import ids as common_ids
-from dash_pydantic_form.utils import (
+from dash_pydantic_utils import (
     SEP,
     Type,
     get_all_subclasses,

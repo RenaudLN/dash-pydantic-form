@@ -5,13 +5,13 @@ import dash_mantine_components as dmc
 from dash import Dash, Input, Output
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
-
-from dash_pydantic_form import ModelForm, fields, ids
 from tests.utils import (
     check_ids_exist,
     set_input,
     stringify_id,
 )
+
+from dash_pydantic_form import ModelForm, fields, ids
 
 
 def test_li0001_basic_list(dash_duo):

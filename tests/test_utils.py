@@ -3,7 +3,7 @@ from typing import get_args, get_origin
 import pytest
 from pydantic import BaseModel, Field
 
-from dash_pydantic_form import utils
+import dash_pydantic_utils as utils
 
 
 def test_ut0001_get_subitem():

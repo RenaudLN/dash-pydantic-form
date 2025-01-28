@@ -7,7 +7,6 @@ from typing import get_args
 
 import dash_ag_grid as dag
 import dash_mantine_components as dmc
-import pandas as pd
 from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,7 +30,7 @@ from dash_pydantic_form.fields.base_fields import (
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id
-from dash_pydantic_form.utils import deep_merge, get_fullpath, get_non_null_annotation
+from dash_pydantic_utils import deep_merge, get_fullpath, get_non_null_annotation
 
 
 class JSFunction(BaseModel):
@@ -79,6 +78,11 @@ class TableField(BaseField):
         if self.read_only:
             self.rows_editable = False
             self.with_upload = False
+        if self.with_upload:
+            try:
+                import pandas  # noqa: F401
+            except ModuleNotFoundError as exc:
+                raise ValueError("The `with_upload` option is only available if pandas is installed.") from exc
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -460,6 +464,8 @@ class TableField(BaseField):
     )
     def csv_to_table(contents, column_defs):
         """Output uploaded csv file to the editable table."""
+        import pandas as pd
+
         if contents is not None:
             _, content_string = contents.split(",")
 

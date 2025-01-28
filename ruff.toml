@@ -1,0 +1,16 @@
+line-length = 120
+fix = true
+target-version = "py310"
+
+src = ["packages/*"]
+
+[lint]
+select = ["I", "D", "UP", "S", "C4", "SIM", "B", "PL", "ARG", "E", "F"] #, "ANN", "RUF"
+ignore = ["D100", "D104", "D205", "D200", "D401", "PLR2004", "PLR0913"]
+unfixable = ["F401"]
+
+[lint.pydocstyle]
+convention = "numpy"
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]

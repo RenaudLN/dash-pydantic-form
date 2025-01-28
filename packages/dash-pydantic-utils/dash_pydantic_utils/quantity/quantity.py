@@ -1,6 +1,8 @@
 import re
 from collections.abc import Mapping
+from copy import deepcopy
 from functools import lru_cache
+from itertools import permutations
 from typing import ClassVar, TypedDict, Union
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -232,7 +234,7 @@ class Quantity(BaseModel):
         # IS units repr
         if re.match(i_s_pattern, unit):
             i_s_units = ISUnits.from_str(unit)
-            return i_s_units, (1, 0), cls.names.get(i_s_units, {}).get("category", "Generic")
+            return i_s_units, (1, 0), cls.names.get(i_s_units, {}).get("category", "Quantity")
 
         all_units = sum([list(units) for units in cls.conversion.values()], [])
 
@@ -246,30 +248,46 @@ class Quantity(BaseModel):
                         return base_unit, prefix
             raise ValueError(f"Unsupported unit: {unit}")
 
-        base_unit, prefix = trim_prefixes(unit)
+        i_s_units = ISUnits()
+        factor, base = 1.0, 0.0
+        for i, unit_ in enumerate(unit.split("/")):
+            base_unit, prefix = trim_prefixes(unit_)
+            i_s_units_, conversion_ = next(
+                (i_s_units, group[base_unit]) for i_s_units, group in cls.conversion.items() if base_unit in group
+            )
+            if isinstance(conversion_, tuple):
+                factor_, base_ = conversion_
+                if i > 0 and base_ != 0:
+                    raise NotImplementedError("Not supported: unit with non-zero base in denominator")
+            else:
+                factor_, base_ = conversion_, 0
 
-        i_s_units, conversion = next(
-            (i_s_units, group[base_unit]) for i_s_units, group in cls.conversion.items() if base_unit in group
-        )
+            if prefix:
+                prefix_multiplier = PREFIX_MULTIPLIERS[prefix]
+                # Handle cases where prefix multiplier is brought to a power (e.g area, volume)
+                if (
+                    re.match(i_s_pattern, base_unit)
+                    and sum(v != 0 for v in i_s_units_.model_dump().values()) == 1
+                    and abs(pow := next(v for v in i_s_units_.model_dump().values() if v != 0)) > 1
+                ):
+                    prefix_multiplier = prefix_multiplier**pow
 
-        if isinstance(conversion, tuple):
-            factor, base = conversion
-        else:
-            factor, base = conversion, 0
+                factor_ *= prefix_multiplier
 
-        if prefix:
-            prefix_multiplier = PREFIX_MULTIPLIERS[prefix]
-            # Handle cases where prefix multiplier is brought to a power (e.g area, volume)
-            if (
-                re.match(i_s_pattern, base_unit)
-                and sum(v != 0 for v in i_s_units.model_dump().values()) == 1
-                and abs(pow := next(v for v in i_s_units.model_dump().values() if v != 0)) > 1
-            ):
-                prefix_multiplier = prefix_multiplier**pow
+            if i == 0:
+                i_s_units = i_s_units_
+                factor = factor_
+                base = base_
+            else:
+                i_s_units /= i_s_units_
+                factor /= factor_
 
-            factor *= prefix_multiplier
+        return i_s_units, (factor, base), cls.names.get(i_s_units, {}).get("category", "Quantity")
 
-        return i_s_units, (factor, base), cls.names.get(i_s_units, {}).get("category", "Generic")
+    @property
+    def unit_parts(self) -> dict[ISUnits, str]:
+        """Get unit parts."""
+        return {self.get_unit_info(part)[0]: part for part in self.unit.split("/")}
 
     @field_validator("unit")
     def validate_unit(cls, unit: str) -> str:
@@ -289,6 +307,11 @@ class Quantity(BaseModel):
 
     def to(self, unit: str) -> "Quantity":
         """Convert to another unit."""
+        if self.get_unit_info(unit)[0] != self.i_s_units:
+            self_repr = self.category if self.category != "Quantity" else str(self.unit)
+            other_info = self.get_unit_info(unit)
+            other_repr = other_info[2] if other_info[2] != "Quantity" else str(unit)
+            raise ValueError(f"Cannot convert between different types: {self_repr} <-/-> {other_repr}.")
         default_unit_value = self._to_default_unit()
         factor, base = self.get_unit_info(unit)[1]
         return self.__class__(unit=unit, value=(default_unit_value - base) / factor)
@@ -319,19 +342,42 @@ class Quantity(BaseModel):
             value=self._from_default_unit(self._to_default_unit() - other._to_default_unit()),
         )
 
+    def _get_output_unit(self, other: Union["Quantity", float, int], out_i_s_units: ISUnits) -> str:
+        all_parts = deepcopy(self.unit_parts)
+        if isinstance(other, Quantity):
+            all_parts |= other.unit_parts
+
+        if out_i_s_units in all_parts:
+            return all_parts[out_i_s_units]
+
+        unit_parts = next(
+            (
+                (all_parts.get(i1) or v1["unit"], all_parts.get(i2) or v2["unit"])
+                for (i1, v1), (i2, v2) in permutations(self.names.items(), 2)
+                if i1 / i2 == out_i_s_units and (i1 in all_parts or i2 in all_parts)
+            ),
+            None,
+        )
+
+        if unit_parts:
+            return "/".join(unit_parts)
+
+        return None
+
     def __mul__(self, other: Union["Quantity", float, int]) -> "Quantity":
         """Multiply a quantity with a number."""
         if isinstance(other, float | int):
             return self.__class__(unit=self.unit, value=self.value * other)
 
         i_s_units = self.i_s_units * other.i_s_units
-        if i_s_units.is_empty():
-            return self._to_default_unit() / other._to_default_unit()
-
-        return self.__class__(
+        out = self.__class__(
             value=self._to_default_unit() * other._to_default_unit(),
             unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
         )
+        output_unit = self._get_output_unit(other, i_s_units)
+        if output_unit is not None:
+            out = out.to(output_unit)
+        return out
 
     def __rmul__(self, other: float | int) -> "Quantity":
         """Multiply a quantity with a number."""
@@ -343,13 +389,14 @@ class Quantity(BaseModel):
             return self.__class__(unit=self.unit, value=self.value / other)
 
         i_s_units = self.i_s_units / other.i_s_units
-        if i_s_units.is_empty():
-            return self._to_default_unit() / other._to_default_unit()
-
-        return self.__class__(
+        out = self.__class__(
             value=self._to_default_unit() / other._to_default_unit(),
             unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
         )
+        output_unit = self._get_output_unit(other, i_s_units)
+        if output_unit is not None:
+            out = out.to(output_unit)
+        return out
 
     def __rtruediv__(self, other: float | int):
         """Divide a number by a quantity."""

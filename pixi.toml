@@ -1,0 +1,57 @@
+[project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+name = "dash-pydantic-form"
+
+[environments]
+default = {features = ["form", "pandas", "dev"], solve-group = "default"}
+
+[dependencies]
+python = ">=3.10"
+pydantic = ">=2,<3"
+
+[pypi-dependencies]
+"dash-pydantic-form" = { path = "packages/dash-pydantic-form", editable = true }
+"dash-pydantic-utils" = { path = "packages/dash-pydantic-utils", editable = true }
+
+[feature.form.dependencies]
+dash = ">=2,<3"
+dash-mantine-components = ">=0.14.5,<0.16"
+dash-iconify = "*"
+dash-ag-grid = ">=31"
+fsspec = "*"
+
+[feature.pandas.dependencies]
+numpy = "*"
+pandas = "*"
+
+[feature.dev.dependencies]
+python = ">=3.10,<3.11"
+pre-commit = "*"
+pytest = ">=6.0.2"
+ipykernel = "*"
+pixi-kernel = "*"
+# Build
+twine = "*"
+importlib_metadata = "<8"
+# Dash testing
+beautifulsoup4 = ">=4.8.2"
+cryptography = "*"
+lxml = ">=4.6.2"
+percy = ">=2.0.2"
+selenium = ">=3.141.0,<=4.2.0"
+waitress = ">=1.4.4"
+multiprocess = ">=0.70.12"
+psutil = ">=5.8.0"
+
+[feature.dev.pypi-dependencies]
+# Build
+build = "*"
+# Dash testing
+dash = {extras = ["testing"], version = ">=2,<3"}
+requests = {extras = ["security"], version = ">=2.21.0"}
+dash_testing_stub = ">=0.0.2"
+
+[feature.dev.tasks]
+lint = "pre-commit run --all-files"
+test = "pytest tests --headless"

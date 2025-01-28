@@ -9,7 +9,7 @@ from dash_iconify import DashIconify
 
 from dash_pydantic_form.form_section import FormSection
 from dash_pydantic_form.ids import form_base_id
-from dash_pydantic_form.utils import deep_merge
+from dash_pydantic_utils import deep_merge
 
 from .form_layout import FormLayout, Position
 

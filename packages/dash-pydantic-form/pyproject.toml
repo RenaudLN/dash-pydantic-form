@@ -16,6 +16,7 @@ dependencies = [
     "pandas",
     "pydantic==2.*",
     "fsspec",
+    "dash-pydantic-utils",
 ]
 
 [project.optional-dependencies]
@@ -30,29 +31,24 @@ Homepage = "https://pydf-docs.onrender.com"
 Source = "https://github.com/RenaudLN/dash-pydantic-form"
 
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools >= 67", "setuptools_scm>=7.1"]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-include-package-data = true
+[tool.hatch.build.targets.wheel]
+packages = ["dash_pydantic_form"]
 
-[tool.setuptools.packages]
-find = {}
+[tool.hatch.build.targets.wheel.sources]
+"dash_pydantic_form" = "dash_pydantic_form"
 
-[tool.setuptools_scm]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.ruff]
-line-length = 120
-fix = true
-target-version = "py310"
-lint.select = ["I", "D", "UP", "S", "C4", "SIM", "B", "PL", "ARG", "E", "F"]
-lint.ignore = ["D100", "D104", "D205", "D200", "D401"]
+[tool.hatch.version.raw-options]
+root = "../.."
+version_scheme = "no-guess-dev"
 
-[tool.ruff.lint.pydocstyle]
-convention = "numpy"
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+[tool.hatch.metadata]
+allow-direct-references = true
 
 # Update .pot
-# xgettext -o dash_pydantic_form/locales/pydf.pot dash_pydantic_form/*.py dash_pydantic_form/**/*.py
+# xgettext -o packages/dash-pydantic-form/dash_pydantic_form/locales/pydf.pot packages/dash-pydantic-form/dash_pydantic_form/*.py packages/dash-pydantic-form/dash_pydantic_form/**/*.py

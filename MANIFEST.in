@@ -4,5 +4,5 @@ exclude images/*
 exclude tests/*
 exclude .vscode/*
 recursive-exclude .github/ *
-recursive-exclude dash_pydantic_form/locales *.pot *.po
-recursive-include dash_pydantic_form/locales *.mo
+recursive-exclude packages/dash-pydantic-form/dash_pydantic_form/locales *.pot *.po
+recursive-include packages/dash-pydantic-form/dash_pydantic_form/locales *.mo

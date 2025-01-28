@@ -1,0 +1,47 @@
+[project]
+name = "dash-pydantic-utils"
+dynamic = ["version"]
+description = "Utils for dash-pydantic-form, allows to use the utils in other places without requiring Dash."
+authors = [
+    {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
+]
+readme = "README.md"
+requires-python =  ">=3.10,<3.13"
+license = {file = "LICENSE"}
+dependencies = [
+    "pydantic==2.*",
+]
+
+[project.optional-dependencies]
+pandas = [
+    "pandas",
+    "numpy",
+]
+dev = [
+    "pre-commit",
+    "pytest",
+    "dash[testing]",
+]
+
+[project.urls]
+Source = "https://github.com/RenaudLN/dash-pydantic-form"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dash_pydantic_utils"]
+
+[tool.hatch.build.targets.wheel.sources]
+"dash_pydantic_utils" = "dash_pydantic_utils"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = "../.."
+version_scheme = "no-guess-dev"
+
+[tool.hatch.metadata]
+allow-direct-references = true
