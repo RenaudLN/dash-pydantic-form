@@ -229,3 +229,21 @@ class QuantityAccessor:
     def to(self, other_unit: str):
         new_value = Quantity(value=self._obj.to_numpy(), unit=self._obj.dtype.unit).to(other_unit).value
         return pd.Series(new_value, index=self._obj.index, dtype=QuantityDtype(unit=other_unit))
+
+
+@pd.api.extensions.register_dataframe_accessor("qt")
+class QuantityAccessor:
+    def __init__(self, pandas_obj: pd.DataFrame):
+        self._obj = pandas_obj
+
+    def to(self, other_unit: str):
+        if not all(isinstance(dtype, QuantityDtype) for dtype in self._obj.dtypes.values):
+            raise ValueError("Can only convert a DataFrame of Quantity")
+        if len(set(self._obj.dtypes.values)) != 1:
+            raise ValueError("Can only convert a DataFrame of Quantity with the same unit")
+
+        unit = self._obj.dtypes.values[0].unit
+        new_value = Quantity(value=self._obj.to_numpy(), unit=unit).to(other_unit).value
+        return pd.DataFrame(
+            new_value, index=self._obj.index, columns=self._obj.columns, dtype=QuantityDtype(unit=other_unit)
+        )

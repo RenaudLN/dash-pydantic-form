@@ -267,8 +267,8 @@ class Quantity(BaseModel):
                 # Handle cases where prefix multiplier is brought to a power (e.g area, volume)
                 if (
                     re.match(i_s_pattern, base_unit)
-                    and sum(v != 0 for v in i_s_units.model_dump().values()) == 1
-                    and abs(pow := next(v for v in i_s_units.model_dump().values() if v != 0)) > 1
+                    and sum(v != 0 for v in i_s_units_.model_dump().values()) == 1
+                    and abs(pow := next(v for v in i_s_units_.model_dump().values() if v != 0)) > 1
                 ):
                     prefix_multiplier = prefix_multiplier**pow
 

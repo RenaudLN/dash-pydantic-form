@@ -10,28 +10,16 @@ on:
 
 jobs:
 
-  pre-commit:
+  lint-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Python based on pyproject.toml
-        uses: actions/setup-python@v4
+      - name: Install pixi env
+        uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          python-version-file: pyproject.toml
-          cache: pip
-
-      - name: Run Pre-commit
-        uses: pre-commit/action@v3.0.0
-        env:
-          RUFF_FORMAT: github
-
-  run-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          cache: true
 
       - name: Install chromedriver
         uses: nanasess/setup-chromedriver@v2
@@ -43,23 +31,14 @@ jobs:
           chromedriver --url-base=/wd/hub &
           sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
 
-      - name: Install Python based on pyproject.toml
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: pyproject.toml
-          cache: pip
-
-      - name: Run Tests
+      - name: Pre-commit and tests
         run: |
-          pip install --upgrade pip
-          pip install .[dev] --no-cache-dir
-          pytest -v tests/* --junitxml=test-reports/report.xml --headless
-        env:
-          DISPLAY: :99
+          pixi r lint
+          pixi r test
 
   publish:
     runs-on: ubuntu-latest
-    needs: [pre-commit, run-tests]
+    needs: [lint-and-test]
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     permissions:
       contents: read
@@ -67,15 +46,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Python based on pyproject.toml
-        uses: actions/setup-python@v4
+      - name: Install pixi env
+        uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          python-version-file: pyproject.toml
-          cache: pip
+          cache: true
 
-      - name: Install dependencies
+      - name: Install gettext
         run: |
-          pip install build twine "importlib_metadata<8"
           sudo apt-get install -y gettext
 
       - name: Create .mo translations
@@ -85,5 +62,7 @@ jobs:
 
       - name: Build and Publish package
         run: |
-          python3 -m build
-          twine upload dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
+          python3 -m build packages/dash-pydantic-utils
+          python3 -m build packages/dash-pydantic-form
+          twine upload packages/dash-pydantic-utils/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
+          twine upload packages/dash-pydantic-form/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive

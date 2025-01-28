@@ -17,7 +17,7 @@ from .path import (
     model_construct_recursive,
     set_at_path,
 )
-from .quantity import Quantity
+from .quantity import Quantity, QuantityDtype
 from .types import Type
 
 __all__ = [
@@ -35,6 +35,7 @@ __all__ = [
     "is_subclass",
     "model_construct_recursive",
     "Quantity",
+    "QuantityDtype",
     "SEP",
     "set_at_path",
     "Type",

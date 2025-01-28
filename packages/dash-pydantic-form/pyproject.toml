@@ -5,9 +5,9 @@ description = "Create Dash forms from pydantic objects"
 authors = [
     {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
 ]
-readme = "../../README.md"
+readme = "README.md"
 requires-python =  ">=3.10,<3.13"
-license = {file = "../../LICENSE"}
+license = {file = "LICENSE"}
 dependencies = [
     "dash>=2.16",
     "dash-mantine-components>=0.14.6",

@@ -5,9 +5,9 @@ description = "Utils for dash-pydantic-form, allows to use the utils in other pl
 authors = [
     {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
 ]
-readme = "../../README.md"
+readme = "README.md"
 requires-python =  ">=3.10,<3.13"
-license = {file = "../../LICENSE"}
+license = {file = "LICENSE"}
 dependencies = [
     "pydantic==2.*",
 ]
