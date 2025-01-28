@@ -1,0 +1,53 @@
+[project]
+name = "dash-pydantic-form"
+dynamic = ["version"]
+description = "Create Dash forms from pydantic objects"
+authors = [
+    {name = "Renaud Lainé", email = "renaudlaine31@gmail.com"},
+]
+readme = "../../README.md"
+requires-python =  ">=3.10,<3.13"
+license = {file = "../../LICENSE"}
+dependencies = [
+    "dash>=2.16",
+    "dash-mantine-components>=0.14.6",
+    "dash-iconify",
+    "dash-ag-grid>=31",
+    "pandas",
+    "pydantic==2.*",
+    "fsspec",
+    "dash-pydantic-utils",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "pytest",
+    "dash[testing]",
+]
+
+[project.urls]
+Homepage = "https://pydf-docs.onrender.com"
+Source = "https://github.com/RenaudLN/dash-pydantic-form"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dash_pydantic_form"]
+
+[tool.hatch.build.targets.wheel.sources]
+"dash_pydantic_form" = "dash_pydantic_form"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = "../.."
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+# Update .pot
+# xgettext -o packages/dash-pydantic-form/dash_pydantic_form/locales/pydf.pot packages/dash-pydantic-form/dash_pydantic_form/*.py packages/dash-pydantic-form/dash_pydantic_form/**/*.py

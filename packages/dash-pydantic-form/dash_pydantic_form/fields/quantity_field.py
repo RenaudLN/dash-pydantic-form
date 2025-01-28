@@ -10,8 +10,8 @@ from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
-from dash_pydantic_form.quantity import Quantity
-from dash_pydantic_form.utils import (
+from dash_pydantic_utils import (
+    Quantity,
     get_fullpath,
     get_non_null_annotation,
 )

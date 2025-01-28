@@ -18,7 +18,7 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
-from dash_pydantic_form.utils import get_fullpath
+from dash_pydantic_utils import get_fullpath
 
 
 class ModelField(BaseField):

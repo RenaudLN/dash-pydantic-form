@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 from dash_pydantic_form import ids
-from dash_pydantic_form.utils import get_non_null_annotation
+from dash_pydantic_utils import get_non_null_annotation
 
 
 def find_ids(component: Component, ids: list[str | dict], whole_elem: bool = False):

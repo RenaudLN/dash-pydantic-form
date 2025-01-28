@@ -11,7 +11,7 @@ from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormLayout, ModelForm, fields, ids
-from dash_pydantic_form.utils import SEP, get_model_cls
+from dash_pydantic_utils import SEP, get_model_cls
 
 _dash_renderer._set_react_version("18.2.0")
 

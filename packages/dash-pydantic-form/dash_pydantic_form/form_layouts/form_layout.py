@@ -7,7 +7,7 @@ from dash.development.base_component import Component
 from plotly.io.json import to_json_plotly
 from pydantic import BaseModel, Discriminator, TypeAdapter, field_serializer
 
-from dash_pydantic_form.utils import get_all_subclasses
+from dash_pydantic_utils import get_all_subclasses
 
 Children_ = Component | str | int | float
 Children = Children_ | list[Children_]

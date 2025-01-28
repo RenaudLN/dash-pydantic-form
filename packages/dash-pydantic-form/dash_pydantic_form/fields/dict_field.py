@@ -14,7 +14,7 @@ from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.fields.list_field import ListField
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
-from dash_pydantic_form.utils import Type, get_fullpath
+from dash_pydantic_utils import Type, get_fullpath
 
 
 class DictField(ListField):

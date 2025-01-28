@@ -26,7 +26,7 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
-from dash_pydantic_form.utils import (
+from dash_pydantic_utils import (
     SEP,
     Type,
     deep_merge,
