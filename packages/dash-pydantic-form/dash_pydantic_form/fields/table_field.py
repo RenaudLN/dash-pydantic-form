@@ -90,7 +90,7 @@ class TableField(BaseField):
         editable_table = partial(field_dependent_id, "_pydf-editable-table-table")
         upload_csv = partial(field_dependent_id, "_pydf-editable-table-upload")
         download_csv = partial(field_dependent_id, "_pydf-editable-table-download")
-        download_csv_btn = partial(field_dependent_id, "_pydf-editable-table-download_btn")
+        download_csv_btn = partial(field_dependent_id, "_pydf-editable-table-download-btn")
         add_row = partial(field_dependent_id, "_pydf-editable-table-add-row")
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 

@@ -82,39 +82,43 @@ msgstr ""
 msgid "No match"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:116
+#: dash_pydantic_form/fields/table_field.py:124
 msgid "Drag & drop a csv file or "
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:117
+#: dash_pydantic_form/fields/table_field.py:125
 msgid "select it"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:122
+#: dash_pydantic_form/fields/table_field.py:130
 msgid "CSV columns"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:125
+#: dash_pydantic_form/fields/table_field.py:133
 msgid "REQUIRED"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:152
+#: dash_pydantic_form/fields/table_field.py:160
 msgid "OPTIONAL"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:195
+#: dash_pydantic_form/fields/table_field.py:203
 msgid "Upload CSV"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:208
+#: dash_pydantic_form/fields/table_field.py:211
+msgid "Download CSV"
+msgstr ""
+
+#: dash_pydantic_form/fields/table_field.py:222
 msgid "Add row"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:474
+#: dash_pydantic_form/fields/table_field.py:499
 msgid "Wrong column names"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:475
+#: dash_pydantic_form/fields/table_field.py:500
 msgid "CSV upload failed, the file should contain the following columns: "
 msgstr ""
 
