@@ -89,6 +89,8 @@ class TableField(BaseField):
 
         editable_table = partial(field_dependent_id, "_pydf-editable-table-table")
         upload_csv = partial(field_dependent_id, "_pydf-editable-table-upload")
+        download_csv = partial(field_dependent_id, "_pydf-editable-table-download")
+        download_csv_btn = partial(field_dependent_id, "_pydf-editable-table-download_btn")
         add_row = partial(field_dependent_id, "_pydf-editable-table-add-row")
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 
@@ -205,6 +207,12 @@ class TableField(BaseField):
                     position="top-start",
                     styles={"dropdown": {"maxWidth": "min(90vw, 500px)"}},
                 ),
+                dmc.Button(
+                    _("Download CSV"),
+                    id=self.ids.download_csv_btn(aio_id, form_id, field, parent=parent),
+                    size="compact-sm",
+                ),
+                dcc.Download(id=self.ids.download_csv(aio_id, form_id, field, parent=parent)),
             ]
 
         add_row = []
@@ -506,4 +514,19 @@ class TableField(BaseField):
         """Add new row in editable table on user click."""
         if n_clicks is not None:
             return {"add": [{col["field"]: col.get("default_value") for col in column_defs if "field" in col}]}
+        return no_update
+
+    @callback(
+        Output(ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
+        Input(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
+        State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+        prevent_initial_call=True,
+    )
+    def table_to_csv(n_clicks, table_data):
+        """Send the table data to the user as a CSV file."""
+        if n_clicks:
+            import pandas as pd
+
+            data_df = pd.DataFrame(table_data)
+            return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8-sig")
         return no_update
