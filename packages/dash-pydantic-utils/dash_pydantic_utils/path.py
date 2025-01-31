@@ -1,7 +1,8 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Annotated, Any, Literal, get_args, get_origin
+from types import UnionType
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError, create_model
 from pydantic.fields import FieldInfo
@@ -86,7 +87,9 @@ def is_idx_template(val: str):
     return bool(re.findall(r"^\{\{[\w|\{\}]+\}\}$", val))
 
 
-def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None = None) -> type[BaseModel]:
+def get_subitem_cls(  # noqa: PLR0912
+    model: type[BaseModel], parent: str, item: BaseModel | None = None
+) -> type[BaseModel]:
     """Get the subitem class of a model at a given parent.
 
     e.g., get_subitem_cls(Person, "au_metadata") = AUMetadata
@@ -99,6 +102,13 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
     first_part = path[0]
     second_part = None
 
+    if get_origin(model) is Annotated:
+        model = get_args(model)[0]
+        if get_origin(model) in [Union, UnionType]:
+            # NOTE: This might break if several models in the union have the same field name but different definitions
+            # or if they have further nesting / unions
+            model = next(m for m in get_args(model) if is_subclass(m, BaseModel) and first_part in m.model_fields)
+
     if len(path) == 1:
         ann = get_non_null_annotation(model.model_fields[first_part].annotation)
         return ann
@@ -107,7 +117,12 @@ def get_subitem_cls(model: type[BaseModel], parent: str, item: BaseModel | None 
     if isinstance(second_part, str) and second_part.isdigit():
         second_part = int(second_part)
 
-    field_info = model.model_fields[first_part] if is_subclass(model, BaseModel) else (item.model_fields[first_part])
+    if is_subclass(model, BaseModel):
+        field_info = model.model_fields[first_part]
+    elif isinstance(item, BaseModel):
+        field_info = item.model_fields[first_part]
+    else:
+        raise TypeError(f"Unsupported model class: {model}")
     first_annotation = get_non_null_annotation(field_info.annotation)
     try:
         subitem = get_subitem(item, first_part) if item is not None else None
@@ -185,6 +200,9 @@ def get_fullpath(*parts, sep: str = SEP):
 
 def model_construct_recursive(data: dict, data_model: type[BaseModel]):
     """Construct a model recursively."""
+    if not isinstance(data, dict):
+        return data_model.model_construct()
+
     updated = deepcopy(data)
     for key, val in data.items():
         if key not in data_model.model_fields:
