@@ -48,6 +48,11 @@ class TableField(BaseField):
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
+    with_download: bool | None = Field(
+        default=None,
+        description="Whether to allow downloading the table as a CSV file."
+        " If not set, it has the same value as `with_upload` by default.",
+    )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
@@ -75,14 +80,18 @@ class TableField(BaseField):
             self.fields_repr = {}
         if self.column_defs_overrides is None:
             self.column_defs_overrides = {}
+        if self.with_download is None:
+            self.with_download = self.with_upload
         if self.read_only:
             self.rows_editable = False
             self.with_upload = False
-        if self.with_upload:
+        if self.with_upload or self.with_download:
             try:
                 import pandas  # noqa: F401
             except ModuleNotFoundError as exc:
-                raise ValueError("The `with_upload` option is only available if pandas is installed.") from exc
+                raise ValueError(
+                    "The `with_upload` and `with_download` options are only available if pandas is installed."
+                ) from exc
 
     class ids(BaseField.ids):
         """Model list field ids."""
@@ -207,6 +216,11 @@ class TableField(BaseField):
                     position="top-start",
                     styles={"dropdown": {"maxWidth": "min(90vw, 500px)"}},
                 ),
+            ]
+
+        download = []
+        if self.with_download:
+            download = [
                 dmc.Button(
                     _("Download CSV"),
                     id=self.ids.download_csv_btn(aio_id, form_id, field, parent=parent),
@@ -323,7 +337,11 @@ class TableField(BaseField):
                     **grid_kwargs,
                 ),
             ]
-            + ([dmc.Group(add_row + upload)] if (self.rows_editable or self.with_upload) else [])
+            + (
+                [dmc.Group(add_row + upload + download)]
+                if (self.rows_editable or self.with_upload or self.with_download)
+                else []
+            )
             + [
                 dmc.JsonInput(
                     id=common_ids.value_field(aio_id, form_id, field, parent=parent),
@@ -524,9 +542,9 @@ class TableField(BaseField):
     )
     def table_to_csv(n_clicks, table_data):
         """Send the table data to the user as a CSV file."""
-        if n_clicks:
+        if n_clicks and table_data:
             import pandas as pd
 
             data_df = pd.DataFrame(table_data)
-            return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8-sig")
+            return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
         return no_update
