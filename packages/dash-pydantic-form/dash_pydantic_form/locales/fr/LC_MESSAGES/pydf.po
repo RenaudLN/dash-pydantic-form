@@ -72,6 +72,9 @@ msgstr "OPTIONNELLES"
 msgid "Upload CSV"
 msgstr "Ajouter via CSV"
 
+msgid "Download CSV"
+msgstr "Télécharger le CSV"
+
 msgid "Add row"
 msgstr "Ajouter une ligne"
 

@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.2] 2025-01-31
+### Added
+- `with_download` parameter in Table field
+
+### Changed
+- Removed pandas dependency
+
+### Fixed
+- Improved robustness of get_subitem_cls with nesting of lists and unions
+
 ## [0.14.0] - 2025-01-28
 ### Changed
 - Split dash-pydantic-form and dash-pydantic-utils to allow using the utils without requirinf Dash dependencies
