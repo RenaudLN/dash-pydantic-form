@@ -1302,9 +1302,9 @@ packages:
   timestamp: 1737915769976
 - kind: pypi
   name: dash-pydantic-form
-  version: 0.14.1.post1.dev0+g56955cf.d20250128
+  version: 0.14.1.post1.dev2+g1d57d25.d20250131
   path: packages/dash-pydantic-form
-  sha256: d5251a2a37e20b6ddb25b0bcb88de2192b0230aa62d14dd3a2698ccec0a971da
+  sha256: 6dca2dfa6377230cabc30c9996eb7308ea2bcc0d8fcaf9ceb1964cac9aaeddc6
   requires_dist:
   - dash-ag-grid>=31
   - dash-iconify
@@ -1312,7 +1312,6 @@ packages:
   - dash-pydantic-utils
   - dash>=2.16
   - fsspec
-  - pandas
   - pydantic==2.*
   - dash[testing] ; extra == 'dev'
   - pre-commit ; extra == 'dev'

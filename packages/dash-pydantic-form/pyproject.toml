@@ -13,7 +13,6 @@ dependencies = [
     "dash-mantine-components>=0.14.6",
     "dash-iconify",
     "dash-ag-grid>=31",
-    "pandas",
     "pydantic==2.*",
     "fsspec",
     "dash-pydantic-utils",
