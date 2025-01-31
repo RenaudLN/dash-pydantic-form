@@ -548,3 +548,9 @@ class TableField(BaseField):
             data_df = pd.DataFrame(table_data)
             return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
         return no_update
+
+    clientside_callback(
+        """ data => !(Array.isArray(data) && data.length) """,
+        Output(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "disabled"),
+        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    )
