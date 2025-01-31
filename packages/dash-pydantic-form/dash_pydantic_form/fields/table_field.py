@@ -48,6 +48,11 @@ class TableField(BaseField):
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
+    with_download: bool | None = Field(
+        default=None,
+        description="Whether to allow downloading the table as a CSV file."
+        " If not set, it has the same value as `with_upload` by default.",
+    )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
@@ -75,20 +80,26 @@ class TableField(BaseField):
             self.fields_repr = {}
         if self.column_defs_overrides is None:
             self.column_defs_overrides = {}
+        if self.with_download is None:
+            self.with_download = self.with_upload
         if self.read_only:
             self.rows_editable = False
             self.with_upload = False
-        if self.with_upload:
+        if self.with_upload or self.with_download:
             try:
                 import pandas  # noqa: F401
             except ModuleNotFoundError as exc:
-                raise ValueError("The `with_upload` option is only available if pandas is installed.") from exc
+                raise ValueError(
+                    "The `with_upload` and `with_download` options are only available if pandas is installed."
+                ) from exc
 
     class ids(BaseField.ids):
         """Model list field ids."""
 
         editable_table = partial(field_dependent_id, "_pydf-editable-table-table")
         upload_csv = partial(field_dependent_id, "_pydf-editable-table-upload")
+        download_csv = partial(field_dependent_id, "_pydf-editable-table-download")
+        download_csv_btn = partial(field_dependent_id, "_pydf-editable-table-download-btn")
         add_row = partial(field_dependent_id, "_pydf-editable-table-add-row")
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 
@@ -207,6 +218,17 @@ class TableField(BaseField):
                 ),
             ]
 
+        download = []
+        if self.with_download:
+            download = [
+                dmc.Button(
+                    _("Download CSV"),
+                    id=self.ids.download_csv_btn(aio_id, form_id, field, parent=parent),
+                    size="compact-sm",
+                ),
+                dcc.Download(id=self.ids.download_csv(aio_id, form_id, field, parent=parent)),
+            ]
+
         add_row = []
         if self.rows_editable:
             add_row = [
@@ -315,7 +337,11 @@ class TableField(BaseField):
                     **grid_kwargs,
                 ),
             ]
-            + ([dmc.Group(add_row + upload)] if (self.rows_editable or self.with_upload) else [])
+            + (
+                [dmc.Group(add_row + upload + download)]
+                if (self.rows_editable or self.with_upload or self.with_download)
+                else []
+            )
             + [
                 dmc.JsonInput(
                     id=common_ids.value_field(aio_id, form_id, field, parent=parent),
@@ -507,3 +533,24 @@ class TableField(BaseField):
         if n_clicks is not None:
             return {"add": [{col["field"]: col.get("default_value") for col in column_defs if "field" in col}]}
         return no_update
+
+    @callback(
+        Output(ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
+        Input(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
+        State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+        prevent_initial_call=True,
+    )
+    def table_to_csv(n_clicks, table_data):
+        """Send the table data to the user as a CSV file."""
+        if n_clicks and table_data:
+            import pandas as pd
+
+            data_df = pd.DataFrame(table_data)
+            return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
+        return no_update
+
+    clientside_callback(
+        """ data => !(Array.isArray(data) && data.length) """,
+        Output(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "disabled"),
+        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    )
