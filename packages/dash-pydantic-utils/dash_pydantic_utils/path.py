@@ -201,7 +201,7 @@ def get_fullpath(*parts, sep: str = SEP):
 def model_construct_recursive(data: dict, data_model: type[BaseModel]):
     """Construct a model recursively."""
     if not isinstance(data, dict):
-        return data
+        return data_model.model_construct()
 
     updated = deepcopy(data)
     for key, val in data.items():
