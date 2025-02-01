@@ -1,11 +1,35 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Mapping
 from copy import deepcopy
 from functools import lru_cache
 from itertools import permutations
-from typing import ClassVar, TypedDict, Union
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, ClassVar, TypedDict, TypeVar, overload
 
 from pydantic import BaseModel, ConfigDict, field_validator
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    import numpy as np
+    import numpy.typing as npt
+    import pandas as pd
+
+    float_array = npt.NDArray[np.floating]
+else:
+    try:
+        import numpy as np
+        import numpy.typing as npt
+        import pandas as pd
+
+        float_array = npt.NDArray[np.floating]
+    except ModuleNotFoundError:
+        float_array = float
+        np = SimpleNamespace(ndarray=float)
+        pd = SimpleNamespace(Series=None, DataFrame=None)
+
+T = TypeVar("T")
+
 
 PREFIX_MULTIPLIERS = {
     "n": 1e-9,
@@ -45,15 +69,15 @@ class ISUnits(BaseModel):
         """The hash function."""
         return hash(frozenset(self.model_dump().items()))
 
-    def __mul__(self, other: "ISUnits") -> "ISUnits":
+    def __mul__(self, other: ISUnits) -> ISUnits:
         """Multiply two IS units."""
         return self.__class__(**{field: getattr(self, field) + getattr(other, field) for field in self.model_fields})
 
-    def __truediv__(self, other: "ISUnits") -> "ISUnits":
+    def __truediv__(self, other: ISUnits) -> ISUnits:
         """Divide two IS units."""
         return self.__class__(**{field: getattr(self, field) - getattr(other, field) for field in self.model_fields})
 
-    def __pow__(self, other: int) -> "ISUnits":
+    def __pow__(self, other: int) -> ISUnits:
         """Raise to power."""
         return self.__class__(**{field: getattr(self, field) * other for field in self.model_fields})
 
@@ -66,7 +90,7 @@ class ISUnits(BaseModel):
         return "*".join([unit + (f"^{pow}" if pow != 1 else "") for unit, pow in self.model_dump().items() if pow])
 
     @classmethod
-    def from_str(cls, unit_str: str) -> "ISUnits":
+    def from_str(cls, unit_str: str) -> ISUnits:
         """Create from string."""
         return cls(
             **{
@@ -83,14 +107,20 @@ class NameData(TypedDict):
     category: str
 
 
+int_or_float = int | float
+
+
 class Quantity(BaseModel):
     """Quantity model."""
 
-    value: float
-    unit: str | None
+    value: float | float_array
+    """Value or array of values quantified by the unit."""
+    unit: str
+    """Unit of the quantity."""
 
-    """Conversion factors from unit to IS unit."""
-    conversion: ClassVar[dict[ISUnits, Mapping[str, float]]] = {
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    conversion: ClassVar[dict[ISUnits, dict[str, int_or_float | tuple[int_or_float, int_or_float]]]] = {
         # Unitless
         ISUnits(): {
             "": 1,
@@ -190,6 +220,8 @@ class Quantity(BaseModel):
             "m/s^2": 1,
         },
     }
+    """Conversion factors from unit to IS unit."""
+
     names: ClassVar[dict[ISUnits, NameData]] = {
         ISUnits(): {"category": "Unitless", "unit": ""},
         ISUnits(USD=1): {"category": "Money", "unit": "USD"},
@@ -207,8 +239,9 @@ class Quantity(BaseModel):
         ISUnits(m=1, s=-1): {"category": "Speed", "unit": "m/s"},
         ISUnits(m=1, s=-2): {"category": "Acceleration", "unit": "m/s^2"},
     }
+    """Category names and default units for each IS unit."""
 
-    def __init__(self, value: float, unit: str):
+    def __init__(self, value: float | float_array, unit: str):
         super().__init__(value=value, unit=unit)
 
     @property
@@ -238,7 +271,7 @@ class Quantity(BaseModel):
 
         all_units = sum([list(units) for units in cls.conversion.values()], [])
 
-        def trim_prefixes(unit: str) -> str:
+        def trim_prefixes(unit: str) -> tuple[str, str | None]:
             if unit in all_units:
                 return unit, None
             for prefix in PREFIX_MULTIPLIERS:
@@ -295,7 +328,7 @@ class Quantity(BaseModel):
         _ = cls.get_unit_info(unit)
         return unit
 
-    def _to_default_unit(self) -> float:
+    def _to_default_unit(self) -> float | np.ndarray:
         """Convert to default unit."""
         factor, base = self.unit_multiplier
         return self.value * factor + base
@@ -305,7 +338,7 @@ class Quantity(BaseModel):
         factor, base = self.unit_multiplier
         return (value - base) / factor
 
-    def to(self, unit: str) -> "Quantity":
+    def to(self, unit: str) -> Self:
         """Convert to another unit."""
         if self.get_unit_info(unit)[0] != self.i_s_units:
             self_repr = self.category if self.category != "Quantity" else str(self.unit)
@@ -316,36 +349,77 @@ class Quantity(BaseModel):
         factor, base = self.get_unit_info(unit)[1]
         return self.__class__(unit=unit, value=(default_unit_value - base) / factor)
 
-    def __add__(self, other: Union["Quantity", float, int]) -> "Quantity":
+    @overload
+    def __add__(self, other: pd.DataFrame) -> pd.DataFrame: ...
+    @overload
+    def __add__(self, other: pd.Series) -> pd.Series: ...
+    @overload
+    def __add__(self, other: Self | float | int | float_array) -> Self: ...
+    def __add__(
+        self, other: Self | float | int | float_array | pd.Series | pd.DataFrame
+    ) -> Self | pd.Series | pd.DataFrame:
         """Add two quantities, they need to be of the same category."""
-        if isinstance(other, float | int):
+        if pd.DataFrame and isinstance(other, pd.DataFrame):
+            return other.assign(**{col: self + other[col] for col in other.columns})
+
+        if pd.Series and isinstance(other, pd.Series):
+            from .pandas_engine import QuantityDtype
+
+            other_unit = getattr(other.dtype, "unit", "")
+            val = self + Quantity(other.to_numpy(), other_unit)
+            return pd.Series(val.value, index=other.index, dtype=QuantityDtype(unit=val.unit))
+
+        if isinstance(other, float | int | np.ndarray):
+            return self.__class__(self.value + other, self.unit)
+
+        if isinstance(other, Quantity):
+            if other.i_s_units != self.i_s_units:
+                raise ValueError("Cannot add quantities of different types.")
+
+            return self.__class__(
+                self._from_default_unit(self._to_default_unit() + other._to_default_unit()), self.unit
+            )
+
+        raise NotImplementedError
+
+    @overload
+    def __sub__(self, other: pd.DataFrame) -> pd.DataFrame: ...
+    @overload
+    def __sub__(self, other: pd.Series) -> pd.Series: ...
+    @overload
+    def __sub__(self, other: Self | float | int | float_array) -> Self: ...
+    def __sub__(
+        self, other: Self | float | int | float_array | pd.Series | pd.DataFrame
+    ) -> Self | pd.Series | pd.DataFrame:
+        """Add two quantities, they need to be of the same category."""
+        if pd.DataFrame and isinstance(other, pd.DataFrame):
+            return other.assign(**{col: self - other[col] for col in other.columns})
+
+        if pd.Series and isinstance(other, pd.Series):
+            from .pandas_engine import QuantityDtype
+
+            other_unit = getattr(other.dtype, "unit", "")
+            val = self - Quantity(other.to_numpy(), other_unit)
+            return pd.Series(val.value, index=other.index, dtype=QuantityDtype(unit=val.unit))
+
+        if isinstance(other, float | int | np.ndarray):
             return self.__class__(unit=self.unit, value=self.value + other)
 
-        if other.i_s_units != self.i_s_units:
-            raise ValueError("Cannot add quantities of different types.")
+        if isinstance(other, Quantity):
+            if self.i_s_units != other.i_s_units:
+                raise ValueError("Cannot subtract quantities of different types.")
 
-        return self.__class__(
-            unit=self.unit,
-            value=self._from_default_unit(self._to_default_unit() + other._to_default_unit()),
-        )
+            return self.__class__(
+                unit=self.unit,
+                value=self._from_default_unit(self._to_default_unit() - other._to_default_unit()),
+            )
 
-    def __sub__(self, other: Union["Quantity", float, int]) -> "Quantity":
-        """Add two quantities, they need to be of the same category."""
-        if isinstance(other, float | int):
-            return self.__class__(unit=self.unit, value=self.value + other)
+        raise NotImplementedError
 
-        if self.i_s_units != other.i_s_units:
-            raise ValueError("Cannot subtract quantities of different types.")
-
-        return self.__class__(
-            unit=self.unit,
-            value=self._from_default_unit(self._to_default_unit() - other._to_default_unit()),
-        )
-
-    def _get_output_unit(self, other: Union["Quantity", float, int], out_i_s_units: ISUnits) -> str:
+    def _get_output_unit(self, other: Self | float | int | float_array, out_i_s_units: ISUnits) -> str | None:
         all_parts = deepcopy(self.unit_parts)
         if isinstance(other, Quantity):
-            all_parts |= other.unit_parts
+            all_parts = deepcopy(other.unit_parts) | all_parts
 
         if out_i_s_units in all_parts:
             return all_parts[out_i_s_units]
@@ -364,43 +438,91 @@ class Quantity(BaseModel):
 
         return None
 
-    def __mul__(self, other: Union["Quantity", float, int]) -> "Quantity":
+    @overload
+    def __mul__(self, other: pd.DataFrame) -> pd.DataFrame: ...
+    @overload
+    def __mul__(self, other: pd.Series) -> pd.Series: ...
+    @overload
+    def __mul__(self, other: Self | float | int | float_array) -> Self: ...
+    def __mul__(
+        self, other: Self | float | int | float_array | pd.Series | pd.DataFrame
+    ) -> Self | pd.Series | pd.DataFrame:
         """Multiply a quantity with a number."""
-        if isinstance(other, float | int):
+        if pd.DataFrame and isinstance(other, pd.DataFrame):
+            return other.assign(**{col: self * other[col] for col in other.columns})
+
+        if pd.Series and isinstance(other, pd.Series):
+            from .pandas_engine import QuantityDtype
+
+            other_unit = getattr(other.dtype, "unit", "")
+            val = self * Quantity(other.to_numpy(), other_unit)
+            return pd.Series(val.value, index=other.index, dtype=QuantityDtype(unit=val.unit))
+
+        if isinstance(other, float | int | np.ndarray):
             return self.__class__(unit=self.unit, value=self.value * other)
 
-        i_s_units = self.i_s_units * other.i_s_units
-        out = self.__class__(
-            value=self._to_default_unit() * other._to_default_unit(),
-            unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
-        )
-        output_unit = self._get_output_unit(other, i_s_units)
-        if output_unit is not None:
-            out = out.to(output_unit)
-        return out
+        if isinstance(other, Quantity):
+            i_s_units = self.i_s_units * other.i_s_units
+            out = self.__class__(
+                value=self._to_default_unit() * other._to_default_unit(),
+                unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
+            )
+            output_unit = self._get_output_unit(other, i_s_units)
+            if output_unit is not None:
+                out = out.to(output_unit)
+            return out
 
-    def __rmul__(self, other: float | int) -> "Quantity":
-        """Multiply a quantity with a number."""
+        raise NotImplementedError
+
+    def __rmul__(self, other: float | int | float_array | pd.Series | pd.DataFrame) -> Self | pd.Series | pd.DataFrame:
+        """Multiply a quantity with a number.
+        NOTE: No pandas support for __rmul__.
+        """
+        if not isinstance(other, float | int | np.ndarray | pd.Series | pd.DataFrame):
+            raise TypeError("Can only multiply numbers by quantities")
         return self.__mul__(other)
 
-    def __truediv__(self, other: Union["Quantity", float, int]) -> Union["Quantity", float]:
+    @overload
+    def __truediv__(self, other: pd.DataFrame) -> pd.DataFrame: ...
+    @overload
+    def __truediv__(self, other: pd.Series) -> pd.Series: ...
+    @overload
+    def __truediv__(self, other: Self | float | int | float_array) -> Self: ...
+    def __truediv__(
+        self, other: Self | float | int | float_array | pd.Series | pd.DataFrame
+    ) -> Self | pd.Series | pd.DataFrame:
         """Divide a quantity with a number or another quantity."""
-        if isinstance(other, float | int):
+        if pd.DataFrame and isinstance(other, pd.DataFrame):
+            return other.assign(**{col: self / other[col] for col in other.columns})
+
+        if pd.Series and isinstance(other, pd.Series):
+            from .pandas_engine import QuantityDtype
+
+            other_unit = getattr(other.dtype, "unit", "")
+            val = self / Quantity(other.to_numpy(), other_unit)
+            return pd.Series(val.value, index=other.index, dtype=QuantityDtype(unit=val.unit))
+
+        if isinstance(other, float | int | np.ndarray):
             return self.__class__(unit=self.unit, value=self.value / other)
 
-        i_s_units = self.i_s_units / other.i_s_units
-        out = self.__class__(
-            value=self._to_default_unit() / other._to_default_unit(),
-            unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
-        )
-        output_unit = self._get_output_unit(other, i_s_units)
-        if output_unit is not None:
-            out = out.to(output_unit)
-        return out
+        if isinstance(other, Quantity):
+            i_s_units = self.i_s_units / other.i_s_units
+            out = self.__class__(
+                value=self._to_default_unit() / other._to_default_unit(),
+                unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
+            )
+            output_unit = self._get_output_unit(other, i_s_units)
+            if output_unit is not None:
+                out = out.to(output_unit)
+            return out
 
-    def __rtruediv__(self, other: float | int):
-        """Divide a number by a quantity."""
-        if not isinstance(other, float | int):
+        raise NotImplementedError
+
+    def __rtruediv__(self, other: float | int | float_array) -> Self:
+        """Divide a number by a quantity.
+        NOTE: No pandas support for __rtruediv__.
+        """
+        if not isinstance(other, float | int | np.ndarray):
             raise TypeError("Can only divide numbers by quantities")
 
         i_s_units = self.i_s_units**-1
@@ -409,7 +531,7 @@ class Quantity(BaseModel):
             unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
         )
 
-    def __pow__(self, other: int) -> "Quantity":
+    def __pow__(self, other: int) -> Self:
         """Raise a quantity to a power."""
         if not isinstance(other, int):
             raise TypeError("Can only raise a quantity to an integer power")
@@ -420,13 +542,13 @@ class Quantity(BaseModel):
             unit=self.names.get(i_s_units, {}).get("unit", str(i_s_units)),
         )
 
-    def __eq__(self, other: "Quantity") -> bool:
+    def __eq__(self, other) -> bool:
         """Equality."""
         if not isinstance(other, Quantity) or self.i_s_units != other.i_s_units:
             return False
         return self._to_default_unit() == other._to_default_unit()
 
-    def __neg__(self) -> "Quantity":
+    def __neg__(self) -> Self:
         """Negate."""
         return self.__class__(unit=self.unit, value=-self.value)
 
@@ -436,6 +558,8 @@ class Quantity(BaseModel):
 
     def __str__(self) -> str:
         """String representation."""
+        if not isinstance(self.value, float):
+            return f"{self.value}, {self.unit}"
         base = f"{self.value:.3f}" if abs(self.value) >= 1e-2 or self.value == 0 else f"{self.value:.2e}"  # noqa: PLR2004
         if "." in base:
             base = base.rstrip("0").rstrip(".")
@@ -457,6 +581,8 @@ class Quantity(BaseModel):
             cls.conversion[i_s_units] = {}
         cls.conversion[i_s_units][unit_name] = rate
         if i_s_units not in cls.names:
+            if category is None:
+                raise ValueError("Category must be specified for new units")
             cls.names[i_s_units] = {"category": category, "unit": unit_name}
 
         cls.get_unit_info.cache_clear()
