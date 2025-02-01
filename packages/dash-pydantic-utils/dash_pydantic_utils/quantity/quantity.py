@@ -24,8 +24,13 @@ else:
 
         float_array = npt.NDArray[np.floating]
     except ModuleNotFoundError:
+
+        def raise_not_found():
+            """Raise ModuleNotFoundError."""
+            raise ModuleNotFoundError("numpy not found")
+
         float_array = float
-        np = SimpleNamespace(ndarray=float)
+        np = SimpleNamespace(ndarray=float, array=raise_not_found)
         pd = SimpleNamespace(Series=None, DataFrame=None)
 
 T = TypeVar("T")
@@ -242,6 +247,8 @@ class Quantity(BaseModel):
     """Category names and default units for each IS unit."""
 
     def __init__(self, value: float | float_array, unit: str):
+        if isinstance(value, list):
+            value = np.array(value)
         super().__init__(value=value, unit=unit)
 
     @property
@@ -564,6 +571,18 @@ class Quantity(BaseModel):
         if "." in base:
             base = base.rstrip("0").rstrip(".")
         return f"{base} {self.unit}" if self.unit else base
+
+    def __len__(self) -> int | None:
+        """Length."""
+        return None if isinstance(self.value, float | int) else len(self.value)
+
+    def __iter__(self):
+        """Iterator."""
+        if isinstance(self.value, float | int):
+            yield self
+        else:
+            for value in self.value:
+                yield self.__class__(unit=self.unit, value=value)
 
     @classmethod
     def register_unit_rates(

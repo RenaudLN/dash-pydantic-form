@@ -142,6 +142,12 @@ class QuantityArray(NumericArray):
             mask |= other._mask
         elif isinstance(other, Quantity | float | int):
             other_q = other
+        elif isinstance(other, np.ndarray):
+            other_q = (
+                Quantity(value=[x.value for x in other], unit=other[0].unit)
+                if len(other) and isinstance(other[0], Quantity)
+                else Quantity(value=other, unit="")
+            )
         else:
             raise NotImplementedError(f"Unsupported type: {type(other)}")
         result = pd_op(self_q, other_q)
