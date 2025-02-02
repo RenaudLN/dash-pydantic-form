@@ -112,9 +112,6 @@ class NameData(TypedDict):
     category: str
 
 
-int_or_float = int | float
-
-
 class Quantity(BaseModel):
     """Quantity model."""
 
@@ -125,7 +122,7 @@ class Quantity(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    conversion: ClassVar[dict[ISUnits, dict[str, int_or_float | tuple[int_or_float, int_or_float]]]] = {
+    conversion: ClassVar[dict[ISUnits, dict[str, int | float | tuple[int | float, int | float]]]] = {
         # Unitless
         ISUnits(): {
             "": 1,
