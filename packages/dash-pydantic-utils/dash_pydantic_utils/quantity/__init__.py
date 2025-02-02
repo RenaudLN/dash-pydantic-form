@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
-try:
-    from .pandas import Quantity, QuantityDtype
-except ModuleNotFoundError:
-    from .quantity import Quantity
+from .quantity import Quantity
 
+try:
+    from .pandas_engine import QuantityDtype
+except ModuleNotFoundError:
     QuantityDtype = None
 
 BaseModel.__getitem__ = lambda self, key: self.__dict__.get(key)

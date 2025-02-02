@@ -1,9 +1,7 @@
-# ruff: noqa
-# TODO: ^
 from __future__ import annotations
 
 import re
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -17,26 +15,13 @@ from pandas.core.dtypes.missing import isna, notna
 from pandas.core.indexers import check_array_indexer
 from pandas.util._decorators import cache_readonly
 
-from .quantity import ISUnits
-from .quantity import Quantity as Quantity_
-
-
-class Quantity(Quantity_):
-    value: float | np.ndarray
-    model_config = {"arbitrary_types_allowed": True}
-
-    def __str__(self) -> str:
-        if isinstance(self.value, np.ndarray):
-            return f"{self.value}, {self.unit}"
-        return super().__str__()
-
-    @property
-    def dtype(self):
-        return QuantityDtype(unit=self.unit)
+from .quantity import ISUnits, Quantity
 
 
 @register_extension_dtype
 class QuantityDtype(NumericDtype):
+    """Pandas dtype for quantities."""
+
     type = np.float64
     name: ClassVar[str] = "Quantity"
     _metadata = ("unit",)
@@ -44,7 +29,8 @@ class QuantityDtype(NumericDtype):
     _checker = is_float_dtype
 
     @property
-    def name(self) -> str:
+    def name(self) -> str:  # noqa: F811
+        """Dtype display name."""
         return f"Quantity[{self.unit}]"
 
     def __init__(self, unit: str, *args, **kwargs):
@@ -52,6 +38,7 @@ class QuantityDtype(NumericDtype):
         self.unit = unit
 
     def __repr__(self):
+        """Dtype repr."""
         return f"QuantityDtype({self.unit})"
 
     @classmethod
@@ -67,6 +54,7 @@ class QuantityDtype(NumericDtype):
 
     @classmethod
     def construct_from_string(cls, string: str):
+        """Construct QuantityDtype from string, used when retrieving from arrow."""
         try:
             unit = re.findall(r"^Quantity\[(.*)\]$", string)[0]
             return cls(unit=unit)
@@ -85,6 +73,7 @@ class QuantityDtype(NumericDtype):
         return values.astype(dtype, copy=copy)
 
     def __from_arrow__(self, array, **kwargs):
+        """Construct QuantityArray from pyarrow Array."""
         import pyarrow
         from pandas.core.arrays.arrow._arrow_utils import pyarrow_array_to_numpy_and_mask
 
@@ -116,18 +105,23 @@ class QuantityDtype(NumericDtype):
         raise ValueError("No common dtype between Quantity with different units")
 
     def __eq__(self, other):
+        """Equality between QuantityDtypes."""
         return isinstance(other, QuantityDtype) and self.unit == other.unit
 
     def __hash__(self):
+        """Hash function."""
         return hash(str(self))
 
 
 class QuantityArray(NumericArray):
+    """Pandas array for quantities."""
+
     _dtype_cls = QuantityDtype
     _internal_fill_value = np.nan
 
     @cache_readonly
-    def dtype(self) -> NumericDtype:
+    def dtype(self) -> QuantityDtype:
+        """Pandas dtype associated with this value."""
         return QuantityDtype(unit=self.unit)
 
     def __init__(self, unit: str, values: np.ndarray, mask: npt.NDArray[np.bool_], copy: bool = False):
@@ -135,7 +129,7 @@ class QuantityArray(NumericArray):
         super().__init__(values, mask, copy=copy)
 
     @classmethod
-    def _from_sequence(cls, scalars, *, dtype=None, copy: bool = False):
+    def _from_sequence(cls, scalars, *, dtype: QuantityDtype, copy: bool = False):
         values, mask = cls._coerce_to_array(scalars, dtype=dtype, copy=copy)
         return cls(unit=dtype.unit, values=values, mask=mask)
 
@@ -148,6 +142,14 @@ class QuantityArray(NumericArray):
             mask |= other._mask
         elif isinstance(other, Quantity | float | int):
             other_q = other
+        elif isinstance(other, np.ndarray):
+            other_q = (
+                Quantity(value=[x.value for x in other], unit=other[0].unit)
+                if len(other) and isinstance(other[0], Quantity)
+                else Quantity(value=other, unit="")
+            )
+        else:
+            raise NotImplementedError(f"Unsupported type: {type(other)}")
         result = pd_op(self_q, other_q)
         if not isinstance(result, Quantity):
             result = Quantity(value=result, unit="")
@@ -156,21 +158,29 @@ class QuantityArray(NumericArray):
     def _maybe_mask_result(self, result: Quantity, mask: np.ndarray):
         if not isinstance(result, Quantity):
             result = Quantity(value=result, unit=self.unit)
+        if not isinstance(result.value, np.ndarray):
+            raise NotImplementedError("Unsupported type: {type(result.value)}")
         return QuantityArray(result.unit, result.value, mask, copy=False)
 
     def copy(self):
+        """Return a copy of the array."""
         data = self._data.copy()
         mask = self._mask.copy()
         return self.__class__(unit=self.unit, values=data, mask=mask)
 
     def to(self, other_unit: str):
+        """Convert to another unit."""
         new_value = Quantity(value=self._data, unit=self.unit).to(other_unit).value
-        return self.__class__(value=new_value, unit=other_unit)
+        if not isinstance(new_value, np.ndarray):
+            raise NotImplementedError("Unsupported type: {type(new_value)}")
+        return self.__class__(unit=other_unit, values=new_value, mask=self._mask)
 
     def __repr__(self):
+        """QuantityArray repr."""
         return repr(Quantity(value=self._data, unit=self.unit))
 
     def __getitem__(self, item):
+        """Get item from QuantityArray."""
         item = check_array_indexer(self, item)
 
         newmask = self._mask[item]
@@ -188,8 +198,9 @@ class QuantityArray(NumericArray):
         *,
         allow_fill: bool = False,
         fill_value=None,
-        axis=0,
+        axis: Literal[0, 1] = 0,
     ):
+        """Take elements from an array along an axis."""
         # we always fill with 1 internally
         # to avoid upcasting
         data_fill_value = self._internal_fill_value if isna(fill_value) else fill_value
@@ -229,21 +240,29 @@ class QuantityArray(NumericArray):
 
 
 @pd.api.extensions.register_series_accessor("qt")
-class QuantityAccessor:
+class QuantitySeriesAccessor:
+    """Quantity accessor for Series."""
+
     def __init__(self, pandas_obj: pd.Series):
         self._obj = pandas_obj
 
     def to(self, other_unit: str):
+        """Convert to another (compatible) unit."""
+        if not isinstance(self._obj.dtype, QuantityDtype):
+            raise TypeError("Can only convert a Series of Quantity")
         new_value = Quantity(value=self._obj.to_numpy(), unit=self._obj.dtype.unit).to(other_unit).value
         return pd.Series(new_value, index=self._obj.index, dtype=QuantityDtype(unit=other_unit))
 
 
 @pd.api.extensions.register_dataframe_accessor("qt")
-class QuantityAccessor:
+class QuantityDataFrameAccessor:
+    """Quantity accessor for DataFrame."""
+
     def __init__(self, pandas_obj: pd.DataFrame):
         self._obj = pandas_obj
 
     def to(self, other_unit: str):
+        """Convert to another (compatible) unit."""
         if not all(isinstance(dtype, QuantityDtype) for dtype in self._obj.dtypes.values):
             raise ValueError("Can only convert a DataFrame of Quantity")
         if len(set(self._obj.dtypes.values)) != 1:
@@ -256,6 +275,7 @@ class QuantityAccessor:
         )
 
     def find(self, unit: str | None = None, category: str | None = None, i_s_units: ISUnits | str | None = None):
+        """Find Quantity columns."""
         if not any([unit, category, i_s_units]):
             return self._obj[[col for col, dtype in self._obj.dtypes.items() if isinstance(dtype, QuantityDtype)]]
 
