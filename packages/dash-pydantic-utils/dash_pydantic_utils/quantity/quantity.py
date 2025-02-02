@@ -335,7 +335,7 @@ class Quantity(BaseModel):
         _ = cls.get_unit_info(unit)
         return unit
 
-    def _to_default_unit(self) -> float | np.ndarray:
+    def _to_default_unit(self) -> float | float_array:
         """Convert to default unit."""
         factor, base = self.unit_multiplier
         return self.value * factor + base
@@ -553,7 +553,11 @@ class Quantity(BaseModel):
         """Equality."""
         if not isinstance(other, Quantity) or self.i_s_units != other.i_s_units:
             return False
-        return self._to_default_unit() == other._to_default_unit()
+        self_default = self._to_default_unit()
+        other_default = other._to_default_unit()
+        if isinstance(self_default, float | int):
+            return self_default == other_default
+        return bool((self_default == other_default).all())
 
     def __neg__(self) -> Self:
         """Negate."""
