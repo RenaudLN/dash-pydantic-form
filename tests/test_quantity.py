@@ -71,3 +71,18 @@ def test_qt0005_pandas_series_operations():
     assert (series / series).qt.to("%").equals(pd.Series([100, 100, 100], dtype=QuantityDtype(unit="%")))
     assert (Quantity(50, "%") * series).equals(pd.Series([0.5, 1, 1.5], dtype=QuantityDtype(unit="m")))
     assert (series * Quantity(50, "%")).equals(pd.Series([0.5, 1, 1.5], dtype=QuantityDtype(unit="m")))
+
+
+def test_qt0006_pandas_dataframe():
+    """Test pandas dataframe."""
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}, dtype=QuantityDtype(unit="EUR/kWh"))
+    assert pd.concat([df, df], axis=0).to_numpy().shape == (6, 2)
+    assert pd.concat([df, df.rename(columns={"a": "c", "b": "d"})], axis=1).to_numpy().shape == (3, 4)
+    assert df.join(df.rename(columns={"a": "c", "b": "d"})).to_numpy().shape == (3, 4)
+    assert (df.dtypes == QuantityDtype(unit="EUR/kWh")).all()
+    assert df.assign(cost=lambda df: Quantity(1, "MW") * Quantity(0.5, "h") * df["a"])["cost"].dtype.unit == "EUR"
+    assert ((Quantity(50, "%") * df).to_numpy() == [[0.5, 0.5], [1.0, 1.0], [1.5, 1.5]]).all()
+    assert df.assign(cost=lambda df: Quantity(1, "MW") * Quantity(0.5, "h") * df["a"]).qt.find(
+        category="Money"
+    ).columns == ["cost"]
+    assert df.loc[[0]].to_numpy().shape == (1, 2)
