@@ -5,7 +5,6 @@ name = "dash-pydantic-form"
 
 [environments]
 default = {features = ["form", "pandas", "dev"], solve-group = "default"}
-base = {features = ["form", "dev"], solve-group = "default"}
 
 [dependencies]
 python = ">=3.10"
