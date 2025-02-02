@@ -584,6 +584,13 @@ class Quantity(BaseModel):
             for value in self.value:
                 yield self.__class__(unit=self.unit, value=value)
 
+    @property
+    def dtype(self):
+        """Pandas dtype associated with this value."""
+        from .pandas_engine import QuantityDtype
+
+        return QuantityDtype(unit=self.unit)
+
     @classmethod
     def register_unit_rates(
         cls,
