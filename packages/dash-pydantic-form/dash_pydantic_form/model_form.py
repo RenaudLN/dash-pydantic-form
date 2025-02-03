@@ -1,4 +1,3 @@
-import contextlib
 import dataclasses as dc
 import uuid
 import warnings
@@ -405,7 +404,7 @@ class ModelForm(html.Div):
 
         fields_repr_dicts = (
             {
-                field_name: field_repr if isinstance(field_repr, dict) else field_repr.to_dict()
+                field_name: field_repr if isinstance(field_repr, dict) else field_repr.model_dump(mode="json")
                 for field_name, field_repr in fields_repr.items()
             }
             if fields_repr
@@ -573,10 +572,7 @@ def update_form_wrapper_contents(
     item = model_construct_recursive(form_data, model_cls)
 
     # Retrieve fields-repr and form_layout from the stored data
-    fields_repr: dict[str, BaseField] = form_specs["fields_repr"] or {}
-    for k, v in fields_repr.items():
-        with contextlib.suppress(KeyError):
-            fields_repr[k] = BaseField.from_dict(v)
+    fields_repr: dict[str, BaseField] = recursive_load_fields_repr(form_specs["fields_repr"] or {})
     form_layout = FormLayout.load(**form_specs["form_layout"]) if form_specs["form_layout"] else None
 
     form = ModelForm(
@@ -592,3 +588,16 @@ def update_form_wrapper_contents(
     )
 
     return form.children.children
+
+
+def recursive_load_fields_repr(fields_repr: dict):
+    """Recursively load fields repr."""
+    final = deepcopy(fields_repr)
+    for k, v in fields_repr.items():
+        if "fields_repr" in v:
+            v["fields_repr"] = recursive_load_fields_repr(v["fields_repr"])
+        try:
+            final[k] = BaseField.load(v)
+        except KeyError:
+            final[k] = v
+    return final

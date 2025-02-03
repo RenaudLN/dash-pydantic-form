@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Working right multiplication and division with dataframes
 
+### Fixed
+- Nested fields_repr were not being serialised/deserialised properly
+
 ## [0.14.3] - 2025-02-03
 ### Added
 - Unit tests for Quantity
