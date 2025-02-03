@@ -155,12 +155,15 @@ class BaseField(BaseModel):
 
         visibility_wrapper = partial(common_ids.field_dependent_id, "_pydf-field-visibility-wrapper")
 
-    def to_dict(self) -> dict:
-        """Return a dictionary representation of the field."""
-        return {"__class__": str(self.__class__)} | self.model_dump(mode="json")
+    def model_dump(self, with_class: bool = True, **kwargs):
+        """Overridden model dump to add class name."""
+        base = super().model_dump(**kwargs)
+        if not with_class:
+            return base
+        return {"__class__": str(self.__class__)} | base
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BaseField":
+    def load(cls, data):
         """Create a field from a dictionary."""
         data = data.copy()
         str_repr = data.pop("__class__")
