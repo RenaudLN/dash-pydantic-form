@@ -42,7 +42,8 @@ class FieldModel(BaseModel):
         None, title="Columns", ge=1, json_schema_extra={"repr_kwargs": {"n_cols": 2, "decimalScale": 0}}
     )
     description: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 4}})
-    repr_kwargs: dict[str, str] | None = Field(title="Representation options", default_factory=dict)
+    repr_kwargs: dict[str, str] = Field(title="Representation options", default_factory=dict)
+    pydantic_kwargs: dict[str, str] = Field(title="Pydantic field options", default_factory=dict)
 
     annotation: ClassVar[type | None] = None
     default_repr: ClassVar[dict | None] = None
@@ -60,7 +61,7 @@ class FieldModel(BaseModel):
         raise NotImplementedError(f"Annotation not implemented for {self.type_}")
 
     def get_repr_type(self):
-        return self.default_repr.get("repr_type")
+        return (self.default_repr or {}).get("repr_type")
 
     def to_dynamic_field(self) -> tuple[type, ...]:
         repr_kwargs = {k: v for k, v in (self.repr_kwargs or {}).items() if k and v}
@@ -85,6 +86,7 @@ class FieldModel(BaseModel):
                     "repr_type": self.get_repr_type(),
                     "repr_kwargs": {**default_repr.get("repr_kwargs", {}), **repr_kwargs},
                 },
+                **self.pydantic_kwargs,
             ),
         )
 
