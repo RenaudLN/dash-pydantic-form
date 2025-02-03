@@ -1,6 +1,8 @@
 # ruff: noqa: D101, D102, D103, D104, D105
+import json
 from datetime import date, datetime, time
-from typing import Annotated, ClassVar, Literal, get_args
+from types import UnionType
+from typing import Annotated, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import Dash, Input, Output, State, _dash_renderer, dcc, no_update
@@ -48,6 +50,20 @@ class FieldModel(BaseModel):
     annotation: ClassVar[type | None] = None
     default_repr: ClassVar[dict | None] = None
 
+    @field_validator("title", mode="before")
+    @classmethod
+    def validate_title(cls, v):
+        if v == "":
+            return None
+        return v
+
+    @field_validator("n_cols", mode="before")
+    @classmethod
+    def validate_n_cols(cls, v):
+        if v == "":
+            return None
+        return v
+
     @field_validator("default", mode="before")
     @classmethod
     def validate_default(cls, v):
@@ -89,6 +105,41 @@ class FieldModel(BaseModel):
                 **self.pydantic_kwargs,
             ),
         )
+
+    def to_field_string(self):
+        """String representation."""
+        annotation, field = self.to_dynamic_field()
+        annotation_str = getattr(annotation, "__name__", str(annotation))
+
+        def parse_arg(arg):
+            if isinstance(arg, str):
+                return f'"{arg}"'
+            if isinstance(arg, type):
+                return arg.__name__
+            return str(arg)
+
+        if get_origin(annotation) not in [Union, UnionType] and get_args(annotation):
+            annotation_str += "[" + ", ".join([parse_arg(x) for x in get_args(annotation)]) + "]"
+        base = f"    {self['name']}: {annotation_str} = Field("
+        parts = []
+        if field.default is not PydanticUndefined:
+            parts.append(f"default={json.dumps(field.default)}")
+        if field.title is not None:
+            parts.append(f"title={json.dumps(field.title)}")
+        if field.description is not None:
+            parts.append(f"description={json.dumps(field.description)}")
+        for k, v in self.pydantic_kwargs.items():
+            parts.append(f"{k}={json.dumps(v)}")
+        extra = {}
+        if field.json_schema_extra is not None:
+            if field.json_schema_extra.get("repr_type"):
+                extra["repr_type"] = field.json_schema_extra["repr_type"]
+            if field.json_schema_extra.get("repr_kwargs"):
+                extra["repr_kwargs"] = field.json_schema_extra["repr_kwargs"]
+        if extra:
+            parts.append(f"json_schema_extra={json.dumps(extra)}")
+        out = base + "\n        " + ",\n        ".join(parts) + "\n    )"
+        return out.replace("null", "None")
 
     def __repr__(self):
         return f"{self.type_}({self['name']})"
@@ -179,16 +230,32 @@ BaseFieldModelUnion = Annotated[
     Field(discriminator="type_"),
 ]
 
+table_options = [get_args(f.model_fields["type_"].annotation)[0] for f in get_args(get_args(BaseFieldModelUnion)[0])]
+
 
 class TableFieldModel(FieldModel):
     type_: Literal["table"] = "table"
-    columns: list[BaseFieldModelUnion]
+    columns: list[BaseFieldModelUnion] = Field(
+        json_schema_extra={
+            "repr_kwargs": {
+                "fields_repr": {
+                    "type_": fields.SegmentedControl(
+                        title="",
+                        default="string",
+                        data=[{"label": x.title(), "value": x} for x in ["-"] + table_options],
+                    ),
+                    "n_cols": {"visible": False},
+                    "description": {"n_cols": 6},
+                }
+            }
+        }
+    )
 
     default_repr = {"repr_type": "Table"}
 
     def get_annotation(self):
         submodel = create_model(
-            f"Table{self['name'].title()}", **{col.name: col.to_dynamic_field() for col in self.columns}
+            f"{self['name'].title()}_", **{col.name: col.to_dynamic_field() for col in self.columns}
         )
         return list[submodel]
 
@@ -236,13 +303,19 @@ class CustomModel(BaseModel):
     def to_model(self):
         try:
             return create_model(
-                f"Custom{self.model_name.title()}", **{field.name: field.to_dynamic_field() for field in self.fields}
+                f"{self.model_name.title()}_", **{field.name: field.to_dynamic_field() for field in self.fields}
             )
         except Exception as exc:
             import traceback
 
             traceback.print_exc()
             raise exc
+
+    def to_model_string(self):
+        parts = [f"class {self.model_name.title()}(BaseModel):\n"]
+        for field in self.fields:
+            parts.append(field.to_field_string())
+        return "\n".join(parts)
 
 
 dummy_output_store = dcc.Store(data={}, id=ModelForm.ids.main("form-definition", "dynamic"))
@@ -278,8 +351,17 @@ app.layout = dmc.MantineProvider(
                 ),
                 dmc.Paper(
                     [
-                        dmc.Text("Custom form output", fw="bold", mb="md"),
+                        dmc.Text("Form output", fw="bold", mb="md"),
                         dmc.Box(dummy_output_store, id="form-container"),
+                    ],
+                    withBorder=True,
+                    p="0.5rem 1rem",
+                    radius="md",
+                ),
+                dmc.Paper(
+                    [
+                        dmc.Text("Equivalent model", fw="bold", mb="md"),
+                        dmc.Box(id="model-container"),
                     ],
                     withBorder=True,
                     p="0.5rem 1rem",
@@ -295,6 +377,7 @@ app.layout = dmc.MantineProvider(
 
 @app.callback(
     Output("form-container", "children"),
+    Output("model-container", "children"),
     Output(ModelForm.ids.errors("form-definition", "base"), "data"),
     Input(ModelForm.ids.main("form-definition", "base"), "data"),
     State(ModelForm.ids.main("form-definition", "dynamic"), "data"),
@@ -306,7 +389,9 @@ def create_form(form_definition, current_data):
         errors = {
             SEP.join([str(x) for i, x in enumerate(error["loc"]) if i != 2]): "Invalid value" for error in exc.errors()
         }
-        return dmc.Skeleton(dummy_output_store, h="4rem"), errors
+        return dmc.Skeleton(dummy_output_store, h="4rem"), None, errors
+
+    model_content = dmc.CodeHighlight(code=custom_model.to_model_string(), language="python")
 
     try:
         dynamic_model = custom_model.to_model()
@@ -318,19 +403,23 @@ def create_form(form_definition, current_data):
                 **custom_model.layout_options.model_dump(),
             )
 
-        return ModelForm(
-            item or dynamic_model,
-            aio_id="form-definition",
-            form_id="dynamic",
-            form_cols=custom_model.form_cols,
-            form_layout=form_layout,
-            submit_on_enter=True,
-        ), None
+        return (
+            ModelForm(
+                item or dynamic_model,
+                aio_id="form-definition",
+                form_id="dynamic",
+                form_cols=custom_model.form_cols,
+                form_layout=form_layout,
+                submit_on_enter=True,
+            ),
+            model_content,
+            None,
+        )
     except Exception:
         import traceback
 
         traceback.print_exc()
-        return dmc.Skeleton(dummy_output_store, h="4rem"), None
+        return dmc.Skeleton(dummy_output_store, h="4rem"), model_content, None
 
 
 @app.callback(
