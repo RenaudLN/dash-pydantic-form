@@ -121,6 +121,7 @@ class Quantity(BaseModel):
     """Unit of the quantity."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    __pandas_priority__ = 5000
 
     conversion: ClassVar[dict[ISUnits, dict[str, int | float | tuple[int | float, int | float]]]] = {
         # Unitless
@@ -483,7 +484,7 @@ class Quantity(BaseModel):
         NOTE: No pandas support for __rmul__.
         """
         if not isinstance(other, float | int | np.ndarray | pd.Series | pd.DataFrame):
-            raise TypeError("Can only multiply numbers by quantities")
+            raise TypeError(f"Cannot multiply {other} by quantity.")
         return self.__mul__(other)
 
     @overload
@@ -526,8 +527,8 @@ class Quantity(BaseModel):
         """Divide a number by a quantity.
         NOTE: No pandas support for __rtruediv__.
         """
-        if not isinstance(other, float | int | np.ndarray):
-            raise TypeError("Can only divide numbers by quantities")
+        if not isinstance(other, float | int | np.ndarray | pd.Series | pd.DataFrame):
+            raise TypeError(f"Cannot divide {other} by quantity.")
 
         i_s_units = self.i_s_units**-1
         return self.__class__(

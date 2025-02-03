@@ -86,3 +86,18 @@ def test_qt0006_pandas_dataframe():
         category="Money"
     ).columns == ["cost"]
     assert df.loc[[0]].to_numpy().shape == (1, 2)
+
+
+def test_qt0007_pandas_dataframe_operations():
+    """Test pandas dataframe operations."""
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}, dtype=QuantityDtype(unit="m"))
+    assert (df + df).to_numpy().shape == (3, 2)
+    assert (df * 2).to_numpy().shape == (3, 2)
+    assert (2 * df).to_numpy().shape == (3, 2)
+    assert (df - df).to_numpy().shape == (3, 2)
+    assert (df * df).to_numpy().shape == (3, 2)
+    assert (df / df).qt.to("%").to_numpy().shape == (3, 2)
+    assert (Quantity(50, "%") * df).to_numpy().shape == (3, 2)
+    assert (df * Quantity(50, "%")).to_numpy().shape == (3, 2)
+    assert (Quantity(1, "m") * df).to_numpy().shape == (3, 2)
+    assert (df * Quantity(1, "s")).to_numpy().shape == (3, 2)
