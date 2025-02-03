@@ -3,7 +3,7 @@ from datetime import date, datetime, time
 from typing import Annotated, ClassVar, Literal, get_args
 
 import dash_mantine_components as dmc
-from dash import Dash, Input, Output, State, _dash_renderer, dcc
+from dash import Dash, Input, Output, State, _dash_renderer, dcc, no_update
 from pydantic import BaseModel, Field, ValidationError, create_model, field_validator
 from pydantic_core import PydanticUndefined
 
@@ -324,12 +324,34 @@ def create_form(form_definition, current_data):
             form_id="dynamic",
             form_cols=custom_model.form_cols,
             form_layout=form_layout,
+            submit_on_enter=True,
         ), None
     except Exception:
         import traceback
 
         traceback.print_exc()
         return dmc.Skeleton(dummy_output_store, h="4rem"), None
+
+
+@app.callback(
+    Output(ModelForm.ids.errors("form-definition", "dynamic"), "data"),
+    Input(ModelForm.ids.form("form-definition", "dynamic"), "data-submit"),
+    State(ModelForm.ids.main("form-definition", "dynamic"), "data"),
+    State(ModelForm.ids.main("form-definition", "base"), "data"),
+    prevent_initial_call=True,
+)
+def check_dynamic_form(trigger, form_data, form_definition):
+    if not trigger:
+        return no_update
+    dynamic_model = CustomModel(**(form_definition or {})).to_model()
+    try:
+        dynamic_model.model_validate(form_data)
+    except ValidationError as exc:
+        errors = {
+            SEP.join([str(x) for i, x in enumerate(error["loc"]) if i != 2]): "Invalid value" for error in exc.errors()
+        }
+        return errors
+    return None
 
 
 if __name__ == "__main__":

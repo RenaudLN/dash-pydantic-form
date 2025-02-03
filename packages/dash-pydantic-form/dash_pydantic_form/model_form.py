@@ -279,6 +279,7 @@ class ModelForm(html.Div):
                     "data-getvalues": None,
                     "data-restored": None,
                     "data-update": None,
+                    "data-submit": None,
                 }
                 if not path
                 else {}
