@@ -79,10 +79,10 @@ class ListField(BaseField):
     @classmethod
     def validate_form_layout(cls, v):
         """Validate form layout."""
+        if isinstance(v, FormLayout) or v is None:
+            return v
         if isinstance(v, dict):
             return FormLayout.load(**v)
-        if isinstance(v, FormLayout):
-            return v
         raise ValueError("form_layout must be a FormLayout or a dict that can be converted to a FormLayout")
 
     def model_post_init(self, _context):

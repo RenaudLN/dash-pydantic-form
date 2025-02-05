@@ -51,7 +51,7 @@ class ModelField(BaseField):
     @classmethod
     def validate_form_layout(cls, v):
         """Validate form layout."""
-        if isinstance(v, FormLayout):
+        if isinstance(v, FormLayout) or v is None:
             return v
         if isinstance(v, dict):
             return FormLayout.load(**v)
