@@ -291,6 +291,7 @@ class TableField(BaseField):
                     ]
                     + (title is not None and description is not None)
                     * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
+                    style={"marginBottom": "-0.5rem" if title is not None else None},
                 ),
                 dag.AgGrid(
                     id=self.ids.editable_table(aio_id, form_id, field, parent=parent),
