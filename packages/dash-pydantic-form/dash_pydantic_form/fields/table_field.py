@@ -523,17 +523,13 @@ class TableField(BaseField):
             )
         return no_update, None
 
-    @callback(
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="tableAddRow"),
         Output(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowTransaction", allow_duplicate=True),
         Input(ids.add_row(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
         State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
         prevent_initial_call=True,
     )
-    def add_row(n_clicks, column_defs):
-        """Add new row in editable table on user click."""
-        if n_clicks is not None:
-            return {"add": [{col["field"]: col.get("default_value") for col in column_defs if "field" in col}]}
-        return no_update
 
     @callback(
         Output(ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),

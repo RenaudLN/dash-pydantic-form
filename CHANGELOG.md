@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Minor styling change on position of Table title
+- Table add row is now clientside
 
 ### Fixed
 - Issue with form_layout validation in field.Model and field.List
+- Quantity field issue
 
 ## [0.14.4] - 2025-02-04
 ### Added

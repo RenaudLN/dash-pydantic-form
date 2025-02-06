@@ -246,7 +246,14 @@ dash_clientside.pydf = {
       return [false, `${prefix}${path}/${globs[0]}`, `${prefix}${path}`]
     }
     return [false, `${prefix}${path}`, `${prefix}${path}`]
-  }
+  },
+  tableAddRow: (trigger, columnDefs) => {
+    if (!trigger) return dash_clientside.no_update
+
+    return {add: [Object.fromEntries(
+      columnDefs.filter(colDef => !!colDef.field).map(colDef => [colDef.field, colDef.default_value])
+    )]}
+  },
 }
 
 function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
