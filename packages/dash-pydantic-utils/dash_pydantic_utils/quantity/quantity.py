@@ -578,6 +578,10 @@ class Quantity(BaseModel):
         """Length."""
         return None if isinstance(self.value, float | int) else len(self.value)
 
+    def __bool__(self) -> bool:
+        """Boolean."""
+        return True
+
     def __iter__(self):
         """Iterator."""
         if isinstance(self.value, float | int):
