@@ -15,11 +15,13 @@ dash-pydantic-form = { path = "packages/dash-pydantic-form", editable = true }
 dash-pydantic-utils = { path = "packages/dash-pydantic-utils", editable = true }
 
 [feature.form.dependencies]
-dash = ">=2,<3"
-dash-mantine-components = ">=0.14.5,<0.16"
+fsspec = "*"
+
+[feature.form.pypi-dependencies]
 dash-iconify = "*"
 dash-ag-grid = ">=31"
-fsspec = "*"
+dash = "==3.0.0rc1"
+dash-mantine-components = "==1.0.0rc1"
 
 [feature.pandas.dependencies]
 numpy = "*"
@@ -48,7 +50,7 @@ psutil = ">=5.8.0"
 # Build
 build = "*"
 # Dash testing
-dash = {extras = ["testing"], version = ">=2,<3"}
+dash = {extras = ["testing"] }
 requests = {extras = ["security"], version = ">=2.21.0"}
 dash_testing_stub = ">=0.0.2"
 

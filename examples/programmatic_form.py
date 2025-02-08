@@ -410,7 +410,7 @@ app.layout = dmc.MantineProvider(
         ),
         p="2rem",
     ),
-    defaultColorScheme="dark",
+    defaultColorScheme="light",
 )
 
 
