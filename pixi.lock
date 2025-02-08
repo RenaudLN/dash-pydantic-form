@@ -1302,7 +1302,7 @@ packages:
   timestamp: 1737915769976
 - kind: pypi
   name: dash-pydantic-form
-  version: 0.14.1.post1.dev2+g1d57d25.d20250131
+  version: 0.14.5.post1.dev0+gff1cfd5.d20250207
   path: packages/dash-pydantic-form
   sha256: 6dca2dfa6377230cabc30c9996eb7308ea2bcc0d8fcaf9ceb1964cac9aaeddc6
   requires_dist:
@@ -1320,7 +1320,7 @@ packages:
   editable: true
 - kind: pypi
   name: dash-pydantic-utils
-  version: 0.14.1.post1.dev0+g56955cf.d20250128
+  version: 0.14.5.post1.dev0+gff1cfd5.d20250207
   path: packages/dash-pydantic-utils
   sha256: b169d4c8b45ff5ce0d30d36c982049fde417d84957dacb511a1d436b60d43363
   requires_dist:

@@ -5,13 +5,13 @@ from types import UnionType
 from typing import Annotated, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
-from dash import Dash, Input, Output, State, _dash_renderer, dcc, no_update
-from pydantic import BaseModel, Field, ValidationError, create_model, field_validator
+from dash import ALL, Dash, Input, Output, State, _dash_renderer, dcc, no_update
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model, field_validator
 from pydantic_core import PydanticUndefined
 
-from dash_pydantic_form import ModelForm, fields
-from dash_pydantic_form.form_layouts.form_layout import FormLayout
+from dash_pydantic_form import FormLayout, ModelForm, TabsFormLayout, fields
 from dash_pydantic_form.form_section import FormSection, Position
+from dash_pydantic_form.ids import value_field
 from dash_pydantic_utils import SEP, model_construct_recursive
 
 _dash_renderer._set_react_version("18.2.0")
@@ -35,15 +35,15 @@ def make_default_field(repr_type=None, **kwargs):
 
 
 class FieldModel(BaseModel):
-    name: str = Field(pattern="^[a-z][a-z0-9_]*$", json_schema_extra={"repr_kwargs": {"n_cols": 3}})
     type_: str = "string"
-    title: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 2}})
+    name: str = Field(pattern="^[a-z][a-z0-9_]*$", json_schema_extra={"repr_kwargs": {"n_cols": 3}})
+    title: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 3}})
     default: str | None = make_default_field()
     required: bool = Field(True, title="Required field", json_schema_extra={"repr_kwargs": {"n_cols": 2, "mt": "2rem"}})
     n_cols: int | None = Field(
         None, title="Columns", ge=1, json_schema_extra={"repr_kwargs": {"n_cols": 2, "decimalScale": 0}}
     )
-    description: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 4}})
+    description: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 12}})
     repr_kwargs: dict[str, str] = Field(title="Representation options", default_factory=dict)
     pydantic_kwargs: dict[str, str] = Field(title="Pydantic field options", default_factory=dict)
 
@@ -112,18 +112,25 @@ class FieldModel(BaseModel):
         annotation_str = getattr(annotation, "__name__", str(annotation))
 
         def parse_arg(arg):
+            if arg is type(None):
+                return "None"
             if isinstance(arg, str):
                 return f'"{arg}"'
             if isinstance(arg, type):
-                return arg.__name__
+                base = arg.__name__
+                if get_args(arg):
+                    base += "[" + ", ".join([parse_arg(x) for x in get_args(arg)]) + "]"
+                return base
             return str(arg)
 
-        if get_origin(annotation) not in [Union, UnionType] and get_args(annotation):
+        if get_origin(annotation) in [Union, UnionType]:
+            annotation_str = " | ".join([parse_arg(x) for x in get_args(annotation)])
+        elif get_origin(annotation) not in [Union, UnionType] and get_args(annotation):
             annotation_str += "[" + ", ".join([parse_arg(x) for x in get_args(annotation)]) + "]"
-        base = f"    {self['name']}: {annotation_str} = Field("
+        base = f"    {self['name']}: {annotation_str}"
         parts = []
         if field.default is not PydanticUndefined:
-            parts.append(f"default={json.dumps(field.default)}")
+            parts.append(f"default={TypeAdapter(field.annotation).dump_json(field.default).decode('utf-8')}")
         if field.title is not None:
             parts.append(f"title={json.dumps(field.title)}")
         if field.description is not None:
@@ -138,7 +145,7 @@ class FieldModel(BaseModel):
                 extra["repr_kwargs"] = field.json_schema_extra["repr_kwargs"]
         if extra:
             parts.append(f"json_schema_extra={json.dumps(extra)}")
-        out = base + "\n        " + ",\n        ".join(parts) + "\n    )"
+        out = base + " = Field(\n        " + ",\n        ".join(parts) + ",\n    )" if parts else base
         return out.replace("null", "None")
 
     def __repr__(self):
@@ -239,10 +246,10 @@ class TableFieldModel(FieldModel):
         json_schema_extra={
             "repr_kwargs": {
                 "fields_repr": {
-                    "type_": fields.SegmentedControl(
+                    "type_": fields.Select(
                         title="",
-                        default="string",
-                        data=[{"label": x.title(), "value": x} for x in ["-"] + table_options],
+                        data=[{"label": x.title(), "value": x} for x in sorted(table_options)],
+                        searchable=True,
                     ),
                     "n_cols": {"visible": False},
                     "description": {"n_cols": 6},
@@ -258,6 +265,12 @@ class TableFieldModel(FieldModel):
             f"{self['name'].title()}_", **{col.name: col.to_dynamic_field() for col in self.columns}
         )
         return list[submodel]
+
+    def to_model_string(self):
+        parts = [f"class {self.name.title()}_(BaseModel):"]
+        for column in self.columns:
+            parts.append(column.to_field_string())
+        return "\n".join(parts)
 
 
 AllFieldModelUnion = Annotated[
@@ -285,7 +298,17 @@ type_mapper = {
 
 
 class LayoutOptions(BaseModel):
-    sections: list[FormSection]
+    sections: list[FormSection] = Field(
+        json_schema_extra={
+            "repr_kwargs": {
+                "fields_repr": {
+                    "icon": fields.Text(),
+                    "fields": fields.MultiSelect(data=[]),
+                    "default_open": {"visible": ("_root_:layout", "==", "accordion"), "mt": "2rem"},
+                },
+            }
+        }
+    )
     remaining_fields_position: Position = Field("top", json_schema_extra={"repr_type": "RadioItems"})
 
 
@@ -312,10 +335,14 @@ class CustomModel(BaseModel):
             raise exc
 
     def to_model_string(self):
-        parts = [f"class {self.model_name.title()}(BaseModel):\n"]
+        table_models = [f.to_model_string() for f in self.fields if f.type_ == "table"]
+
+        parts = [f"class {self.model_name.title()}(BaseModel):"]
         for field in self.fields:
             parts.append(field.to_field_string())
-        return "\n".join(parts)
+        out = "\n".join(parts)
+
+        return "\n\n".join(table_models + [out])
 
 
 dummy_output_store = dcc.Store(data={}, id=ModelForm.ids.main("form-definition", "dynamic"))
@@ -337,14 +364,26 @@ app.layout = dmc.MantineProvider(
                             fields_repr={
                                 "fields": {
                                     "fields_repr": {
-                                        "type_": fields.SegmentedControl(
+                                        "type_": fields.Select(
                                             title="",
-                                            default="string",
-                                            data=[{"label": x.title(), "value": x} for x in ["-"] + options],
+                                            data=[{"label": x.title(), "value": x} for x in sorted(options)],
+                                            searchable=True,
                                         ),
                                     },
                                 },
                             },
+                            form_layout=TabsFormLayout(
+                                sections=[
+                                    FormSection(
+                                        name="Model",
+                                        fields=["model_name", "fields"],
+                                    ),
+                                    FormSection(
+                                        name="Form",
+                                        fields=["form_cols", "layout", "layout_options"],
+                                    ),
+                                ]
+                            ),
                         ),
                     ],
                     p="0.5rem",
@@ -441,6 +480,17 @@ def check_dynamic_form(trigger, form_data, form_definition):
         }
         return errors
     return None
+
+
+app.clientside_callback(
+    """(formData, ids) => {
+        availableFields = formData.fields.filter(f => !!f.name).map(f => f.name);
+        return Array(ids.length).fill(availableFields);
+    }""",
+    Output(value_field("form-definition", "base", "fields", ALL), "data"),
+    Input(ModelForm.ids.main("form-definition", "base"), "data"),
+    State(value_field("form-definition", "base", "fields", ALL), "id"),
+)
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ python = ">=3.10"
 pydantic = ">=2,<3"
 
 [pypi-dependencies]
-"dash-pydantic-form" = { path = "packages/dash-pydantic-form", editable = true }
-"dash-pydantic-utils" = { path = "packages/dash-pydantic-utils", editable = true }
+dash-pydantic-form = { path = "packages/dash-pydantic-form", editable = true }
+dash-pydantic-utils = { path = "packages/dash-pydantic-utils", editable = true }
 
 [feature.form.dependencies]
 dash = ">=2,<3"
