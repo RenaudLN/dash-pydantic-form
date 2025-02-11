@@ -56,10 +56,10 @@ class BaseField(BaseModel):
     reserved_attributes: ClassVar = ("value", "label", "description", "id", "required")
     full_width: ClassVar[bool] = False
 
-    title: str | None = Field(
+    title: str | Component | None = Field(
         default=None, description="Field label, overrides the title defined in the pydantic Field."
     )
-    description: str | None = Field(
+    description: str | Component | None = Field(
         default=None, description="Field helper text, overrides the description defined in the pydantic Field."
     )
     required: bool | None = Field(
@@ -104,7 +104,7 @@ class BaseField(BaseModel):
     field_id_meta: str | None = Field(default=None, description="Optional str to be set in the field id's 'meta' key.")
     read_only: bool = Field(default=False, description="Read only field.")
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
     @classmethod
     def __pydantic_init_subclass__(cls):

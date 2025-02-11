@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Model field "simple" render with only title, description and sub-form
 
+### Changed
+- Possibility to pass Components to fields `title` and `description`
+
 ### Fixed
 - `debounce_inputs` is properly passed down to nested submodels
 
