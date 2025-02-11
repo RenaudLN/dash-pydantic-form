@@ -44,6 +44,7 @@ class ModelField(BaseField):
     form_cols: int = Field(default=4, description="Number of columns in the form.")
     excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
     fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
+    debounce: bool | int = Field(default=False, description="Debounce the inputs.")
 
     full_width = True
 
@@ -122,6 +123,7 @@ class ModelField(BaseField):
                                 form_cols=self.form_cols,
                                 excluded_fields=self.excluded_fields,
                                 fields_order=self.fields_order,
+                                debounce_inputs=self.debounce,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -182,6 +184,7 @@ class ModelField(BaseField):
                                 form_cols=self.form_cols,
                                 excluded_fields=self.excluded_fields,
                                 fields_order=self.fields_order,
+                                debounce_inputs=self.debounce,
                             ),
                         ],
                     ),
