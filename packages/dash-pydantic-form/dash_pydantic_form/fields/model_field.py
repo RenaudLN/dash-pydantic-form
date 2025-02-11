@@ -33,8 +33,8 @@ class ModelField(BaseField):
     * fields_order, list of field names in the order they should be rendered
     """
 
-    render_type: Literal["accordion", "modal"] = Field(
-        default="accordion", description="How to render the model field, one of 'accordion', 'modal'."
+    render_type: Literal["accordion", "modal", "simple"] = Field(
+        default="accordion", description="How to render the model field, one of 'accordion', 'modal', 'simple'."
     )
     fields_repr: dict[str, dict | BaseField] | None = Field(
         default=None,
@@ -72,6 +72,43 @@ class ModelField(BaseField):
         edit = partial(common_ids.field_dependent_id, "_pydf-model-field-edit")
         modal = partial(common_ids.field_dependent_id, "_pydf-model-field-modal")
         modal_save = partial(common_ids.field_dependent_id, "_pydf-model-field-modal-save")
+
+    def simple_item(  # noqa: PLR0913
+        self,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str = "",
+        field_info: FieldInfo | None = None,
+    ) -> Component:
+        """Model field simple render."""
+        from dash_pydantic_form import ModelForm
+
+        title = self.get_title(field_info, field_name=field)
+        description = self.get_description(field_info)
+        return dmc.Box(
+            [
+                dmc.Stack(
+                    (title is not None) * [dmc.Text(title, size="sm", mt=3, mb=5, fw=500, lh=1.55)]
+                    + (title is not None and description is not None)
+                    * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
+                    gap=0,
+                ),
+                ModelForm(
+                    item=item,
+                    aio_id=aio_id,
+                    form_id=form_id,
+                    path=get_fullpath(parent, field),
+                    fields_repr=self.fields_repr,
+                    form_layout=self.form_layout,
+                    read_only=self.read_only,
+                    form_cols=self.form_cols,
+                    excluded_fields=self.excluded_fields,
+                    fields_order=self.fields_order,
+                ),
+            ]
+        )
 
     def modal_item(  # noqa: PLR0913
         self,
