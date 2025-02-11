@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Model field "simple" render with only title, description and sub-form
+
 ### Fixed
 - `debounce_inputs` is properly passed down to nested submodels
 
