@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ## [0.14.7] - 2025-02-12
 ### Changed
-- `debounce_inputs` now works on the clientside callback ensuring the whole form changes are debounced
+- `debounce` now works on the clientside callback ensuring the whole form changes are debounced
+- Deprecated `debounce_inputs` in favor of `debounce`
 
 ## [0.14.6] - 2025-02-11
 ### Added
