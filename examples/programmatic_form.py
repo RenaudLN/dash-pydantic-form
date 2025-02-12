@@ -15,17 +15,7 @@ from dash_pydantic_form.ids import value_field
 from dash_pydantic_utils import SEP, model_construct_recursive
 
 _dash_renderer._set_react_version("18.2.0")
-app = Dash(
-    __name__,
-    external_stylesheets=[
-        "https://unpkg.com/@mantine/dates@7/styles.css",
-        "https://unpkg.com/@mantine/code-highlight@7/styles.css",
-        "https://unpkg.com/@mantine/charts@7/styles.css",
-        "https://unpkg.com/@mantine/carousel@7/styles.css",
-        "https://unpkg.com/@mantine/notifications@7/styles.css",
-        "https://unpkg.com/@mantine/nprogress@7/styles.css",
-    ],
-)
+app = Dash(__name__, external_stylesheets=dmc.styles.ALL)
 
 server = app.server
 
@@ -36,7 +26,10 @@ def make_default_field(repr_type=None, **kwargs):
 
 class FieldModel(BaseModel):
     type_: str = "string"
-    name: str = Field(pattern="^[a-z][a-z0-9_]*$", json_schema_extra={"repr_kwargs": {"n_cols": 3}})
+    name: str = Field(
+        pattern="^[a-z][a-z0-9_]*$",
+        json_schema_extra={"repr_kwargs": {"n_cols": 3, "placeholder": "snake_case"}},
+    )
     title: str | None = Field(default=None, json_schema_extra={"repr_kwargs": {"n_cols": 3}})
     default: str | None = make_default_field()
     required: bool = Field(True, title="Required field", json_schema_extra={"repr_kwargs": {"n_cols": 2, "mt": "2rem"}})
