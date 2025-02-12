@@ -72,7 +72,6 @@ class ListField(BaseField):
     wrapper_kwargs: dict | None = Field(default=None, description="Kwargs to pass to the items wrapper.")
     excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
     fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
-    debounce: bool | int = Field(default=False, description="Debounce the inputs.")
 
     full_width = True
 
@@ -136,7 +135,6 @@ class ListField(BaseField):
         form_cols: int = 4,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -184,7 +182,6 @@ class ListField(BaseField):
                         form_cols=form_cols,
                         excluded_fields=excluded_fields,
                         fields_order=fields_order,
-                        debounce_inputs=debounce_inputs,
                     ),
                 ),
             ],
@@ -210,7 +207,6 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create a list of accordion items."""
@@ -252,7 +248,6 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
-                    debounce_inputs=debounce_inputs,
                 )
                 for i, val in enumerate(value)
             ],
@@ -281,7 +276,6 @@ class ListField(BaseField):
         form_cols: int = 4,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -303,7 +297,6 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
-                    debounce_inputs=debounce_inputs,
                 ),
             ]
             + items_deletable
@@ -341,7 +334,6 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create a list of list items."""
@@ -363,7 +355,6 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
-                    debounce_inputs=debounce_inputs,
                 )
                 for i, _ in enumerate(value)
             ],
@@ -392,7 +383,6 @@ class ListField(BaseField):
         form_cols: int = 4,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create an item with bare forms for the model list field."""
@@ -449,7 +439,6 @@ class ListField(BaseField):
                                 form_cols=form_cols,
                                 excluded_fields=excluded_fields,
                                 fields_order=fields_order,
-                                debounce_inputs=debounce_inputs,
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -498,7 +487,6 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create a list of modal items."""
@@ -530,7 +518,6 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
-                    debounce_inputs=debounce_inputs,
                 )
                 for i, val in enumerate(value)
             ],
@@ -611,7 +598,6 @@ class ListField(BaseField):
         input_kwargs: dict,
         wrapper_class_name: str,
         wrapper_kwargs: dict,
-        debounce_inputs: bool | int = False,
         **_kwargs,
     ):
         """Create a list of scalar items."""
@@ -640,8 +626,7 @@ class ListField(BaseField):
                     form_layout=form_layout,
                     items_deletable=items_deletable,
                     read_only=read_only,
-                    input_kwargs=input_kwargs | {"debounce": debounce_inputs},
-                    debounce_inputs=debounce_inputs,
+                    input_kwargs=input_kwargs,
                 )
                 for i, val in enumerate(value)
             ],
@@ -705,7 +690,6 @@ class ListField(BaseField):
             wrapper_kwargs=self.wrapper_kwargs,
             excluded_fields=self.excluded_fields,
             fields_order=self.fields_order,
-            debounce_inputs=self.debounce,
         )
 
         template_item = model_construct_recursive(item.model_dump(), item.__class__)
@@ -740,7 +724,6 @@ class ListField(BaseField):
             form_cols=self.form_cols,
             excluded_fields=self.excluded_fields,
             fields_order=self.fields_order,
-            debounce_inputs=self.debounce,
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)

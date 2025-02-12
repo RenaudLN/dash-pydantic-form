@@ -228,7 +228,7 @@ app.layout = dmc.MantineProvider(
                             FORM_ID,
                             # read_only=True,
                             # submit_on_enter=True,
-                            debounce_inputs=True,
+                            debounce_inputs=1000,
                             # locale="fr",
                             store_progress="session",
                             restore_behavior="notify",

@@ -229,7 +229,6 @@ class ModelForm(html.Div):
                 excluded_fields=excluded_fields,
                 discriminator=discriminator,
                 read_only=read_only,
-                debounce_inputs=debounce_inputs,
                 form_cols=form_cols,
             )
             # Re-order fields as per fields_order
@@ -280,6 +279,7 @@ class ModelForm(html.Div):
                     "data-restored": None,
                     "data-update": None,
                     "data-submit": None,
+                    "data-debounce": debounce_inputs,
                 }
                 if not path
                 else {}
@@ -325,7 +325,6 @@ class ModelForm(html.Div):
         excluded_fields: list[str],
         discriminator: str | None,
         read_only: bool | None,
-        debounce_inputs: int | None,
         form_cols: int,
     ) -> dict[str, Component]:
         """Render each field in the form."""
@@ -340,8 +339,6 @@ class ModelForm(html.Div):
             more_kwargs = {"form_cols": form_cols}
             if read_only:
                 more_kwargs["read_only"] = read_only
-            if debounce_inputs:
-                more_kwargs["debounce"] = debounce_inputs
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:
@@ -473,6 +470,7 @@ clientside_callback(
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
     State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "id"),
     State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "data-behavior"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-debounce"),
 )
 
 clientside_callback(
