@@ -146,8 +146,10 @@ class ModelForm(html.Div):
     read_only: bool | None
         Whether the form should be read only.
         True/False set all the fields to read only or not. None keeps the field setting.
+    debounce: int | None
+        Debounce the form output in milliseconds.
     debounce_inputs: int | None
-        Debounce inputs in milliseconds. Only works with DMC components that can be debounced.
+        DEPRECATED: Use debounce.
     locale: str | None
         Locale to render the buttons and helpers in, currently English and French are supported.
         If left to None, will default to system locale, and fallback to English.
@@ -181,6 +183,7 @@ class ModelForm(html.Div):
         excluded_fields: list[str] | None = None,
         container_kwargs: dict | None = None,
         read_only: bool | None = None,
+        debounce: int | None = None,
         debounce_inputs: int | None = None,
         locale: str = None,
         cols: int = None,
@@ -211,6 +214,10 @@ class ModelForm(html.Div):
             warnings.warn("sections is deprecated, use form_layout instead", DeprecationWarning, stacklevel=1)
             if form_layout is None:
                 form_layout = sections
+        if debounce_inputs is not None:
+            warnings.warn("debounce_inputs is deprecated, use debounce instead", DeprecationWarning, stacklevel=1)
+            if debounce is None:
+                debounce = debounce_inputs
 
         fields_repr = fields_repr or {}
 
@@ -279,7 +286,7 @@ class ModelForm(html.Div):
                     "data-restored": None,
                     "data-update": None,
                     "data-submit": None,
-                    "data-debounce": debounce_inputs,
+                    "data-debounce": debounce,
                 }
                 if not path
                 else {}
