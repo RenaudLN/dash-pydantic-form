@@ -90,27 +90,25 @@
 
 .pydf-model-list-accordion-item {
     & .pydf-model-list-accordion-item-delete {
-        opacity: 0;
-        transition: opacity 100ms;
+        display: none;
         cursor: pointer;
     }
     &:hover .pydf-model-list-accordion-item-delete,
     &:has(*:focus) .pydf-model-list-accordion-item-delete,
     &:has(*:active) .pydf-model-list-accordion-item-delete {
-        opacity: 1;
+        display: block;
     }
 }
 
 .pydf-model-list-modal-item {
     & .pydf-model-list-modal-item-btn {
-        opacity: 0;
-        transition: opacity 100ms;
+        display: none;
         cursor: pointer;
     }
     &:hover .pydf-model-list-modal-item-btn,
     &:has(*:focus) .pydf-model-list-modal-item-btn,
     &:has(*:active) .pydf-model-list-modal-item-btn {
-        opacity: 1;
+        display: block;
     }
 }
 
