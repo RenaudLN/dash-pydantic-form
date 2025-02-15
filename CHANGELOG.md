@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Use display rather than opacity on delete buttons to avoid issues on mobile
 
+### Fixed
+- Adding to an accordion list opens the added item
+
 ## [0.14.7] - 2025-02-12
 ### Changed
 - `debounce` now works on the clientside callback ensuring the whole form changes are debounced

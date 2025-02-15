@@ -170,6 +170,10 @@ dash_clientside.pydf = {
     const templateCopy = JSON.parse(template.replaceAll(`{{${path}}}`, String(current.length)))
     if (templateCopy.type == "AccordionItem") {
       templateCopy.props.value = `uuid:${uuid4()}`
+      dash_clientside.set_props(
+        dash_clientside.callback_context.outputs_list.id,
+        {value: templateCopy.props.value},
+      )
     }
     return [...current, templateCopy]
   },
