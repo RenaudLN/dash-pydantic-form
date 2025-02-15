@@ -300,7 +300,6 @@ def test_du0008_list_union_in_list_union(dash_duo):
 
     add_base_btn = dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "bases")))
     add_base_btn.click()
-    dash_duo.driver.find_elements(By.CSS_SELECTOR, ".mantine-Accordion-control")[-1].click()
     time.sleep(0.5)
     set_select(dash_duo, ids.value_field(aio_id, form_id, "kind", parent="bases:1", meta="discriminator"), "base2")
     set_input(dash_duo, ids.value_field(aio_id, form_id, "name", parent="bases:1"), "yay")

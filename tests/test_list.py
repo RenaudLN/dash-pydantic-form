@@ -136,7 +136,6 @@ def test_li0003_model_list(dash_duo):
     dash_duo.wait_for_text_to_equal("#output", '{"b": {"bb": ""}}')
 
     dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "a"))).click()
-    dash_duo.driver.find_element(By.CSS_SELECTOR, ".mantine-Accordion-control").click()
     dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "aa", parent="a:0"))).click()
     set_input(dash_duo, ids.value_field(aio_id, form_id, "0", parent="a:0:aa"), 1)
     dash_duo.wait_for_text_to_equal("#output", '{"a": [{"aa": ["1"]}], "b": {"bb": ""}}')
