@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Literal, Union, get_args, get_origin
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 from pydantic_core import PydanticUndefined
@@ -155,12 +155,10 @@ class BaseField(BaseModel):
 
         visibility_wrapper = partial(common_ids.field_dependent_id, "_pydf-field-visibility-wrapper")
 
-    def model_dump(self, with_class: bool = True, **kwargs):
+    @model_serializer(mode="wrap")
+    def serialize_with_cls_name(self, base_serializer):
         """Overridden model dump to add class name."""
-        base = super().model_dump(**kwargs)
-        if not with_class:
-            return base
-        return {"__class__": str(self.__class__)} | base
+        return {"__class__": str(self.__class__)} | base_serializer(self)
 
     @classmethod
     def load(cls, data):
