@@ -847,6 +847,7 @@ def check_fields_repr(fields_repr):
 # NOTE: The following is defined to allow using custom serializer on nested fields.
 # Pydantic doesn't work well when using dict[str, dict | BaseField] for fields_repr
 # as it then tries to serialize the nested fields with BaseField rather than their own class.
+# See https://github.com/pydantic/pydantic/issues/11563
 FieldsRepr = Annotated[dict[str, Any] | None, AfterValidator(check_fields_repr)]
 
 
