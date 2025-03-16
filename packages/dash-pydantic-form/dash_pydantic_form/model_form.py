@@ -175,7 +175,7 @@ class ModelForm(html.Div):
         form_id: str | None = None,
         path: str = "",
         form_cols: int = 4,
-        fields_repr: dict[str, Union["BaseField", dict]] | None = None,
+        fields_repr: dict[str, dict | BaseField] | None = None,
         sections: FormLayout | None = None,
         form_layout: FormLayout | None = None,
         submit_on_enter: bool = False,

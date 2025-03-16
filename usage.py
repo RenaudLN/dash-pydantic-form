@@ -242,7 +242,7 @@ app.layout = dmc.MantineProvider(
                                 },
                                 "pets": fields.Table(
                                     fields_repr={
-                                        "species": {"options_labels": {"dog": "Dog", "cat": "Cat"}},
+                                        "species": fields.Select(options_labels={"dog": "Dog", "cat": "Cat"}),
                                     },
                                     table_height=200,
                                     dynamic_options={
