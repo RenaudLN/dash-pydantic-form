@@ -18,6 +18,7 @@ from dash_pydantic_form.fields.base_fields import (
     BaseField,
     CheckboxField,
     ChecklistField,
+    FieldsRepr,
     MonthField,
     MultiSelectField,
     RadioItemsField,
@@ -43,7 +44,7 @@ class JSFunction(BaseModel):
 class TableField(BaseField):
     """Editable table input field attributes and rendering."""
 
-    fields_repr: dict[str, dict | BaseField] | None = Field(
+    fields_repr: FieldsRepr = Field(
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
@@ -395,9 +396,7 @@ class TableField(BaseField):
         if isinstance(
             field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
         ):
-            data = field_repr.data_gotten or field_repr.input_kwargs.get(
-                "data", field_repr._get_data(field_info=field_info)
-            )
+            data = field_repr._additional_kwargs(field_info=field_info)["data"]
             options = [
                 {
                     "value": x

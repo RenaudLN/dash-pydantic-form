@@ -24,7 +24,7 @@ jobs:
       - name: Install chromedriver
         uses: nanasess/setup-chromedriver@v2
         with:
-          chromedriver-version: '132.0.6834.83'
+          chromedriver-version: '134.0.6998.35'
 
       - name: Start chromedriver
         run: |

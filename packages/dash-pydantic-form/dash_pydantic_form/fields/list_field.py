@@ -23,7 +23,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
 from dash_pydantic_form import ids as common_ids
-from dash_pydantic_form.fields.base_fields import BaseField
+from dash_pydantic_form.fields.base_fields import BaseField, FieldsRepr
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_utils import (
@@ -61,7 +61,7 @@ class ListField(BaseField):
             "Should be set to 'scalar' for a list of scalars."
         ),
     )
-    fields_repr: dict[str, dict | BaseField] | None = Field(
+    fields_repr: FieldsRepr = Field(
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )

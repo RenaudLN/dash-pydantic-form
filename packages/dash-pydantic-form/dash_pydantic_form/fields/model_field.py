@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
-from dash_pydantic_form.fields.base_fields import BaseField
+from dash_pydantic_form.fields.base_fields import BaseField, FieldsRepr
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_utils import get_fullpath
@@ -36,7 +36,7 @@ class ModelField(BaseField):
     render_type: Literal["accordion", "modal", "simple"] = Field(
         default="accordion", description="How to render the model field, one of 'accordion', 'modal', 'simple'."
     )
-    fields_repr: dict[str, dict | BaseField] | None = Field(
+    fields_repr: FieldsRepr = Field(
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )

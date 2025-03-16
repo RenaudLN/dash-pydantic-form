@@ -7,12 +7,12 @@ from enum import Enum, EnumMeta
 from functools import partial
 from textwrap import TextWrapper
 from types import UnionType
-from typing import Any, ClassVar, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
 from pydantic.types import annotated_types
 from pydantic_core import PydanticUndefined
@@ -155,12 +155,10 @@ class BaseField(BaseModel):
 
         visibility_wrapper = partial(common_ids.field_dependent_id, "_pydf-field-visibility-wrapper")
 
-    def model_dump(self, with_class: bool = True, **kwargs):
-        """Overridden model dump to add class name."""
-        base = super().model_dump(**kwargs)
-        if not with_class:
-            return base
-        return {"__class__": str(self.__class__)} | base
+    @model_serializer(mode="wrap")
+    def serialize_with_cls_name(self, base_serializer, info):
+        """Add class name in model_dump."""
+        return {"__class__": str(self.__class__)} | base_serializer(self, info)
 
     @classmethod
     def load(cls, data):
@@ -835,6 +833,22 @@ class ChipGroupField(SelectField):
         if self.orientation == "horizontal" or (self.orientation is None and len(data) <= MAX_OPTIONS_INLINE):
             return {"children": dmc.Group(children, mt=mt, py="0.5rem", gap="0.5rem")}
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem", gap="0.5rem")}
+
+
+def check_fields_repr(fields_repr):
+    """Fields repr validator function."""
+    if fields_repr is None:
+        return None
+    if any(not isinstance(x, dict | BaseField) for x in fields_repr.values()):
+        raise ValueError("fields_repr must be a dict of BaseField or dict")
+    return fields_repr
+
+
+# NOTE: The following is defined to allow using custom serializer on nested fields.
+# Pydantic doesn't work well when using dict[str, dict | BaseField] for fields_repr
+# as it then tries to serialize the nested fields with BaseField rather than their own class.
+# See https://github.com/pydantic/pydantic/issues/11563
+FieldsRepr = Annotated[dict[str, Any] | None, AfterValidator(check_fields_repr)]
 
 
 clientside_callback(
