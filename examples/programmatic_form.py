@@ -5,7 +5,7 @@ from types import UnionType
 from typing import Annotated, ClassVar, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
-from dash import ALL, Dash, Input, Output, State, _dash_renderer, dcc, no_update
+from dash import ALL, Dash, Input, Output, State, dcc, no_update
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, create_model, field_validator
 from pydantic_core import PydanticUndefined
 
@@ -14,7 +14,6 @@ from dash_pydantic_form.form_section import FormSection, Position
 from dash_pydantic_form.ids import value_field
 from dash_pydantic_utils import SEP, model_construct_recursive
 
-_dash_renderer._set_react_version("18.2.0")
 app = Dash(__name__, external_stylesheets=dmc.styles.ALL)
 
 server = app.server

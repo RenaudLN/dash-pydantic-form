@@ -12,7 +12,6 @@
             "env": {
                 "FLASK_APP": "usage.py:server",
                 "FLASK_DEBUG": "1",
-                "REACT_VERSION": "18.2.0",
                 "DEBUG": "1",
             },
             "args": [

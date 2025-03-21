@@ -4,14 +4,13 @@ from enum import Enum
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import MATCH, Dash, Input, Output, State, _dash_renderer, callback, clientside_callback
+from dash import MATCH, Dash, Input, Output, State, callback, clientside_callback
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import AccordionFormLayout, FormSection, ModelForm, fields, get_model_cls, ids
 from dash_pydantic_utils import SEP, Quantity
 
-_dash_renderer._set_react_version("18.2.0")
 app = Dash(
     __name__,
     external_stylesheets=[
