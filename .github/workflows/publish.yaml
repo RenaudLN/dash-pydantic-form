@@ -12,14 +12,18 @@ jobs:
 
   lint-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [default, dash2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install pixi env
-        uses: prefix-dev/setup-pixi@v0.8.1
+        uses: prefix-dev/setup-pixi@v0.8.3
         with:
           cache: true
+          environments: ${{ matrix.environment }}
 
       - name: Install chromedriver
         uses: nanasess/setup-chromedriver@v2

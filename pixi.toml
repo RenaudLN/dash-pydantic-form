@@ -5,6 +5,7 @@ name = "dash-pydantic-form"
 
 [environments]
 default = {features = ["form", "pandas", "dev"], solve-group = "default"}
+dash2 = {features = ["form2", "pandas", "dev"], solve-group = "dash2"}
 
 [dependencies]
 python = ">=3.10"
@@ -19,6 +20,13 @@ dash = ">=3,<4"
 dash-mantine-components = ">=1.1,<1.2"
 dash-iconify = "*"
 dash-ag-grid = ">=31.3.1"
+fsspec = "*"
+
+[feature.form2.dependencies]
+dash = ">=2.16,<3"
+dash-mantine-components = ">=0.15,<1"
+dash-iconify = "*"
+dash-ag-grid = ">=31"
 fsspec = "*"
 
 [feature.pandas.dependencies]
@@ -49,9 +57,17 @@ psutil = ">=5.8.0"
 # Build
 build = "*"
 # Dash testing
-dash = {extras = ["testing"], version = ">=3,<4"}
 requests = {extras = ["security"], version = ">=2.21.0"}
 dash_testing_stub = ">=0.0.2"
+
+[feature.form.pypi-dependencies]
+# Dash testing
+dash = {extras = ["testing"], version = ">=3,<4"}
+
+[feature.form2.pypi-dependencies]
+# Dash testing
+dash = {extras = ["testing"], version = ">=2.16,<3"}
+
 
 [feature.dev.tasks]
 lint = "pre-commit run --all-files"
