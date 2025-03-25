@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.15.0] - 2025-03-25
+### Changed
+- Allow Dash 3.0 in deps
+- Made some MATCH callbacks prevent_initial_call to avoid performance issues in large forms
+  NOTE: This means the __str__ method needs to be defined on the models to get the initial
+  name in accordion/modal title for list fields
 
 ## [0.14.9] - 2025-03-16
 ### Fixed
