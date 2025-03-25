@@ -504,6 +504,7 @@ clientside_callback(
     Output(ModelForm.ids.form(MATCH, MATCH), "id"),
     Input(ModelForm.ids.form(MATCH, MATCH), "id"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-submitonenter"),
+    prevent_initial_call=True,
 )
 
 clientside_callback(
@@ -511,6 +512,7 @@ clientside_callback(
     Output(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "error"),
     Input(ModelForm.ids.errors(MATCH, MATCH), "data"),
     State(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "id"),
+    prevent_initial_call=True,
 )
 
 
