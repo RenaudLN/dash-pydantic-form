@@ -5,15 +5,13 @@ from datetime import date
 from typing import Literal
 
 import dash_mantine_components as dmc
-from dash import Dash, Input, Output, State, _dash_renderer, callback, clientside_callback, html
+from dash import Dash, Input, Output, State, callback, clientside_callback, html
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import FormLayout, ModelForm, fields, ids
 from dash_pydantic_utils import SEP, get_model_cls
-
-_dash_renderer._set_react_version("18.2.0")
 
 NODE_WIDTH = 64
 NODE_HEIGHT = 32

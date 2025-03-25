@@ -3,15 +3,20 @@ from datetime import date
 from enum import Enum
 from typing import Literal
 
+import dash
 import dash_mantine_components as dmc
-from dash import MATCH, Dash, Input, Output, State, _dash_renderer, callback, clientside_callback
+from dash import MATCH, Dash, Input, Output, State, callback, clientside_callback
 from dash_iconify import DashIconify
 from pydantic import BaseModel, Field, ValidationError
 
 from dash_pydantic_form import AccordionFormLayout, FormSection, ModelForm, fields, get_model_cls, ids
 from dash_pydantic_utils import SEP, Quantity
 
-_dash_renderer._set_react_version("18.2.0")
+if dash.__version__ < "3":
+    from dash import _dash_renderer
+
+    _dash_renderer._set_react_version("18.2.0")
+
 app = Dash(
     __name__,
     external_stylesheets=[
@@ -346,4 +351,7 @@ clientside_callback(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    if dash.__version__ < "3":
+        app.run_server(debug=True)
+    else:
+        app.run(debug=True)

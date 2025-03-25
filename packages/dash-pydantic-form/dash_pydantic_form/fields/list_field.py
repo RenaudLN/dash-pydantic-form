@@ -815,6 +815,7 @@ class ListField(BaseField):
         Output(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "title"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
         State(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "id"),
+        prevent_initial_call=True,
     )
 
     # Update the accordion title to match the name field of the item (if it exists)
@@ -822,4 +823,5 @@ class ListField(BaseField):
         ClientsideFunction(namespace="pydf", function_name="updateAccordionTitle"),
         Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
         Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
+        prevent_initial_call=True,
     )
