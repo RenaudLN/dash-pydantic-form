@@ -66,7 +66,10 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
         first_part = int(first_part)
 
     if isinstance(item, BaseModel):
-        next_item = getattr(item, first_part, None)
+        if first_part in item.model_fields:
+            next_item = getattr(item, first_part, None)
+        else:
+            raise AttributeError(f"Field {first_part} unavailable in {item}")
     elif isinstance(item, dict) and isinstance(first_part, int):
         next_item = list(item.values())[first_part]
     elif isinstance(item, list) and isinstance(first_part, int):
