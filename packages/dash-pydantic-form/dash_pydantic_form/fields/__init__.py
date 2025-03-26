@@ -29,6 +29,9 @@ DEFAULT_REPR = fields.Json
 
 def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:  # noqa: PLR0911, PLR0912
     """Get default field representation."""
+    if "__class__" in kwargs:
+        return BaseField.load(kwargs)
+
     if field_info is not None:
         # Add default repr kwargs
         if (
