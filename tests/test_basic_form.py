@@ -120,7 +120,7 @@ def test_bf0003_basic_form_form_data(dash_duo):
     )
 
 
-def test_bf0005_use_repr_types():
+def test_bf0004_use_repr_types():
     """Test using repr_type and repr_kwargs in model."""
 
     class Basic2(BaseModel):
@@ -178,7 +178,7 @@ def test_bf0005_use_repr_types():
     assert isinstance(matches[0], dmc.TextInput)
 
 
-def test_store_progress_auto(dash_duo):
+def test_bf0005_store_progress_auto(dash_duo):
     """Test that the store_progress=True option works."""
     app = Dash(__name__)
     aio_id = "basic"
@@ -209,7 +209,7 @@ def test_store_progress_auto(dash_duo):
     assert elem.get_property("value") == "test"
 
 
-def test_store_progress_notify(dash_duo):
+def test_bf0006_store_progress_notify(dash_duo):
     """Test that the store_progress=True option works."""
     app = Dash(__name__)
     aio_id = "basic"
@@ -250,3 +250,37 @@ def test_store_progress_notify(dash_duo):
         str_id = stringify_id(fid)
         elem = dash_duo.driver.find_element(By.ID, str_id)
         assert elem.get_property("value") == ""
+
+
+def test_bf0007_nested_fields_repr():
+    """Test nested fields_repr."""
+
+    class Nested(BaseModel):
+        val: str
+
+    class Basic(BaseModel):
+        a: Nested | None = None
+        b: list[Nested] = Field(default_factory=list)
+        c: list[Nested] = Field(default_factory=list)
+
+    form = ModelForm(
+        Basic(
+            a=Nested(val="1"),
+            b=[Nested(val="2"), Nested(val="3")],
+            c=[Nested(val="1"), Nested(val="3")],
+        ),
+        aio_id="basic",
+        form_id="form",
+        fields_repr={
+            "a": fields.Model(fields_repr={"val": fields.Select(data=["1", "2", "3"])}),
+            "b": fields.List(fields_repr={"val": fields.Select(data=["1", "2", "3"])}),
+            "c": fields.Table(fields_repr={"val": fields.Select(data=["1", "2", "3"])}),
+        },
+    )
+
+    assert isinstance(form[ids.value_field("basic", "form", "val", "a")], dmc.Select)
+    assert form[ids.value_field("basic", "form", "val", "a")].data == ["1", "2", "3"]
+    assert isinstance(form[ids.value_field("basic", "form", "val", "b:1")], dmc.Select)
+    assert form[fields.Table.ids.editable_table("basic", "form", "c")].columnDefs[1]["cellEditorParams"]["options"] == [
+        {"label": o, "value": o} for o in ["1", "2", "3"]
+    ]
