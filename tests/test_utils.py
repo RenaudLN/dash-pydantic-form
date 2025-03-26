@@ -56,6 +56,10 @@ def test_ut0001_get_subitem():
     with pytest.raises(IndexError):
         utils.get_subitem(item, "y:3")
 
+    assert utils.get_subitem(Base.model_construct(), "name") is None
+    with pytest.raises(AttributeError):
+        utils.get_subitem(Base.model_construct(), "nope")
+
 
 def test_u0002_get_subitem_cls():
     """Test get_subitem_cls."""

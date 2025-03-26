@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ## Fixed
 - Edge case for nested fields_repr not working as expected
+- Edge case in get_subitem when called on a model built with model_construct (like discriminated unions)
 
 ## [0.15.0] - 2025-03-25
 ### Changed
