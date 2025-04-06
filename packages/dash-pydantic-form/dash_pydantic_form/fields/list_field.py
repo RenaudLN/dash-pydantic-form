@@ -116,6 +116,13 @@ class ListField(BaseField):
         add = partial(common_ids.field_dependent_id, "_pydf-list-field-add")
         template_store = partial(common_ids.field_dependent_id, "_pydf-list-field-template-store")
 
+    @staticmethod
+    def get_value_str(value: Any):
+        """Get value string."""
+        if isinstance(value, BaseModel) and "name" in value.model_fields and getattr(value, "name", None):
+            return str(value.name)
+        return str(value)
+
     @classmethod
     def accordion_item(  # noqa: PLR0913
         cls,
@@ -141,6 +148,10 @@ class ListField(BaseField):
         from dash_pydantic_form import ModelForm
 
         new_parent = get_fullpath(parent, field, index)
+
+        new_parent = get_fullpath(parent, field, index)
+        value_str = cls.get_value_str(value)
+
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
@@ -149,7 +160,7 @@ class ListField(BaseField):
             className="pydf-model-list-accordion-item",
             children=[
                 dmc.AccordionControl(
-                    [dmc.Text(str(value), id=cls.ids.accordion_parent_text(aio_id, form_id, "", parent=new_parent))]
+                    [dmc.Text(value_str, id=cls.ids.accordion_parent_text(aio_id, form_id, "", parent=new_parent))]
                     + items_deletable
                     * [
                         dmc.ActionIcon(
@@ -389,11 +400,13 @@ class ListField(BaseField):
         from dash_pydantic_form import ModelForm
 
         new_parent = get_fullpath(parent, field, index)
+        value_str = cls.get_value_str(value)
+
         return dmc.Paper(
             dmc.Group(
                 [
                     dmc.Text(
-                        str(value),
+                        value_str,
                         style={
                             "flex": 1,
                             "overflow": "hidden",
@@ -451,7 +464,7 @@ class ListField(BaseField):
                                 mt="sm",
                             ),
                         ],
-                        title=str(value),
+                        title=value_str,
                         id=cls.ids.modal(aio_id, form_id, "", parent=new_parent),
                         style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
                         styles={"content": {"containerType": "inline-size"}},
