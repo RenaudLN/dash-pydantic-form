@@ -11,7 +11,7 @@ from dash import (
 )
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, SerializeAsAny, field_validator
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
@@ -40,7 +40,7 @@ class ModelField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
+    form_layout: SerializeAsAny[FormLayout] | None = Field(default=None, description="Sub-form layout.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
     excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
     fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")

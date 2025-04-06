@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - For list items, display the 'name' attribute if it exists before it is synced with callbacks
 
+### Fixed
+- Use SerializeAsAny on `form_layout` attribute of List and Model fields
+
 ## [0.15.1] - 2025-03-26
 ### Fixed
 - Edge case for nested fields_repr not working as expected
