@@ -18,7 +18,7 @@ from dash import (
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from plotly.io.json import to_json_plotly
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, SerializeAsAny, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -65,7 +65,7 @@ class ListField(BaseField):
         default=None,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
-    form_layout: FormLayout | None = Field(default=None, description="Sub-form layout.")
+    form_layout: SerializeAsAny[FormLayout] | None = Field(default=None, description="Sub-form layout.")
     items_deletable: bool = Field(default=True, description="Whether the items can be deleted.")
     items_creatable: bool = Field(default=True, description="Whether new items can be created.")
     form_cols: int = Field(default=4, description="Number of columns in the form.")
