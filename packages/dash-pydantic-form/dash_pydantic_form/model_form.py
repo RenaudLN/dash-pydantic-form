@@ -22,12 +22,13 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_utils import (
     SEP,
     Type,
+    convert_root_to_base_model,
     get_fullpath,
     get_model_cls,
     get_subitem,
@@ -170,7 +171,7 @@ class ModelForm(html.Div):
 
     def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
-        item: BaseModel | type[BaseModel] | Annotated[UnionType, FieldInfo],
+        item: BaseModel | type[BaseModel] | RootModel | type[RootModel] | Annotated[UnionType, FieldInfo],
         aio_id: str | None = None,
         form_id: str | None = None,
         path: str = "",
@@ -194,6 +195,10 @@ class ModelForm(html.Div):
     ) -> None:
         if data_model is None:
             data_model = type(item) if isinstance(item, BaseModel) else item
+        if is_subclass(item, RootModel):
+            item = convert_root_to_base_model(item)
+        if isinstance(item, RootModel):
+            item = convert_root_to_base_model(type(item))(rootmodel_root_=item.root)
         if is_subclass(item, BaseModel):
             item = item.model_construct()
         if not isinstance(item, BaseModel):
@@ -346,6 +351,8 @@ class ModelForm(html.Div):
             more_kwargs = {"form_cols": form_cols}
             if read_only:
                 more_kwargs["read_only"] = read_only
+            if is_subclass(field_info.annotation, RootModel):
+                more_kwargs["render_type"] = "simple"
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:

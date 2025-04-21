@@ -1,4 +1,5 @@
 window.dash_clientside = window.dash_clientside || {}
+const PYDF_ROOTMODEL_ROOT = "rootmodel_root_"
 
 dash_clientside.pydf = {
   getValues: (
@@ -157,7 +158,7 @@ dash_clientside.pydf = {
     if (!errors) return Array(ids.length).fill(null)
 
     return ids.map(id => {
-      const fullPath = id.parent ? `${id.parent}:${id.field}` : id.field
+      const fullPath = getFullpath(id.parent, id.field).replaceAll(`${PYDF_ROOTMODEL_ROOT}:`, "")
       return errors[fullPath]
     })
   },
@@ -272,13 +273,22 @@ function valuesDebounce(func, timeout){
 }
 
 function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
+  const firstKey = getFullpath(inputs[0].id.parent, inputs[0].id.field)
+  const startsWithArray = (
+    firstKey.startsWith(`${PYDF_ROOTMODEL_ROOT}:`)
+    && firstKey.split(":").length > 1
+    && /^\d+$/.test(firstKey.split(":")[1])
+    && !Object.keys(dictItemKeys).includes(firstKey.split(":").slice(0, 2).join(":"))
+  )
   const formData = inputs.reduce((acc, val) => {
-    const key = `${val.id.parent}:${val.id.field}`.replace(/^:/, "")
+    let key = getFullpath(val.id.parent, val.id.field)
     if (hiddenPaths.some(p => key.startsWith(`${p}:`) || key === p)) return acc
-    const parts = key.split(":")
+    const parts = key.split(":").filter(p => p !== PYDF_ROOTMODEL_ROOT)
+    key = parts.join(":")
     let pointer = acc
     const matchingDictKeys = Object.fromEntries(
       Object.entries(dictItemKeys)
+      .map(entry => [entry[0].replaceAll(`${PYDF_ROOTMODEL_ROOT}:`, ""), entry[1]])
       .filter(entry => key.startsWith(entry[0]))
       .map(([k, v]) => [k.split(":").length, v])
     )
@@ -299,7 +309,7 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
         }
     })
     return acc
-  }, {})
+  }, startsWithArray ? [] : {})
   return formData
 }
 

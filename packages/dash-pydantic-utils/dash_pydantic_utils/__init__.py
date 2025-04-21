@@ -8,6 +8,7 @@ from .common import (
 )
 from .path import (
     SEP,
+    convert_root_to_base_model,
     from_form_data,
     get_fullpath,
     get_model_value,
@@ -21,6 +22,7 @@ from .quantity import Quantity, QuantityDtype
 from .types import Type
 
 __all__ = [
+    "convert_root_to_base_model",
     "deep_diff",
     "deep_merge",
     "from_form_data",

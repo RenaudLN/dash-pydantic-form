@@ -4,7 +4,7 @@ from copy import deepcopy
 from types import UnionType
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, Field, RootModel, ValidationError, create_model
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -90,6 +90,30 @@ def is_idx_template(val: str):
     return bool(re.findall(r"^\{\{[\w|\{\}]+\}\}$", val))
 
 
+def convert_root_to_base_model(root_model: type[RootModel]) -> type[BaseModel]:
+    """Convert a RootModel to a BaseModel."""
+    base_model = create_model(
+        root_model.__name__,
+        rootmodel_root_=(root_model.model_fields["root"].annotation, Field(title="")),
+        __config__={"pydf_root_model": True},
+    )
+
+    return base_model
+
+
+def root_model_converter(func):
+    """Decorator to convert a RootModel to a BaseModel."""
+
+    def wrapper(*args, **kwargs):
+        out = func(*args, **kwargs)
+        if is_subclass(out, RootModel):
+            return convert_root_to_base_model(out)
+        return out
+
+    return wrapper
+
+
+@root_model_converter
 def get_subitem_cls(  # noqa: PLR0912
     model: type[BaseModel], parent: str, item: BaseModel | None = None
 ) -> type[BaseModel]:
@@ -111,6 +135,9 @@ def get_subitem_cls(  # noqa: PLR0912
             # NOTE: This might break if several models in the union have the same field name but different definitions
             # or if they have further nesting / unions
             model = next(m for m in get_args(model) if is_subclass(m, BaseModel) and first_part in m.model_fields)
+
+    if is_subclass(model, RootModel):
+        model = convert_root_to_base_model(model)
 
     if len(path) == 1:
         ann = get_non_null_annotation(model.model_fields[first_part].annotation)
