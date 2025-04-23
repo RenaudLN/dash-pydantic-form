@@ -16,7 +16,7 @@ dash-pydantic-form = { path = "packages/dash-pydantic-form", editable = true }
 dash-pydantic-utils = { path = "packages/dash-pydantic-utils", editable = true }
 
 [feature.form.dependencies]
-dash = ">=3,<4"
+dash = ">=3.0.3,<4"
 dash-mantine-components = ">=1.1,<1.2"
 dash-iconify = "*"
 dash-ag-grid = ">=31.3.1"
