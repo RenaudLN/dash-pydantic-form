@@ -1755,7 +1755,7 @@ packages:
   timestamp: 1742499857830
 - pypi: packages/dash-pydantic-form
   name: dash-pydantic-form
-  version: 0.15.2.post1.dev0+g0f475d6.d20250423
+  version: 0.15.2.post1.dev1+g1fd96b2.d20250423
   sha256: 99b4ad46caf3dbb23f085c577ad832fdef67fafce55c6c78a737d4bd2142a3a4
   requires_dist:
   - dash-ag-grid>=31
@@ -1772,7 +1772,7 @@ packages:
   editable: true
 - pypi: packages/dash-pydantic-utils
   name: dash-pydantic-utils
-  version: 0.15.2.post1.dev0+g0f475d6.d20250423
+  version: 0.15.2.post1.dev1+g1fd96b2.d20250423
   sha256: ecd2a6f644153955ff9e91f2b8631bfd957338d843028bf956f4e3ba5c6769e4
   requires_dist:
   - pydantic==2.*
@@ -5469,35 +5469,6 @@ packages:
   timestamp: 1732827613585
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py310ha75aee5_1.conda
   sha256: 96f96336f76443f5efb05f8a7232cc62f8fff969c27d03aa4aae181745f6f961
-  md5: 0316e8d0e00c00631a6de89207db5b09
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - cffi >=1.11
-  - libgcc >=13
-  - python >=3.10,<3.11.0a0
-  - python_abi 3.10.* *_cp310
-  license: BSD-3-Clause
-  license_family: BSD
-  purls:
-  - pkg:pypi/zstandard?source=hash-mapping
-  size: 720871
-  timestamp: 1741853413225
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.23.0-py310h078409c_1.conda
-  sha256: dbcc4f2478aa418695a53ab7b7cd0074c0067173ad5301e20832820226a73220
-  md5: bc00cf3860a0914d9ff009c3a19e1977
-  depends:
-  - __osx >=11.0
-  - cffi >=1.11
-  - python >=3.10,<3.11.0a0
-  - python >=3.10,<3.11.0a0 *_cpython
-  - python_abi 3.10.* *_cp310
-  license: BSD-3-Clause
-  license_family: BSD
-  purls:
-  - pkg:pypi/zstandard?source=hash-mapping
-  size: 520342
-  timestamp: 1741853601584
-443f5efb05f8a7232cc62f8fff969c27d03aa4aae181745f6f961
   md5: 0316e8d0e00c00631a6de89207db5b09
   depends:
   - __glibc >=2.17,<3.0.a0
