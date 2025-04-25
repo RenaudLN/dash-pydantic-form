@@ -111,3 +111,13 @@ def test_rm003_root_model_as_annotation(dash_duo):
     set_input(dash_duo, ids.value_field(aio_id, form_id, "0", parent=f"files:{ROOT_FIELD}"), "Test file")
     set_input(dash_duo, ids.value_field(aio_id, form_id, "name"), "Home folder")
     dash_duo.wait_for_text_to_equal("#output", '{"name": "Home folder", "files": ["Test file"]}')
+
+
+def test_rm004_root_model_instances():
+    """Test RootModel instances with the form."""
+    Files = RootModel[list[str]]
+    item = Files(["1", "2", "3"])
+    aio_id = "test"
+    form_id = "test"
+    form = ModelForm(item, aio_id=aio_id, form_id=form_id)
+    check_ids_exist(form, [ids.value_field(aio_id, form_id, idx, parent=ROOT_FIELD) for idx in range(3)])
