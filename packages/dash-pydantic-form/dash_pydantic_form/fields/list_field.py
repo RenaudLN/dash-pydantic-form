@@ -1,3 +1,4 @@
+import logging
 import uuid
 from collections.abc import Callable
 from functools import partial
@@ -62,7 +63,7 @@ class ListField(BaseField):
         ),
     )
     fields_repr: FieldsRepr = Field(
-        default=None,
+        default_factory=dict,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     form_layout: SerializeAsAny[FormLayout] | None = Field(default=None, description="Sub-form layout.")
@@ -650,12 +651,12 @@ class ListField(BaseField):
         )
 
     @classmethod
-    def render_type_item_mapper(cls, render_type: str) -> dict[str, Callable]:
+    def render_type_item_mapper(cls, render_type: str) -> Callable:
         """Mapping between render type and renderer function."""
         return getattr(cls, f"{render_type}_item")
 
     @classmethod
-    def render_type_items_mapper(cls, render_type: str) -> dict[str, Callable]:
+    def render_type_items_mapper(cls, render_type: str) -> Callable:
         """Mapping between render type and renderer function."""
         return getattr(cls, f"{render_type}_items")
 
@@ -712,10 +713,14 @@ class ListField(BaseField):
                 for part in parent.split(SEP):
                     pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
             default_val = None
-            if subitem.model_fields[field].default is not PydanticUndefined:
-                default_val = subitem.model_fields[field].default
-            if subitem.model_fields[field].default_factory is not None:
-                default_val = subitem.model_fields[field].default_factory()
+            field_info = subitem.model_fields[field]
+            if field_info.default is not PydanticUndefined:
+                default_val = field_info.default
+            if field_info.default_factory is not None:
+                try:
+                    default_val = field_info.default_factory()
+                except TypeError:
+                    logging.warning("Default factory with validated data not supported in allow_default")
             setattr(pointer, field, default_val)
 
         # Create a template item to be used clientside when adding new items
@@ -741,6 +746,10 @@ class ListField(BaseField):
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 
+        title_children: list = [title] + [
+            html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
+        ] * self.is_required(field_info)
+
         return dmc.Stack(
             bool(title)
             * [
@@ -748,13 +757,7 @@ class ListField(BaseField):
                     bool(title)
                     * [
                         dmc.Text(
-                            [title]
-                            + [
-                                html.Span(
-                                    " *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}
-                                ),
-                            ]
-                            * self.is_required(field_info),
+                            title_children,
                             size="sm",
                             mt=3,
                             fw=500,
@@ -789,52 +792,53 @@ class ListField(BaseField):
             gap="0.5rem",
         )
 
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="addToList"),
-        Output(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
-        Input(ids.add(MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        State(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
-        State(ids.template_store(MATCH, MATCH, MATCH, MATCH), "data"),
-        prevent_initial_call=True,
-    )
 
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="deleteFromList"),
-        Output(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
-        Input(ids.delete(MATCH, MATCH, MATCH, MATCH, ALL), "n_clicks"),
-        State(ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
-        prevent_initial_call=True,
-    )
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="addToList"),
+    Output(ListField.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
+    Input(ListField.ids.add(MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    State(ListField.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+    State(ListField.ids.template_store(MATCH, MATCH, MATCH, MATCH), "data"),
+    prevent_initial_call=True,
+)
 
-    # Open a model list modal when editing an item
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="syncTrue"),
-        Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
-        Input(ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        prevent_initial_call=True,
-    )
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="deleteFromList"),
+    Output(ListField.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children", allow_duplicate=True),
+    Input(ListField.ids.delete(MATCH, MATCH, MATCH, MATCH, ALL), "n_clicks"),
+    State(ListField.ids.wrapper(MATCH, MATCH, MATCH, MATCH), "children"),
+    prevent_initial_call=True,
+)
 
-    # Close a model list modal when saving an item
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="syncFalse"),
-        Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
-        Input(ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        prevent_initial_call=True,
-    )
+# Open a model list modal when editing an item
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncTrue"),
+    Output(ListField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
+    Input(ListField.ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
+)
 
-    # Update the modal title and list item to match the name field of the item (if it exists)
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="updateModalTitle"),
-        Output(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "title"),
-        Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
-        State(ids.modal(MATCH, MATCH, "", MATCH, MATCH), "id"),
-        prevent_initial_call=True,
-    )
+# Close a model list modal when saving an item
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncFalse"),
+    Output(ListField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
+    Input(ListField.ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
+)
 
-    # Update the accordion title to match the name field of the item (if it exists)
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="updateAccordionTitle"),
-        Output(ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
-        Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
-        prevent_initial_call=True,
-    )
+# Update the modal title and list item to match the name field of the item (if it exists)
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="updateModalTitle"),
+    Output(ListField.ids.modal(MATCH, MATCH, "", MATCH, MATCH), "title"),
+    Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
+    State(ListField.ids.modal(MATCH, MATCH, "", MATCH, MATCH), "id"),
+    prevent_initial_call=True,
+)
+
+# Update the accordion title to match the name field of the item (if it exists)
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="updateAccordionTitle"),
+    Output(ListField.ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
+    Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
+    prevent_initial_call=True,
+)

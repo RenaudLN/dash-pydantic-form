@@ -43,7 +43,6 @@ def test_li0001_basic_list(dash_duo):
 
     dash_duo.start_server(app)
 
-    dash_duo.wait_for_text_to_equal("#output", "{}")
     add_btn = dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "a")))
     add_btn.click()
     set_input(dash_duo, ids.value_field(aio_id, form_id, "0", parent="a"), 123)

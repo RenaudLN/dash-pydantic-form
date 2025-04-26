@@ -61,7 +61,7 @@ class PathField(BaseField):
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type image to interact with the model field."""
         value = self.get_value(item, field, parent)
@@ -78,7 +78,7 @@ class PathField(BaseField):
                         fs="italic",
                     ),
                     id=self.ids.modal_btn_text(aio_id, form_id, field, parent),
-                    offsetScrollbars=True,
+                    offsetScrollbars="x",
                     scrollbars="x",
                     scrollbarSize="0.25rem",
                     mb="-0.125rem",
@@ -101,7 +101,7 @@ class PathField(BaseField):
         ]
         if self.path_type == "glob":
             if value:
-                base_path_match = re.findall("^([^*]*)\/.*\*", value)
+                base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
                 if not base_path_match:
                     raise ValueError("Invalid glob pattern.")
 
@@ -130,16 +130,15 @@ class PathField(BaseField):
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+        title_children: list = [title] + [
+            html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
+        ] * self.is_required(field_info)
 
         return dmc.Stack(
             (title is not None)
             * [
                 dmc.Text(
-                    [title]
-                    + [
-                        html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
-                    ]
-                    * self.is_required(field_info),
+                    title_children,
                     size="sm",
                     mt=3,
                     mb=5,
@@ -203,7 +202,7 @@ class PathField(BaseField):
         return subpath
 
     @staticmethod
-    def _base_button(children, icon: DashIconify = None, **kwargs):
+    def _base_button(children, icon: DashIconify | None = None, **kwargs):
         return dmc.Button(
             children,
             size="compact-sm",
@@ -222,7 +221,7 @@ class PathField(BaseField):
         )
 
     @staticmethod
-    def _selectable_group(checkbox_id: dict, button: dmc.Button = None, label=None):
+    def _selectable_group(checkbox_id: dict, button: dmc.Button | dmc.Group | None = None, label=None):
         return dmc.Group(
             [
                 dmc.Checkbox(
@@ -401,7 +400,7 @@ def update_filetree(  # noqa: PLR0913
     fs = fsspec.filesystem(config["backend"])
     path_type = config["path_type"]
     prefix = config["prefix"]
-    id_parts = (id_["aio_id"], id_["form_id"], id_["field"], id_["parent"], id_["meta"])
+    id_parts: list[str] = [id_["aio_id"], id_["form_id"], id_["field"], id_["parent"], id_["meta"]]
     value = (value or "").removeprefix(prefix)
     page = page[0] if page else 1
     pagination_value = pagination_value[0] if pagination_value else value
@@ -422,7 +421,7 @@ def update_filetree(  # noqa: PLR0913
         else:
             value = pagination_value
     elif path_type == "glob":
-        base_path_match = re.findall("^([^*]*)\/.*\*", value)
+        base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
         value = value if not base_path_match else base_path_match[0]
 
     # This happens when the modal first opens after clicking on the button

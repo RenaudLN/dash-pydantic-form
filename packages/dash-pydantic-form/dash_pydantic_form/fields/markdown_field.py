@@ -30,7 +30,7 @@ class MarkdownField(BaseField):
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Render the markdown field."""
         value = self.get_value(item, field, parent)

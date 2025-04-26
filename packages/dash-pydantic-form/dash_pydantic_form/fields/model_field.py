@@ -18,7 +18,7 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField, FieldsRepr
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
-from dash_pydantic_utils import get_fullpath
+from dash_pydantic_utils import get_fullpath, get_str_discriminator
 
 
 class ModelField(BaseField):
@@ -37,7 +37,7 @@ class ModelField(BaseField):
         default="accordion", description="How to render the model field, one of 'accordion', 'modal', 'simple'."
     )
     fields_repr: FieldsRepr = Field(
-        default=None,
+        default_factory=dict,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     form_layout: SerializeAsAny[FormLayout] | None = Field(default=None, description="Sub-form layout.")
@@ -75,11 +75,12 @@ class ModelField(BaseField):
     def simple_item(  # noqa: PLR0913
         self,
         item: BaseModel,
+        *,
         aio_id: str,
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Model field simple render."""
         from dash_pydantic_form import ModelForm
@@ -112,11 +113,12 @@ class ModelField(BaseField):
     def modal_item(  # noqa: PLR0913
         self,
         item: BaseModel,
+        *,
         aio_id: str,
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Model field modal render."""
         from dash_pydantic_form import ModelForm
@@ -188,17 +190,19 @@ class ModelField(BaseField):
     def accordion_item(  # noqa: PLR0913
         self,
         item: BaseModel,
+        *,
         aio_id: str,
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Model field accordion item render."""
         from dash_pydantic_form import ModelForm
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+        discriminator = get_str_discriminator(field_info)
         return dmc.Accordion(
             dmc.AccordionItem(
                 value="item",
@@ -214,7 +218,7 @@ class ModelField(BaseField):
                                 path=get_fullpath(parent, field),
                                 fields_repr=self.fields_repr,
                                 form_layout=self.form_layout,
-                                discriminator=field_info.discriminator,
+                                discriminator=discriminator,
                                 read_only=self.read_only,
                                 form_cols=self.form_cols,
                                 excluded_fields=self.excluded_fields,
@@ -260,20 +264,28 @@ class ModelField(BaseField):
             renderer = getattr(self, f"{self.render_type}_item")
         except AttributeError as exc:
             raise ValueError(f"Unknown render type: {self.render_type}") from exc
-        return renderer(item, aio_id, form_id, field, parent, field_info)
+        return renderer(
+            item,
+            aio_id=aio_id,
+            form_id=form_id,
+            field=field,
+            parent=parent,
+            field_info=field_info,
+        )
 
-    # Open a model modal when editing an item
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="syncTrue"),
-        Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
-        Input(ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        prevent_initial_call=True,
-    )
 
-    # Close a model modal when saving an item
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="syncFalse"),
-        Output(ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
-        Input(ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
-        prevent_initial_call=True,
-    )
+# Open a model modal when editing an item
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncTrue"),
+    Output(ModelField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
+    Input(ModelField.ids.edit(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
+)
+
+# Close a model modal when saving an item
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncFalse"),
+    Output(ModelField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
+    Input(ModelField.ids.modal_save(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
+)

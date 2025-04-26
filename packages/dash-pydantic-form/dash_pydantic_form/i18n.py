@@ -12,7 +12,7 @@ gettext.bindtextdomain("pydf", locale_dir)
 
 
 @contextmanager
-def language_context(language: str):
+def language_context(language: str | None):
     """Language context for pydf."""
     if language:
         language_before = os.getenv("LANGUAGE")

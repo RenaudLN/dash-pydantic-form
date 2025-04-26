@@ -126,7 +126,7 @@ def test_bf0004_use_repr_types():
     class Basic2(BaseModel):
         """Basic model."""
 
-        a: int = Field(title="Field A", repr_kwargs={"placeholder": "Some placeholder"})
+        a: int = Field(title="Field A", json_schema_extra={"repr_kwargs": {"placeholder": "Some placeholder"}})
         b: Literal["a", "b"] = Field(
             title="Field B",
             json_schema_extra={"repr_type": "RadioItems", "repr_kwargs": {"options_labels": {"a": "A", "b": "B"}}},

@@ -19,7 +19,7 @@ class AccordionFormLayout(FormLayout):
 
     Parameters
     ----------
-    render_kwargs: dict | None
+    render_kwargs: dict
         Kwargs to pass to the render method.
     sections: list[FormSection]
         List of form sections.

@@ -4,17 +4,17 @@ from copy import deepcopy
 from types import UnionType
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, Field, RootModel, ValidationError, create_model
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
 from dash_pydantic_utils.common import get_non_null_annotation, is_subclass
-from dash_pydantic_utils.types import Type
+from dash_pydantic_utils.types import Type, get_discriminator_from_annotated, get_str_discriminator
 
 SEP = ":"
 
 
-def get_model_value(item: BaseModel, field: str, parent: str, allow_default: bool = True):  # noqa: PLR0911
+def get_model_value(item: BaseModel | None, field: str, parent: str, allow_default: bool = True):  # noqa: PLR0911, PLR0912
     """Get the value of a model (parent, field) pair.
 
     Parameters
@@ -28,6 +28,11 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
     allow_default: bool
         Allow to return the default value, when the object has been created with model_construct.
     """
+    if item is None:
+        if allow_default:
+            return None
+        else:
+            raise ValueError("item is None")
     try:
         subitem = get_subitem(item, parent)
         if isinstance(subitem, BaseModel):
@@ -40,18 +45,21 @@ def get_model_value(item: BaseModel, field: str, parent: str, allow_default: boo
     except:
         if allow_default:
             subitem_cls = get_subitem_cls(item.__class__, parent, item=item)
-            if not is_subclass(subitem_cls, BaseModel):
+            if not is_subclass(subitem_cls, BaseModel) or field not in subitem_cls.model_fields:
                 return None
             field_info = subitem_cls.model_fields[field]
             if field_info.default is not PydanticUndefined:
                 return field_info.default
             if field_info.default_factory:
-                return field_info.default_factory()
+                try:
+                    return field_info.default_factory()
+                except TypeError:
+                    logging.warning("Default factory with validated data not supported in allow_default")
             return None
         raise
 
 
-def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
+def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel | list | dict | None:
     """Get the subitem of a model at a given parent.
 
     e.g., get_subitem(person, "au_metadata") = AUMetadata(param1=True, param2=False)
@@ -70,14 +78,14 @@ def get_subitem(item: BaseModel | list | dict, parent: str) -> BaseModel:
             next_item = getattr(item, first_part, None)
         else:
             raise AttributeError(f"Field {first_part} unavailable in {item}")
-    elif isinstance(item, dict) and isinstance(first_part, int):
-        next_item = list(item.values())[first_part]
+    elif isinstance(first_part, str) and is_idx_template(first_part):
+        next_item = None
+    elif isinstance(item, dict):
+        next_item = list(item.values())[first_part] if isinstance(first_part, int) else item.get(first_part)
     elif isinstance(item, list) and isinstance(first_part, int):
         next_item = item[first_part]
-    elif is_idx_template(first_part):
-        next_item = None
     else:
-        next_item = item.get(first_part)
+        raise AttributeError(f"{first_part} unavailable in {item}")
 
     if len(path) == 1 or next_item is None:
         return next_item
@@ -90,8 +98,31 @@ def is_idx_template(val: str):
     return bool(re.findall(r"^\{\{[\w|\{\}]+\}\}$", val))
 
 
+def convert_root_to_base_model(root_model: type[RootModel]) -> type[BaseModel]:
+    """Convert a RootModel to a BaseModel."""
+    base_model = create_model(
+        root_model.__name__,
+        rootmodel_root_=(root_model.model_fields["root"].annotation, Field(title="")),
+    )
+
+    return base_model
+
+
+def root_model_converter(func):
+    """Decorator to convert a RootModel to a BaseModel."""
+
+    def wrapper(*args, **kwargs):
+        out = func(*args, **kwargs)
+        if is_subclass(out, RootModel):
+            return convert_root_to_base_model(out)
+        return out
+
+    return wrapper
+
+
+@root_model_converter
 def get_subitem_cls(  # noqa: PLR0912
-    model: type[BaseModel], parent: str, item: BaseModel | None = None
+    model: type[BaseModel] | type[RootModel], parent: str, item: BaseModel | None = None
 ) -> type[BaseModel]:
     """Get the subitem class of a model at a given parent.
 
@@ -112,8 +143,14 @@ def get_subitem_cls(  # noqa: PLR0912
             # or if they have further nesting / unions
             model = next(m for m in get_args(model) if is_subclass(m, BaseModel) and first_part in m.model_fields)
 
+    if issubclass(model, RootModel):
+        model = convert_root_to_base_model(model)
+
     if len(path) == 1:
-        ann = get_non_null_annotation(model.model_fields[first_part].annotation)
+        ann = model.model_fields[first_part].annotation
+        if ann is None:
+            raise ValueError("Field has no annotation")
+        ann = get_non_null_annotation(ann)
         return ann
 
     second_part = path[1]
@@ -126,18 +163,23 @@ def get_subitem_cls(  # noqa: PLR0912
         field_info = item.model_fields[first_part]
     else:
         raise TypeError(f"Unsupported model class: {model}")
+    if field_info.annotation is None:
+        raise ValueError("Field has no annotation")
     first_annotation = get_non_null_annotation(field_info.annotation)
     try:
         subitem = get_subitem(item, first_part) if item is not None else None
+        if not isinstance(subitem, BaseModel):
+            subitem = None
     except:  # noqa: E722
         subitem = None
-    if Type.classify(first_annotation, field_info.discriminator) == Type.DISCRIMINATED_MODEL:
-        if not item:
+    discriminator = get_str_discriminator(field_info)
+    if Type.classify(first_annotation, discriminator) == Type.DISCRIMINATED_MODEL:
+        if item is None:
             raise TypeError("Discriminated models with nesting need passing item data to be displayed")
-        discriminator_value = None if subitem is None else getattr(subitem, field_info.discriminator, None)
-        subitem_cls, _ = handle_discriminated(
-            item.__class__, parent, first_annotation, field_info.discriminator, discriminator_value
-        )
+        if discriminator is None:
+            raise ValueError("discriminator should be provided if data_model is a discriminated union")
+        discriminator_value = None if subitem is None else getattr(subitem, discriminator, None)
+        subitem_cls, _ = handle_discriminated(parent, first_annotation, discriminator, discriminator_value)
         return get_subitem_cls(subitem_cls, SEP.join(path[1:]), item=subitem)
     if (
         get_origin(first_annotation) is list
@@ -162,33 +204,43 @@ def get_subitem_cls(  # noqa: PLR0912
     return get_subitem_cls(first_annotation, SEP.join(path[1:]), item=subitem)
 
 
-def handle_discriminated(model: type[BaseModel], parent: str, annotation: type, disc_field: str, disc_val: Any):
+def handle_discriminated(parent: str, annotation: type, disc_field: str, disc_val: Any | None):
     """Handle a discriminated model."""
-    all_vals = set()
+    all_vals_set: set[str] = set()
     out = None
     if get_origin(annotation) is Annotated:
-        if disc_field is None:
-            disc_field = next(
-                (f.discriminator for f in get_args(annotation)[1:] if isinstance(f, FieldInfo)),
-                None,
-            )
+        disc_field = disc_field or get_discriminator_from_annotated(annotation, True)
         annotation = get_args(annotation)[0]
+    if get_origin(annotation) not in [Union, UnionType]:
+        raise ValueError("Should be a union")
     for possible in get_args(annotation):
+        if not issubclass(possible, BaseModel):
+            raise ValueError("Should be a union of BaseModel")
         if not get_origin(possible.model_fields[disc_field].annotation) == Literal:
             raise ValueError("Discriminator must be a Literal")
-
         vals = get_args(possible.model_fields[disc_field].annotation)
-        all_vals = all_vals.union(vals)
+        if len(vals) != 1:
+            raise ValueError("Discriminator field must be a Literal with exactly 1 value")
+        if not all(isinstance(x, str) for x in vals):
+            raise ValueError("Discriminator field must be a Literal with exactly 1 string value")
+        all_vals_set = all_vals_set.union(vals)
         if disc_val is not None and disc_val in vals:
             out = possible
 
-    all_vals = tuple(all_vals)
+    all_vals = tuple(all_vals_set)
 
     if disc_val is None:
-        return create_model(
-            f"{model.__name__}{parent.replace(SEP, ' ').title().replace(' ', '')}Discriminator",
+        programmatic_model = create_model(
+            f"M{hash(str(annotation))}{parent.replace(SEP, ' ').title().replace(' ', '')}Discriminator",
+            __config__=None,
+            __doc__=None,
+            __base__=None,
+            __module__=__name__,
+            __validators__=None,
+            __cls_kwargs__=None,
             **{disc_field: (Literal[tuple(all_vals)], ...)},
-        ), all_vals
+        )
+        return programmatic_model, all_vals
 
     if out is None:
         raise ValueError(f"Invalid discriminator value: {disc_val}")
@@ -215,12 +267,16 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             continue
 
         field_info = data_model.model_fields[key]
-        ann = get_non_null_annotation(field_info.annotation)
-        type_ = Type.classify(ann, field_info.discriminator)
+        ann = field_info.annotation
+        if ann is None:
+            raise ValueError("Annotation is None")
+        ann = get_non_null_annotation(ann)
+        discriminator = get_str_discriminator(field_info)
+        type_ = Type.classify(ann, discriminator)
         if type_ == Type.MODEL:
             updated[key] = model_construct_recursive(val, ann)
         elif type_ == Type.DISCRIMINATED_MODEL:
-            updated[key] = _construct_handle_discriminated(val, field_info.discriminator, ann)
+            updated[key] = _construct_handle_discriminated(val, discriminator, ann)
         elif type_ == Type.MODEL_LIST and isinstance(val, list):
             updated[key] = [model_construct_recursive(vv, get_args(ann)[0]) for vv in val]
         elif type_ == Type.DISCRIMINATED_MODEL_LIST and isinstance(val, list):
@@ -228,7 +284,9 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             sub_ann = get_args(ann)[0]
             # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
             sub_ann2 = get_args(sub_ann)[0]
-            discriminator = next((f.discriminator for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None)
+            discriminator = next(
+                (get_str_discriminator(f) for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None
+            )
             for vv in val:
                 new_val.append(_construct_handle_discriminated(vv, discriminator, sub_ann2))
             updated[key] = new_val
@@ -237,7 +295,9 @@ def model_construct_recursive(data: dict, data_model: type[BaseModel]):
             sub_ann = get_args(ann)[1]
             # Note: since we have a DISCRIMINATED_MODEL_LIST, sub_ann will be an Annotated union with discriminator
             sub_ann2 = get_args(sub_ann)[0]
-            discriminator = next((f.discriminator for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None)
+            discriminator = next(
+                (get_str_discriminator(f) for f in get_args(sub_ann)[1:] if isinstance(f, FieldInfo)), None
+            )
             for kk, vv in val.items():
                 new_val[kk] = _construct_handle_discriminated(vv, discriminator, sub_ann2)
             updated[key] = new_val
@@ -288,9 +348,12 @@ def from_form_data(data: dict, data_model: type[BaseModel]):
                     defaulted_fields.append(path)
                     break
                 if field.default_factory is not None:
-                    set_at_path(data_with_defaults, path, field.default_factory())
-                    defaulted_fields.append(path)
-                    break
+                    try:
+                        set_at_path(data_with_defaults, path, field.default_factory())
+                        defaulted_fields.append(path)
+                        break
+                    except TypeError:
+                        logging.warning("Default factory with validated data not supported in allow_default")
 
         if defaulted_fields:
             logging.info(

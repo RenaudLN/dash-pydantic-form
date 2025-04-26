@@ -4,7 +4,7 @@ import warnings
 from copy import deepcopy
 from functools import partial
 from types import UnionType
-from typing import Annotated, Literal, Union, get_args, get_origin, overload
+from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
 import dash_mantine_components as dmc
 from dash import (
@@ -22,12 +22,14 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_utils import (
     SEP,
     Type,
+    convert_root_to_base_model,
+    get_discriminator_from_annotated,
     get_fullpath,
     get_model_cls,
     get_subitem,
@@ -89,7 +91,7 @@ class IdAccessor:
     def __get__(self, obj: "ModelForm", objtype=None) -> ModelFormIds: ...
     @overload
     def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj: Optional["ModelForm"], objtype=None):
         """Returns the ``ModelFormIdsFactory`` class if accessed via the ``ModelForm`` class directly (ModelForm.ids)
         or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
         """
@@ -170,12 +172,12 @@ class ModelForm(html.Div):
 
     def __init__(  # noqa: PLR0912, PLR0913, PLR0915
         self,
-        item: BaseModel | type[BaseModel] | Annotated[UnionType, FieldInfo],
+        item: BaseModel | type[BaseModel] | RootModel | type[RootModel] | Annotated[type, FieldInfo] | None,
         aio_id: str | None = None,
         form_id: str | None = None,
         path: str = "",
         form_cols: int = 4,
-        fields_repr: dict[str, dict | BaseField] | None = None,
+        fields_repr: dict[str, dict[str, Any] | BaseField] | None = None,
         sections: FormLayout | None = None,
         form_layout: FormLayout | None = None,
         submit_on_enter: bool = False,
@@ -185,27 +187,35 @@ class ModelForm(html.Div):
         read_only: bool | None = None,
         debounce: int | None = None,
         debounce_inputs: int | None = None,
-        locale: str = None,
-        cols: int = None,
-        data_model: type[BaseModel] | Annotated[UnionType, FieldInfo] | None = None,
+        locale: str | None = None,
+        cols: int | None = None,
+        data_model: type[BaseModel] | Annotated[type, FieldInfo] | None = None,
         fields_order: list[str] | None = None,
         store_progress: bool | Literal["local", "session"] = False,
         restore_behavior: Literal["auto", "notify"] = "notify",
     ) -> None:
+        if isinstance(item, type) and issubclass(item, RootModel):
+            item = convert_root_to_base_model(item)
+        if isinstance(item, RootModel):
+            item = convert_root_to_base_model(type(item))(rootmodel_root_=item.root)
         if data_model is None:
+            if item is None:
+                raise ValueError("item and data_model are both None")
             data_model = type(item) if isinstance(item, BaseModel) else item
-        if is_subclass(item, BaseModel):
+        if isinstance(item, type) and issubclass(item, BaseModel):
             item = item.model_construct()
         if not isinstance(item, BaseModel):
             item = None
         if get_origin(data_model) is Annotated:
-            if discriminator is None:
-                discriminator = next((f.discriminator for f in get_args(data_model) if isinstance(f, FieldInfo)), None)
-            data_model = get_args(data_model)[0]
+            discriminator = discriminator or get_discriminator_from_annotated(data_model, True)
+            type_arg: type = get_args(data_model)[0]
+            data_model = type_arg
+            if get_origin(type_arg) not in [Union, UnionType]:
+                raise ValueError("Annotated data model should be a discriminated union")
 
         aio_id = aio_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
         form_id = form_id or str(uuid.UUID(int=rd.randint(0, 2**128)))
-        self.ids = ModelFormIds.from_basic_ids(aio_id, form_id)
+        self._ids = ModelFormIds.from_basic_ids(aio_id, form_id)
 
         if cols is not None:
             warnings.warn("cols is deprecated, use form_cols instead", DeprecationWarning, stacklevel=1)
@@ -300,36 +310,39 @@ class ModelForm(html.Div):
         item: BaseModel | None,
         path: str,
         discriminator: str | None,
-        data_model: type[BaseModel] | UnionType,
-    ) -> tuple[type[BaseModel], tuple]:
+        data_model: type[BaseModel] | type,
+    ) -> tuple[type[BaseModel], tuple[str, ...] | None]:
         """Get the subitem of a model at a given parent, handling type unions."""
-        subitem_cls = (
-            get_subitem_cls(item.__class__, path, item=item) if is_subclass(data_model, BaseModel) else data_model
-        )
+        if isinstance(data_model, type) and issubclass(data_model, BaseModel):
+            subitem_cls = get_subitem_cls(data_model, path, item=item)
+            disc_vals = None
+        else:
+            subitem_cls = data_model
 
         # Handle type unions
-        disc_vals = None
-        discriminator_value = None
         if Type.classify(subitem_cls, discriminator) == Type.DISCRIMINATED_MODEL:
+            if discriminator is None:
+                raise ValueError("discriminator should be provided if data_model is a discriminated union")
             subitem = get_subitem(item, path) if item is not None else None
             discriminator_value = None if subitem is None else getattr(subitem, discriminator, None)
-            subitem_cls, disc_vals = handle_discriminated(
-                item.__class__, path, subitem_cls, discriminator, discriminator_value
-            )
+            subitem_cls, disc_vals = handle_discriminated(path, subitem_cls, discriminator, discriminator_value)
+
+        if not isinstance(subitem_cls, type) and not issubclass(subitem_cls, BaseModel):
+            raise ValueError("subitem_cls should be a subclass of BaseModel")
 
         return subitem_cls, disc_vals
 
     @staticmethod
     def render_fields(  # noqa: PLR0913
         *,
-        item: BaseModel,
+        item: BaseModel | None,
         aio_id: str,
         form_id: str,
         path: str,
         subitem_cls: type[BaseModel],
-        disc_vals: list[str],
-        fields_repr: dict[str, dict | BaseField],
-        excluded_fields: list[str],
+        disc_vals: tuple[str, ...] | None,
+        fields_repr: dict[str, dict[str, Any] | BaseField],
+        excluded_fields: list[str] | None,
         discriminator: str | None,
         read_only: bool | None,
         form_cols: int,
@@ -343,9 +356,11 @@ class ModelForm(html.Div):
         for field_name, field_info in subitem_cls.model_fields.items():
             if field_name in (excluded_fields or []):
                 continue
-            more_kwargs = {"form_cols": form_cols}
+            more_kwargs: dict[str, Any] = {"form_cols": form_cols}
             if read_only:
                 more_kwargs["read_only"] = read_only
+            if is_subclass(field_info.annotation, RootModel):
+                more_kwargs["render_type"] = "simple"
             # If discriminating field, ensure all discriminator values are shown
             # Also add required metadata for discriminator callback
             if disc_vals and field_name == discriminator:
@@ -353,12 +368,11 @@ class ModelForm(html.Div):
                 field_info.annotation = Literal[disc_vals]
                 more_kwargs |= {"n_cols": "var(--pydf-form-cols)", "field_id_meta": "discriminator"}
             if field_name in fields_repr:
-                if isinstance(fields_repr[field_name], dict):
-                    field_repr = get_default_repr(field_info, **(fields_repr[field_name] | more_kwargs))
-                else:
-                    field_repr = fields_repr[field_name]
-                    if more_kwargs:
-                        field_repr = field_repr.__class__(**(field_repr.model_dump() | more_kwargs))
+                field_repr = fields_repr[field_name]
+                if isinstance(field_repr, dict):
+                    field_repr = get_default_repr(field_info, **(field_repr | more_kwargs))
+                elif more_kwargs:
+                    field_repr = field_repr.__class__(**(field_repr.model_dump() | more_kwargs))
             else:
                 field_repr = get_default_repr(field_info, **more_kwargs)
 
@@ -540,6 +554,8 @@ def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
 )
 def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict):
     """Update contents when discriminator input changes."""
+    if not isinstance(ctx.triggered_id, dict):
+        return no_update
     path: str = get_fullpath(ctx.triggered_id["parent"], ctx.triggered_id["field"])
     discriminator = ctx.triggered_id["field"]
     parts = path.split(SEP)
@@ -562,11 +578,16 @@ def update_form_wrapper_contents(
     form_specs: dict,
 ):
     """Update the form wrapper contents."""
+    if not isinstance(ctx.triggered_id, dict):
+        return no_update
+
     # Create an instance of the model with the form data using model_construct_recursive
     # to build it out as much as possible without failing on validation
     if isinstance(model_name, str):
         model_cls = get_model_cls(model_name)
     else:
+        if discriminator is None:
+            raise ValueError("discriminator must be set when model_name is a list")
         if not (disc_val := form_data.get(discriminator)):
             return no_update
         model_union = [get_model_cls(x) for x in model_name]
