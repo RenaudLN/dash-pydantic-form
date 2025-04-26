@@ -101,7 +101,7 @@ class PathField(BaseField):
         ]
         if self.path_type == "glob":
             if value:
-                base_path_match = re.findall("^([^*]*)\/.*\*", value)
+                base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
                 if not base_path_match:
                     raise ValueError("Invalid glob pattern.")
 
@@ -422,7 +422,7 @@ def update_filetree(  # noqa: PLR0913
         else:
             value = pagination_value
     elif path_type == "glob":
-        base_path_match = re.findall("^([^*]*)\/.*\*", value)
+        base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
         value = value if not base_path_match else base_path_match[0]
 
     # This happens when the modal first opens after clicking on the button
