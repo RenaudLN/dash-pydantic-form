@@ -2,9 +2,9 @@ from datetime import date, time
 from enum import Enum
 from numbers import Number
 from types import UnionType
-from typing import Annotated, Literal, Union, get_args, get_origin
+from typing import Annotated, Literal, Union, get_args, get_origin, overload
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Discriminator
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_utils.common import get_non_null_annotation, is_subclass
@@ -32,15 +32,12 @@ class Type(Enum):
     DISCRIMINATED_MODEL_DICT = "discriminated_model_dict"
 
     @classmethod
-    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> bool:  # noqa: PLR0911, PLR0912
+    def classify(cls, annotation: type, discriminator: str | None = None, depth: int = 0) -> "Type":  # noqa: PLR0911, PLR0912
         """Classify a value as a field type."""
         annotation = get_non_null_annotation(annotation)
 
         if get_origin(annotation) is Annotated and get_origin(get_args(annotation)[0]) in [Union, UnionType]:
-            if discriminator is None:
-                discriminator = next(
-                    (f.discriminator for f in get_args(annotation)[1:] if isinstance(f, FieldInfo)), None
-                )
+            discriminator = discriminator or get_discriminator_from_annotated(annotation, True)
             annotation = get_args(annotation)[0]
 
         if is_subclass(annotation, str | Number | bool | date | time):
@@ -89,3 +86,26 @@ class Type(Enum):
             return cls.UNKOWN_DICT
 
         return cls.UNKNOWN
+
+
+def get_str_discriminator(info: FieldInfo | Discriminator) -> str | None:
+    """Get tghe string discriminator of a field."""
+    if isinstance(info, Discriminator):
+        return info.discriminator if isinstance(info.discriminator, str) else None
+    if isinstance(info.discriminator, Discriminator):
+        return info.discriminator.discriminator if isinstance(info.discriminator.discriminator, str) else None
+    return info.discriminator
+
+
+@overload
+def get_discriminator_from_annotated(annotated: type | UnionType, raise_on_null: Literal[True]) -> str: ...
+@overload
+def get_discriminator_from_annotated(annotated: type | UnionType, raise_on_null: Literal[False]) -> str | None: ...
+def get_discriminator_from_annotated(annotated: type | UnionType, raise_on_null: bool = False) -> str | None:
+    """Retrieve the discriminator field from an Annotated[UnionType]."""
+    discriminator = next(
+        (get_str_discriminator(f) for f in get_args(annotated) if isinstance(f, FieldInfo | Discriminator)), None
+    )
+    if discriminator is None and raise_on_null:
+        raise ValueError("No discriminator field found")
+    return discriminator

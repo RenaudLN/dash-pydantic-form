@@ -3,18 +3,18 @@ import json
 import logging
 import os
 from collections.abc import Callable
-from enum import Enum, EnumMeta
+from enum import Enum
 from functools import partial
 from textwrap import TextWrapper
 from types import UnionType
 from typing import Annotated, Any, ClassVar, Literal, Union, get_args, get_origin
 
+import annotated_types
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
 from dash.development.base_component import Component
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
-from pydantic.types import annotated_types
 from pydantic_core import PydanticUndefined
 
 from dash_pydantic_form import ids as common_ids
@@ -94,14 +94,16 @@ class BaseField(BaseModel):
             ""
         ),
     )
-    input_kwargs: dict | None = Field(
-        default=None,
+    input_kwargs: dict[str, Any] = Field(
         description=(
             "Arguments to be passed to the underlying rendered component. "
             "NOTE: these are updated with extra arguments passed to the field."
         ),
+        default_factory=lambda: {},
     )
-    field_id_meta: str | None = Field(default=None, description="Optional str to be set in the field id's 'meta' key.")
+    field_id_meta: str = Field(
+        description="Optional str to be set in the field id's 'meta' key.", default_factory=lambda: ""
+    )
     read_only: bool = Field(default=False, description="Read only field.")
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
@@ -124,8 +126,6 @@ class BaseField(BaseModel):
             self.n_cols = "var(--pydf-form-cols)" if self.full_width else "calc(var(--pydf-form-cols) / 2)"
         if isinstance(self.n_cols, float) and (self.n_cols < 0 or self.n_cols > 1):
             raise ValueError("Field n_cols must be between 0 and 1 when using a float.")
-        if self.input_kwargs is None:
-            self.input_kwargs = {}
         if self.model_extra:
             self.input_kwargs.update(self.model_extra)
         if self.base_component:
@@ -138,8 +138,6 @@ class BaseField(BaseModel):
                 logging.debug("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
         if self.read_only:
             self.input_kwargs["className"] = self.input_kwargs.get("className", "") + " read-only"
-        if self.field_id_meta is None:
-            self.field_id_meta = ""
 
     @property
     def n_cols_css(self):
@@ -171,7 +169,7 @@ class BaseField(BaseModel):
     def render(  # noqa: PLR0913
         self,
         *,
-        item: BaseModel,
+        item: BaseModel | None,
         aio_id: str,
         form_id: str,
         field: str,
@@ -203,7 +201,7 @@ class BaseField(BaseModel):
         if visible is False:
             return html.Div(inputs, style={"display": "none"}, title=title)
 
-        if isinstance(visible, tuple) and isinstance(visible[0], str):
+        if isinstance(visible, tuple):
             visible = [visible]
 
         for i, vis in enumerate(visible):
@@ -225,12 +223,12 @@ class BaseField(BaseModel):
     def _render(  # noqa: PLR0913
         self,
         *,
-        item: BaseModel,
+        item: BaseModel | None,
         aio_id: str,
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Create a form input to interact with the field."""
         if not self.base_component:
@@ -285,15 +283,18 @@ class BaseField(BaseModel):
 
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+        title_children: list = [title] + (
+            [
+                html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
+            ]
+            if self.is_required(field_info)
+            else []
+        )
         return dmc.Stack(
             (title is not None)
             * [
                 dmc.Text(
-                    [title]
-                    + [
-                        html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}),
-                    ]
-                    * self.is_required(field_info),
+                    title_children,
                     size="sm",
                     mt=3,
                     mb=5,
@@ -312,16 +313,13 @@ class BaseField(BaseModel):
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 
-        outputs = dmc.Stack(
-            (title is not None) * [dmc.Text(title, size="sm", mt=3, mb=5, fw=500, lh=1.55)]
-            + (title is not None and description is not None)
-            * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)],
-            gap=0,
-        )
+        children: list = (title is not None) * [dmc.Text(title, size="sm", mt=3, mb=5, fw=500, lh=1.55)] + (
+            title is not None and description is not None
+        ) * [dmc.Text(description, size="xs", c="dimmed", mt=-5, mb=5, lh=1.2)]
 
         value_repr = self._get_value_repr(value, field_info)
 
-        outputs.children.append(
+        children.append(
             dmc.Paper(
                 value_repr,
                 withBorder=True,
@@ -336,11 +334,14 @@ class BaseField(BaseModel):
                 },
             )
         )
+        outputs = dmc.Stack(children, gap=0)
 
         return outputs
 
     @staticmethod
     def _get_value_repr(value: Any, field_info: FieldInfo):
+        if field_info.annotation is None:
+            raise ValueError("field_info.annotation is None")
         val_type = Type.classify(field_info.annotation)
         value_repr = str(value)
         if val_type == Type.SCALAR:
@@ -381,13 +382,13 @@ class BaseField(BaseModel):
         inputs,
         aio_id: str,
         form_id: str,
-        item: BaseModel,
+        item: BaseModel | None,
         visibility: tuple,
         parent: str,
         field: str,
         index: int,
         n_visibility_fields: int,
-        title: str,
+        title: str | None,
     ):
         """Wrap the inputs with a layer of togglable visibility."""
         dependent_field, operator, expected_value = visibility
@@ -396,7 +397,7 @@ class BaseField(BaseModel):
         current_value = self.get_value(item, dependent_field, dependent_parent)
         if isinstance(current_value, Enum):
             current_value = current_value.value
-        if os.getenv("DEBUG"):
+        if os.getenv("DEBUG") and title is not None:
             keyword = "Visible" if index == 0 else "   AND"
             title += f"\n{keyword}: {get_fullpath(dependent_parent , dependent_field)}" f" {operator} {expected_value}"
 
@@ -419,7 +420,7 @@ class BaseField(BaseModel):
 
         return inputs, title
 
-    def get_title(self, field_info: FieldInfo, field_name: str | None = None) -> str:
+    def get_title(self, field_info: FieldInfo, field_name: str | None = None) -> str | Component | None:
         """Get the input title."""
         if self.title is not None:
             return self.title or None
@@ -427,7 +428,7 @@ class BaseField(BaseModel):
             return field_info.title
         return field_name.replace("_", " ").title() if isinstance(field_name, str) else None
 
-    def get_description(self, field_info: FieldInfo) -> str:
+    def get_description(self, field_info: FieldInfo) -> str | Component | None:
         """Get the input description."""
         return self.description or field_info.description
 
@@ -458,7 +459,7 @@ class BaseField(BaseModel):
         raise ValueError(f"Invalid operator: {operator}")
 
     @classmethod
-    def get_value(cls, item: BaseModel, field: str, parent: str) -> Any:
+    def get_value(cls, item: BaseModel | None, field: str, parent: str) -> Any:
         """Get the value of a model (parent, field) pair. Defined to allow overriding."""
         return get_model_value(item, field, parent)
 
@@ -634,6 +635,8 @@ class SelectField(BaseField):
 
     def _get_data(self, field_info: FieldInfo, **kwargs) -> list[dict]:
         """Gets option list from annotations."""
+        if field_info.annotation is None:
+            raise ValueError("field_info.annotation is None")
         non_null_annotation = get_non_null_annotation(field_info.annotation)
         data = self._get_data_list(non_null_annotation=non_null_annotation, **kwargs)
         options = self._format_data(data, **kwargs)
@@ -673,7 +676,7 @@ class SelectField(BaseField):
                 return self._get_data_list_recursive(annotation_args[0], **kwargs)
         elif get_origin(non_null_annotation) == Literal:
             data = list(get_args(non_null_annotation))
-        elif isinstance(non_null_annotation, EnumMeta):
+        elif issubclass(non_null_annotation, Enum):
             data = [{"value": x.value, "label": x.name} for x in non_null_annotation]
 
         return data
@@ -721,6 +724,9 @@ class SelectField(BaseField):
             )
             return label if label is not None else value_repr
 
+        if field_info.annotation is None:
+            raise ValueError("field_info.annotation is None")
+
         if Type.classify(field_info.annotation) == Type.SCALAR:
             return _get_label(value, data, value_repr)
         if Type.classify(field_info.annotation) == Type.SCALAR_LIST:
@@ -758,7 +764,7 @@ class RadioItemsField(SelectField):
         description="Orientation of the chip group, defaults to None which will adapt based on the number of items.",
     )
 
-    def _additional_kwargs(self, *, field: str = None, field_info: FieldInfo, **kwargs) -> dict:
+    def _additional_kwargs(self, *, field: str | None = None, field_info: FieldInfo, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
         kwargs = super()._additional_kwargs(field_info=field_info, **kwargs)
         data = kwargs["data"] or []
@@ -819,7 +825,7 @@ class ChipGroupField(SelectField):
         description="Orientation of the chip group, defaults to None which will adapt based on the number of items.",
     )
 
-    def _additional_kwargs(self, *, field: str = None, field_info: FieldInfo, **kwargs) -> dict:
+    def _additional_kwargs(self, *, field: str | None = None, field_info: FieldInfo, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
         kwargs = super()._additional_kwargs(field_info=field_info, **kwargs)
         data = kwargs["data"] or []
@@ -837,8 +843,6 @@ class ChipGroupField(SelectField):
 
 def check_fields_repr(fields_repr):
     """Fields repr validator function."""
-    if fields_repr is None:
-        return None
     if any(not isinstance(x, dict | BaseField) for x in fields_repr.values()):
         raise ValueError("fields_repr must be a dict of BaseField or dict")
     return fields_repr
@@ -848,7 +852,7 @@ def check_fields_repr(fields_repr):
 # Pydantic doesn't work well when using dict[str, dict | BaseField] for fields_repr
 # as it then tries to serialize the nested fields with BaseField rather than their own class.
 # See https://github.com/pydantic/pydantic/issues/11563
-FieldsRepr = Annotated[dict[str, Any] | None, AfterValidator(check_fields_repr)]
+FieldsRepr = Annotated[dict[str, Any], AfterValidator(check_fields_repr)]
 
 
 clientside_callback(

@@ -34,7 +34,7 @@ class QuantityField(BaseField):
         default="5rem",
     )
 
-    kwargs_for_both: ClassVar[list[str]] = ("size",)
+    kwargs_for_both: ClassVar[tuple[str, ...]] = ("size",)
     base_component = dmc.NumberInput
 
     class ids(BaseField.ids):
@@ -79,23 +79,21 @@ class QuantityField(BaseField):
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Render the quantity field."""
-        ann = get_non_null_annotation(field_info.annotation)
+        ann = field_info.annotation
+        if ann is None:
+            raise ValueError("field_info.annotation is None")
+        ann = get_non_null_annotation(ann)
         if not issubclass(ann, BaseModel) or set(ann.model_fields) != {"unit", "value"}:
             raise TypeError("Quantity field should be used with a field that has value and unit sub-fields.")
 
-        value: Quantity | None = self.get_value(item, field, parent)
-
-        # Convert to Quantity if dict
-        if isinstance(value, dict) and set(value) == {"unit", "value"}:
-            value = Quantity(**value)
+        value = self.get_value(item, field, parent)
 
         # Try converting if the given uit does not match any of the input units
         if value and value.unit not in self.unit_options:
             value = Quantity(value.value, value.unit).to(next(iter(self.unit_options)))
-
         meta = "auto-convert" if self.auto_convert else "default"
         new_parent = get_fullpath(parent, field)
         value_id = common_ids.value_field(aio_id, form_id, "value", parent=new_parent, meta=meta)
@@ -159,6 +157,17 @@ class QuantityField(BaseField):
             wrap="nowrap",
             gap=0,
         )
+
+    def get_value(self, item: BaseModel, field: str, parent: str) -> Quantity | None:
+        """Get the value of a model (parent, field) pair. Defined to allow overriding."""
+        value = super().get_value(item, field, parent)
+        if isinstance(value, Quantity):
+            return value
+        if isinstance(value, dict):
+            return Quantity(**value)
+        if value is None:
+            return None
+        raise TypeError(f"Expected Quantity, got {type(value)}")
 
 
 clientside_callback(

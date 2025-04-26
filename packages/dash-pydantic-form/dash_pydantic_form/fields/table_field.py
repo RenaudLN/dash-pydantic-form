@@ -1,9 +1,10 @@
 import base64
 import io
+import logging
 import uuid
 from datetime import date, datetime, time
 from functools import partial
-from typing import get_args
+from typing import Any, get_args
 
 import dash_ag_grid as dag
 import dash_mantine_components as dmc
@@ -45,7 +46,7 @@ class TableField(BaseField):
     """Editable table input field attributes and rendering."""
 
     fields_repr: FieldsRepr = Field(
-        default=None,
+        default_factory=dict,
         description="Fields representation, mapping between field name and field representation for the nested fields.",
     )
     with_upload: bool = Field(default=True, description="Whether to allow uploading a CSV file.")
@@ -56,7 +57,7 @@ class TableField(BaseField):
     )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
-    column_defs_overrides: dict[str, dict] | None = Field(default=None, description="Ag-grid column_defs overrides.")
+    column_defs_overrides: dict[str, dict] = Field(default_factory=dict, description="Ag-grid column_defs overrides.")
     dynamic_options: dict[str, JSFunction] | None = Field(
         default=None,
         description="Clientside function to use for dynamic options, defined per columnn."
@@ -77,10 +78,6 @@ class TableField(BaseField):
     def model_post_init(self, _context):
         """Model post init."""
         super().model_post_init(_context)
-        if self.fields_repr is None:
-            self.fields_repr = {}
-        if self.column_defs_overrides is None:
-            self.column_defs_overrides = {}
         if self.with_download is None:
             self.with_download = self.with_upload
         if self.read_only:
@@ -112,11 +109,14 @@ class TableField(BaseField):
         form_id: str,
         field: str,
         parent: str = "",
-        field_info: FieldInfo | None = None,
+        field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
-        template = get_args(get_non_null_annotation(field_info.annotation))[0]
+        ann = field_info.annotation
+        if ann is None:
+            raise ValueError("field_info.annotation is None")
+        template = get_args(get_non_null_annotation(ann))[0]
         if not issubclass(template, BaseModel):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 
@@ -269,6 +269,9 @@ class TableField(BaseField):
                 for field in self.fields_order
                 if field in template.model_fields
             ] + [col for col in column_defs if col["field"] not in self.fields_order]
+        title_children: list = [title] + [
+            html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
+        ] * self.is_required(field_info)
 
         return html.Div(
             [
@@ -276,13 +279,7 @@ class TableField(BaseField):
                     (title is not None)
                     * [
                         dmc.Text(
-                            [title]
-                            + [
-                                html.Span(
-                                    " *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}
-                                ),
-                            ]
-                            * self.is_required(field_info),
+                            title_children,
                             size="sm",
                             mt=3,
                             mb=5,
@@ -372,7 +369,7 @@ class TableField(BaseField):
             field_repr = get_default_repr(field_info, **field_repr)
 
         # Column_def no matter the type
-        column_def = {
+        column_def: dict[str, Any] = {
             "editable": editable,
             "field": field_name,
             "headerName": field_repr.get_title(field_info, field_name=field_name),
@@ -389,8 +386,12 @@ class TableField(BaseField):
 
         if field_info.default != PydanticUndefined:
             column_def["default_value"] = field_info.default
+
         if field_info.default_factory is not None:
-            column_def["default_value"] = field_info.default_factory()
+            try:
+                column_def["default_value"] = field_info.default_factory()
+            except TypeError:
+                logging.warning("Default factory with validated data not supported in allow_default")
 
         # if select field, generate column of dropdowns
         if isinstance(
@@ -472,81 +473,86 @@ class TableField(BaseField):
         # default return base definition (text field)
         return column_def
 
-    # Sync the JsonInput from the table data
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
-        Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "cellValueChanged"),
-        prevent_initial_call=True,
-    )
 
-    @callback(
-        Output(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData", allow_duplicate=True),
-        Output(ids.notification_wrapper(MATCH, MATCH, MATCH, parent=MATCH), "children", allow_duplicate=True),
-        Input(ids.upload_csv(MATCH, MATCH, MATCH, parent=MATCH), "contents"),
-        State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
-        prevent_initial_call=True,
-    )
-    def csv_to_table(contents, column_defs):
-        """Output uploaded csv file to the editable table."""
+# Sync the JsonInput from the table data
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncTableJson"),
+    Output(common_ids.value_field(MATCH, MATCH, MATCH, parent=MATCH), "value", allow_duplicate=True),
+    Input(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    Input(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "cellValueChanged"),
+    prevent_initial_call=True,
+)
+
+
+@callback(
+    Output(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData", allow_duplicate=True),
+    Output(TableField.ids.notification_wrapper(MATCH, MATCH, MATCH, parent=MATCH), "children", allow_duplicate=True),
+    Input(TableField.ids.upload_csv(MATCH, MATCH, MATCH, parent=MATCH), "contents"),
+    State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
+    prevent_initial_call=True,
+)
+def csv_to_table(contents: str, column_defs: list[dict]):
+    """Output uploaded csv file to the editable table."""
+    import pandas as pd
+
+    if contents is not None:
+        _, content_string = contents.split(",")
+
+        decoded = base64.b64decode(content_string)
+        data = pd.read_csv(
+            io.StringIO(decoded.decode("utf-8")),
+            dtype={f["field"]: f["dtype"] for f in column_defs if "field" in f and "dtype" in f},
+        )
+        required_columns = [col["field"] for col in column_defs if col.get("required")]
+        if set(required_columns).issubset(data.columns):
+            for col in column_defs:
+                if not (field := col.get("field")):
+                    continue
+                if options := col.get("cellEditorParams", {}).get("options"):
+                    values = [x["value"] for x in options]
+                    options_dict = {x["label"]: x["value"] for x in options}
+                    data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
+
+            return data.to_dict("records"), None
+
+        return no_update, dmc.Notification(
+            color="red",
+            title=_("Wrong column names"),
+            message=_("CSV upload failed, the file should contain the following columns: ")
+            + f"{', '.join(required_columns)}",
+            id=uuid.uuid4().hex,
+            action="show",
+        )
+    return no_update, None
+
+
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="tableAddRow"),
+    Output(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowTransaction", allow_duplicate=True),
+    Input(TableField.ids.add_row(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
+    State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
+    prevent_initial_call=True,
+)
+
+
+@callback(
+    Output(TableField.ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
+    Input(TableField.ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
+    State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    prevent_initial_call=True,
+)
+def table_to_csv(n_clicks, table_data):
+    """Send the table data to the user as a CSV file."""
+    if n_clicks and table_data:
         import pandas as pd
 
-        if contents is not None:
-            _, content_string = contents.split(",")
+        data_df = pd.DataFrame(table_data)
+        return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
+    return no_update
 
-            decoded = base64.b64decode(content_string)
-            data = pd.read_csv(
-                io.StringIO(decoded.decode("utf-8")),
-                dtype={f["field"]: f["dtype"] for f in column_defs if "field" in f and "dtype" in f},
-            )
-            required_columns = [col["field"] for col in column_defs if col.get("required")]
-            if set(required_columns).issubset(data.columns):
-                for col in column_defs:
-                    if not (field := col.get("field")):
-                        continue
-                    if options := col.get("cellEditorParams", {}).get("options"):
-                        values = [x["value"] for x in options]
-                        options_dict = {x["label"]: x["value"] for x in options}
-                        data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
 
-                return data.to_dict("records"), None
-
-            return no_update, dmc.Notification(
-                color="red",
-                title=_("Wrong column names"),
-                message=_("CSV upload failed, the file should contain the following columns: ")
-                + f"{', '.join(required_columns)}",
-                id=uuid.uuid4().hex,
-                action="show",
-            )
-        return no_update, None
-
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="tableAddRow"),
-        Output(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowTransaction", allow_duplicate=True),
-        Input(ids.add_row(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
-        State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
-        prevent_initial_call=True,
-    )
-
-    @callback(
-        Output(ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
-        Input(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
-        State(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-        prevent_initial_call=True,
-    )
-    def table_to_csv(n_clicks, table_data):
-        """Send the table data to the user as a CSV file."""
-        if n_clicks and table_data:
-            import pandas as pd
-
-            data_df = pd.DataFrame(table_data)
-            return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
-        return no_update
-
-    clientside_callback(
-        """ data => !(Array.isArray(data) && data.length) """,
-        Output(ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "disabled"),
-        Input(ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-    )
+clientside_callback(
+    """ data => !(Array.isArray(data) && data.length) """,
+    Output(TableField.ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "disabled"),
+    Input(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+)

@@ -268,7 +268,7 @@ class Quantity(BaseModel):
     @lru_cache
     def get_unit_info(cls, unit: str) -> tuple[ISUnits, tuple[float, float], str]:
         """Get information about a given unit."""
-        i_s_pattern = re.compile("^((kg|m|s|K|USD|A|mol|cd)(?:\^(\-*\d+))*(?:\*|$))+$")
+        i_s_pattern = re.compile(r"^((kg|m|s|K|USD|A|mol|cd)(?:\^(\-*\d+))*(?:\*|$))+$")
         # IS units repr
         if re.match(i_s_pattern, unit):
             i_s_units = ISUnits.from_str(unit)

@@ -14,7 +14,7 @@ from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.fields.list_field import ListField
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
-from dash_pydantic_utils import Type, get_fullpath
+from dash_pydantic_utils import Type, get_fullpath, get_str_discriminator
 
 
 class DictField(ListField):
@@ -174,7 +174,10 @@ class DictField(ListField):
         field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type checklist to interact with the model field."""
-        type_ = Type.classify(field_info.annotation, field_info.discriminator)
+        ann = field_info.annotation
+        if ann is None:
+            raise ValueError("field_info.annotation is None")
+        type_ = Type.classify(ann, get_str_discriminator(field_info))
         if type_ in [Type.MODEL_LIST, Type.MODEL_DICT] and self.render_type == "scalar":
             raise ValueError("Cannot render model list as scalar")
         if (
@@ -231,6 +234,9 @@ class DictField(ListField):
         )
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
+        title_children = [title] + [
+            html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
+        ] * self.is_required(field_info)
 
         return dmc.Stack(
             bool(title)
@@ -239,13 +245,7 @@ class DictField(ListField):
                     bool(title)
                     * [
                         dmc.Text(
-                            [title]
-                            + [
-                                html.Span(
-                                    " *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"}
-                                ),
-                            ]
-                            * self.is_required(field_info),
+                            title_children,
                             size="sm",
                             mt=3,
                             fw=500,
