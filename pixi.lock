@@ -549,7 +549,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/comm-0.2.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.16-py310hd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cryptography-44.0.2-py310h6c63255_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-1.1.0-pyhd8ed1ab_0.conda
@@ -733,7 +733,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/sortedcontainers-2.4.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/soupsieve-2.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/stack_data-0.6.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/stringcase-1.2.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/terminado-0.18.1-pyh0d859eb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h4845f30_101.conda
@@ -806,7 +805,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/comm-0.2.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.16-py310hd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/cryptography-44.0.2-py310h69cbf43_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-1.1.0-pyhd8ed1ab_0.conda
@@ -976,7 +975,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/sortedcontainers-2.4.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/soupsieve-2.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/stack_data-0.6.3-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/stringcase-1.2.0-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/terminado-0.18.1-pyh31c8845_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h5083fa2_1.conda
@@ -1675,9 +1673,9 @@ packages:
   - pkg:pypi/dash?source=compressed-mapping
   size: 5444549
   timestamp: 1737726641971
-- conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.0-pyhd8ed1ab_0.conda
-  sha256: a6617e9ba9342b5b9c96e0c8e6648a8a60033e2183f6e9159c3e199bcc627585
-  md5: 1386ba25a997e2468ccbe24d232ec182
+- conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.3-pyhd8ed1ab_0.conda
+  sha256: d50446a7d8f234b235e4c80c4ae831beee48109f7a046b67b296c1edcb22d1bd
+  md5: f82cfbd4aa9f3627d0905f32e445c0db
   depends:
   - flask >=1.0.4
   - importlib-metadata
@@ -1687,7 +1685,6 @@ packages:
   - requests
   - retrying
   - setuptools
-  - stringcase >=1.2.0
   - typing_extensions >=4.1.1
   - werkzeug
   constrains:
@@ -1698,8 +1695,8 @@ packages:
   license_family: MIT
   purls:
   - pkg:pypi/dash?source=hash-mapping
-  size: 5719148
-  timestamp: 1742284718816
+  size: 5700632
+  timestamp: 1744687408823
 - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
   sha256: f5ef5c01c93365929fddd4cdf981fcedb604a12940e75391f88acc3309c23c87
   md5: 8eca43325acc263f2d9bace6b92e8bd7
@@ -1758,8 +1755,8 @@ packages:
   timestamp: 1742499857830
 - pypi: packages/dash-pydantic-form
   name: dash-pydantic-form
-  version: 0.14.9.post1.dev2+g31ea741.d20250325
-  sha256: 98eee507f5a5dd2c7bfa6b219571205913aee18d4c63eb6ffada9a3442ea011d
+  version: 0.15.2.post1.dev1+g1fd96b2.d20250423
+  sha256: 99b4ad46caf3dbb23f085c577ad832fdef67fafce55c6c78a737d4bd2142a3a4
   requires_dist:
   - dash-ag-grid>=31
   - dash-iconify
@@ -1771,19 +1768,19 @@ packages:
   - dash[testing] ; extra == 'dev'
   - pre-commit ; extra == 'dev'
   - pytest ; extra == 'dev'
-  requires_python: '>=3.10,<3.13'
+  requires_python: '>=3.10,<3.14'
   editable: true
 - pypi: packages/dash-pydantic-utils
   name: dash-pydantic-utils
-  version: 0.14.3.post1.dev1+g9bb650c
-  sha256: b169d4c8b45ff5ce0d30d36c982049fde417d84957dacb511a1d436b60d43363
+  version: 0.15.2.post1.dev1+g1fd96b2.d20250423
+  sha256: ecd2a6f644153955ff9e91f2b8631bfd957338d843028bf956f4e3ba5c6769e4
   requires_dist:
   - pydantic==2.*
   - pre-commit ; extra == 'dev'
   - pytest ; extra == 'dev'
   - numpy ; extra == 'pandas'
   - pandas ; extra == 'pandas'
-  requires_python: '>=3.10,<3.13'
+  requires_python: '>=3.10,<3.14'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
   name: dash-testing-stub
@@ -3422,8 +3419,6 @@ packages:
   - __osx >=11.0
   constrains:
   - openmp 20.1.1|20.1.1.*
-  arch: arm64
-  platform: osx
   license: Apache-2.0 WITH LLVM-exception
   license_family: APACHE
   purls: []
@@ -4988,17 +4983,6 @@ packages:
   - pkg:pypi/stack-data?source=hash-mapping
   size: 26988
   timestamp: 1733569565672
-- conda: https://conda.anaconda.org/conda-forge/noarch/stringcase-1.2.0-pyhd8ed1ab_2.conda
-  sha256: 8184e801354ec82f686989f4664cc914d6a80686bb0856ac84bce8e82e8a0853
-  md5: 6c17c5b9a3f8cf44137bfca12e2574d7
-  depends:
-  - python >=3.9
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/stringcase?source=hash-mapping
-  size: 10339
-  timestamp: 1734359694686
 - conda: https://conda.anaconda.org/conda-forge/noarch/terminado-0.18.1-pyh0d859eb_0.conda
   sha256: b300557c0382478cf661ddb520263508e4b3b5871b471410450ef2846e8c352c
   md5: efba281bbdae5f6b0a1d53c6d4a97c93

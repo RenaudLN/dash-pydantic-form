@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Allow pydantic's `RootModel` in the `ModelForm`
 
+## [0.15.3] - 2025-04-23
+### Changed
+- Allow python 3.13 in pypi
+
 ## [0.15.2] - 2025-04-06
 ### Changed
 - For list items, display the 'name' attribute if it exists before it is synced with callbacks
