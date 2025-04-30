@@ -60,6 +60,7 @@ class ModelFormIdsFactory:
     restore_btn = partial(form_base_id, "_pydf-restore-btn")
     cancel_restore_btn = partial(form_base_id, "_pydf-cancel-restore-btn")
     wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
+    field = partial(common_ids.field_dependent_id, "_pydf-value-field")
     errors = partial(form_base_id, "_pydf-errors")
     model_store = partial(form_base_id, "_pydf-model-store")
     form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
