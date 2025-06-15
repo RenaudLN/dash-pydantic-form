@@ -168,7 +168,7 @@ def get_subitem_cls(  # noqa: PLR0912
     first_annotation = get_non_null_annotation(field_info.annotation)
     try:
         subitem = get_subitem(item, first_part) if item is not None else None
-        if not isinstance(subitem, BaseModel | list):
+        if not isinstance(subitem, BaseModel | list | dict):
             subitem = None
     except:  # noqa: E722
         subitem = None

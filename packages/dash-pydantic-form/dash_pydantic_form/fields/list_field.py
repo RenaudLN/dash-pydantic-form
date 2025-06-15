@@ -660,6 +660,28 @@ class ListField(BaseField):
         """Mapping between render type and renderer function."""
         return getattr(cls, f"{render_type}_items")
 
+    @staticmethod
+    def make_template_item(item: BaseModel, parent: str, field: str):
+        """Make a template item."""
+        template_item = model_construct_recursive(item.model_dump(), item.__class__)
+        if isinstance(subitem := get_subitem(item, parent), BaseModel):
+            pointer = template_item
+            if parent:
+                for part in parent.split(SEP):
+                    pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
+            default_val = None
+            field_info = subitem.model_fields[field]
+            if field_info.default is not PydanticUndefined:
+                default_val = field_info.default
+            if field_info.default_factory is not None:
+                try:
+                    default_val = field_info.default_factory()
+                except TypeError:
+                    logging.warning("Default factory with validated data not supported in allow_default")
+            setattr(pointer, field, default_val)
+
+        return template_item
+
     def _render(  # noqa: PLR0913
         self,
         *,
@@ -706,22 +728,7 @@ class ListField(BaseField):
             fields_order=self.fields_order,
         )
 
-        template_item = model_construct_recursive(item.model_dump(), item.__class__)
-        if isinstance(subitem := get_subitem(item, parent), BaseModel):
-            pointer = template_item
-            if parent:
-                for part in parent.split(SEP):
-                    pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
-            default_val = None
-            field_info = subitem.model_fields[field]
-            if field_info.default is not PydanticUndefined:
-                default_val = field_info.default
-            if field_info.default_factory is not None:
-                try:
-                    default_val = field_info.default_factory()
-                except TypeError:
-                    logging.warning("Default factory with validated data not supported in allow_default")
-            setattr(pointer, field, default_val)
+        template_item = self.make_template_item(item, parent, field)
 
         # Create a template item to be used clientside when adding new items
         template = self.render_type_item_mapper(self.render_type)(
