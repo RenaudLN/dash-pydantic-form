@@ -214,9 +214,11 @@ class DictField(ListField):
             wrapper_kwargs=self.wrapper_kwargs,
         )
 
+        template_item = self.make_template_item(item, parent, field)
+
         # Create a template item to be used clientside when adding new items
         template = self.render_type_item_mapper(self.render_type)(
-            item=item.__class__.model_construct(),
+            item=template_item,
             aio_id=aio_id,
             form_id=form_id,
             field=field,
