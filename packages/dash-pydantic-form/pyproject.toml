@@ -10,7 +10,7 @@ requires-python =  ">=3.10,<3.14"
 license = {file = "LICENSE"}
 dependencies = [
     "dash>=2.16,<4",
-    "dash-mantine-components>=0.14.6,<2",
+    "dash-mantine-components>=0.14.6,<3",
     "dash-iconify",
     "dash-ag-grid>=31",
     "pydantic==2.*",
