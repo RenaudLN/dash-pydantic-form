@@ -107,7 +107,7 @@ class WorkOffice(BaseModel):
     """Work office model."""
 
     type: Literal["work_office"]
-    commute_time: int = Field(title="Commute time", ge=0, repr_kwargs={"suffix": " min"})
+    commute_time: int = Field(title="Commute time", ge=0, multiple_of=5, repr_kwargs={"suffix": " min"})
 
 
 class Metadata(BaseModel):
