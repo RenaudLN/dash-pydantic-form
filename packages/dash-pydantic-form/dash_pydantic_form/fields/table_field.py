@@ -515,7 +515,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
 
             return data.to_dict("records"), None
 
-        return no_update, dmc.Notification(
+        return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
             color="red",
             title=_("Wrong column names"),
             message=_("CSV upload failed, the file should contain the following columns: ")
