@@ -273,8 +273,8 @@ class BaseField(BaseModel):
 
         component = self.base_component(
             id=id_,
-            **self.input_kwargs
-            | self._additional_kwargs(item=item, aio_id=aio_id, field=field, parent=parent, field_info=field_info)
+            **self._additional_kwargs(item=item, aio_id=aio_id, field=field, parent=parent, field_info=field_info)
+            | self.input_kwargs
             | value_kwarg,
         )
 
@@ -492,6 +492,10 @@ class NumberField(BaseField):
                 kwargs["max"] = meta.le
             if isinstance(meta, annotated_types.Lt):
                 kwargs["max"] = meta.lt - 1e-12
+            if isinstance(meta, annotated_types.MultipleOf):
+                kwargs["step"] = meta.multiple_of
+            if hasattr(meta, "decimal_places"):
+                kwargs["decimalScale"] = meta.decimal_places
 
         return kwargs
 
