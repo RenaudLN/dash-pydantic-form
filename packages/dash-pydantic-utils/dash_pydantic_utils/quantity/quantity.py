@@ -37,6 +37,11 @@ T = TypeVar("T")
 
 
 PREFIX_MULTIPLIERS = {
+    "y": 1e-24,
+    "z": 1e-21,
+    "a": 1e-18,
+    "f": 1e-15,
+    "p": 1e-12,
     "n": 1e-9,
     "u": 1e-6,
     "m": 1e-3,
@@ -48,6 +53,10 @@ PREFIX_MULTIPLIERS = {
     "M": 1e6,
     "G": 1e9,
     "T": 1e12,
+    "P": 1e15,
+    "E": 1e18,
+    "Z": 1e21,
+    "Y": 1e24,
 }
 
 
