@@ -845,6 +845,14 @@ class ChipGroupField(SelectField):
         return {"children": dmc.Stack(children, mt=mt, py="0.25rem", gap="0.5rem")}
 
 
+class AutocompleteField(SelectField):
+    """Autocomplete field."""
+
+    base_component = dmc.Autocomplete
+    options_labels: ClassVar[None] = None
+    """options_labels is not supported for AutocompleteField."""
+
+
 def check_fields_repr(fields_repr):
     """Fields repr validator function."""
     if any(not isinstance(x, dict | BaseField) for x in fields_repr.values()):
