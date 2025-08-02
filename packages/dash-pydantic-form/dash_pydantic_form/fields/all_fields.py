@@ -1,5 +1,6 @@
 import logging
 
+from .base_fields import AutocompleteField as Autocomplete
 from .base_fields import CheckboxField as Checkbox
 from .base_fields import ChecklistField as Checklist
 from .base_fields import ChipField as Chip
@@ -52,6 +53,7 @@ ModelList = deprecated_field_factory("ModelList", List)
 EditableTable = deprecated_field_factory("EditableTable", Table)
 
 __all__ = [
+    "Autocomplete",
     "Checkbox",
     "Checklist",
     "Chip",

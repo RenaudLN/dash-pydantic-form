@@ -196,7 +196,7 @@ dash_clientside.pydf = {
     return [((value * rateFrom + baseFrom) - baseTo) / rateTo, newUnit]
   },
   showPathFieldSkeletons: (n) => {
-    if (!n) return dash_clientside.no_update
+    if (!n) return [dash_clientside.no_update, dash_clientside.no_update]
 
     const skeleton = (props) => ({
       namespace: "dash_mantine_components",
