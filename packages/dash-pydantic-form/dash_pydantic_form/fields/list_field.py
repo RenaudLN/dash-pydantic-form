@@ -156,7 +156,7 @@ class ListField(BaseField):
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
-            value="uuid:" + uuid.uuid4().hex,
+            value=str(index),
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[
@@ -264,7 +264,7 @@ class ListField(BaseField):
                 for i, val in enumerate(value)
             ],
             id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
-            value=None,
+            value=wrapper_kwargs.pop("value", None),
             styles=styles,
             className=wrapper_class_name,
             **wrapper_kwargs,
