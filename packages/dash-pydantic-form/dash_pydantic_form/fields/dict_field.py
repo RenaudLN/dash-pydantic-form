@@ -18,9 +18,23 @@ from dash_pydantic_utils import Type, get_fullpath, get_str_discriminator
 
 
 class DictField(ListField):
-    """Dict field for dict of models or scalars."""
+    """Dict field for dict of models or scalars.
+
+    Optional attributes:
+    * render_type (one of 'accordion', 'modal', default 'accordion')
+        new render types can be defined by extending this class and overriding
+        the following methods: _contents_renderer and render_type_item_mapper
+    * key_suggestions, list of keys to suggest for the dict items
+    """
 
     render_type: Literal["accordion", "modal", "scalar"] = "accordion"
+    key_suggestions: list[str] | None = None
+
+    def model_post_init(self, _context):
+        """Model post init."""
+        super().model_post_init(_context)
+        if self.key_suggestions:
+            self.input_kwargs["key_suggestions"] = self.key_suggestions
 
     class ids(ListField.ids):
         """Dict field ids."""
@@ -42,9 +56,11 @@ class DictField(ListField):
         items_deletable: bool = True,
         read_only: bool | None = None,
         value: str | None = None,
+        input_kwargs: dict,
         **kwargs,
     ):
         """Create an item with bare forms for the model dict field."""
+        key_suggestions = input_kwargs.pop("key_suggestions", None)
         contents = super().accordion_item(
             item=item,
             aio_id=aio_id,
@@ -60,7 +76,15 @@ class DictField(ListField):
             **kwargs,
         )
         contents.children[0].children[0] = cls.key_input(
-            aio_id, form_id, field, parent, index, key=value, read_only=read_only, w="calc(100% - 3.5rem)"
+            aio_id,
+            form_id,
+            field,
+            parent,
+            index,
+            key=value,
+            read_only=read_only,
+            w="calc(100% - 3.5rem)",
+            key_suggestions=key_suggestions,
         )
         return contents
 
@@ -80,9 +104,11 @@ class DictField(ListField):
         form_layout: FormLayout | None = None,
         items_deletable: bool = True,
         read_only: bool | None = None,
+        input_kwargs: dict,
         **kwargs,
     ):
         """Create an item with bare forms for the model dict field."""
+        key_suggestions = input_kwargs.pop("key_suggestions", None)
         contents = super().modal_item(
             item=item,
             aio_id=aio_id,
@@ -99,7 +125,15 @@ class DictField(ListField):
             **kwargs,
         )
         contents.children.children[0] = cls.key_input(
-            aio_id, form_id, field, parent, index, key=value, read_only=read_only, style={"flex": 1}
+            aio_id,
+            form_id,
+            field,
+            parent,
+            index,
+            key=value,
+            read_only=read_only,
+            style={"flex": 1},
+            key_suggestions=key_suggestions,
         )
         return contents
 
@@ -120,6 +154,7 @@ class DictField(ListField):
         **kwargs,
     ):
         """Create an item for a scalar dict."""
+        key_suggestions = input_kwargs.pop("key_suggestions", None)
         contents = super().scalar_item(
             item=item,
             aio_id=aio_id,
@@ -135,7 +170,15 @@ class DictField(ListField):
         )
         contents.children = [
             cls.key_input(
-                aio_id, form_id, field, parent, index, key=value, read_only=read_only, style={"flex": "0 0 30%"}
+                aio_id,
+                form_id,
+                field,
+                parent,
+                index,
+                key=value,
+                read_only=read_only,
+                style={"flex": "0 0 30%"},
+                key_suggestions=key_suggestions,
             ),
             dmc.Text(":", pl="0.25rem", pr="0.5rem", fw=500, lh=2),
         ] + contents.children
@@ -151,15 +194,18 @@ class DictField(ListField):
         index: int,
         key: str | None = None,
         read_only: bool | None = None,
+        key_suggestions: list[str] | None = None,
         **input_kwargs,
     ):
         """Create an input for the key of a dict item."""
-        return dmc.TextInput(
+        return dmc.Autocomplete(
             placeholder="Key",
             id=cls.ids.item_key(aio_id, form_id, field, parent=parent, meta=index),
             leftSection=DashIconify(icon="fe:key"),
             value=key,
             readOnly=read_only,
+            data=key_suggestions,
+            selectFirstOptionOnChange=True,
             **input_kwargs,
         )
 
