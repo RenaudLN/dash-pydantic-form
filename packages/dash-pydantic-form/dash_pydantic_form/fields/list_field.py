@@ -143,6 +143,7 @@ class ListField(BaseField):
         form_cols: int = 4,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
+        _value_uid: str | None = None,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
@@ -151,12 +152,10 @@ class ListField(BaseField):
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
 
-        value_uid = "uuid:" + uuid.uuid4().hex
-
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
-            value=value_uid,
+            value=_value_uid,
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[
@@ -197,7 +196,7 @@ class ListField(BaseField):
                     ),
                 ),
             ],
-        ), value_uid
+        )
 
     @classmethod
     def accordion_items(  # noqa: PLR0913
@@ -245,34 +244,44 @@ class ListField(BaseField):
         )
 
         items = []
-        first_uid = None
+        opened_value = [] if wrapper_kwargs.get("multiple", False) else None
+        passed_opened_value = wrapper_kwargs.pop("initially_opened_value", None)
         for i, val in enumerate(value):
-            list_item, value_uid = cls.accordion_item(
-                    item=item,
-                    aio_id=aio_id,
-                    form_id=form_id,
-                    field=field,
-                    parent=parent,
-                    index=i,
-                    value=val,
-                    fields_repr=fields_repr,
-                    form_layout=form_layout,
-                    items_deletable=items_deletable,
-                    read_only=read_only,
-                    discriminator=discriminator,
-                    form_cols=form_cols,
-                    excluded_fields=excluded_fields,
-                    fields_order=fields_order,
-                    input_kwargs=input_kwargs,
-                )
+            value_uid = "uuid:" + uuid.uuid4().hex
+            list_item = cls.accordion_item(
+                item=item,
+                aio_id=aio_id,
+                form_id=form_id,
+                field=field,
+                parent=parent,
+                index=i,
+                value=val,
+                fields_repr=fields_repr,
+                form_layout=form_layout,
+                items_deletable=items_deletable,
+                read_only=read_only,
+                discriminator=discriminator,
+                form_cols=form_cols,
+                excluded_fields=excluded_fields,
+                fields_order=fields_order,
+                _value_uid=value_uid,
+                input_kwargs=input_kwargs,
+            )
             items.append(list_item)
-            if i == 0:
-                first_uid = value_uid
+            if passed_opened_value is not None:
+                if wrapper_kwargs.get("multiple", False):
+                    if isinstance(passed_opened_value, list):
+                        if i in passed_opened_value:
+                            opened_value.append(value_uid)
+                    elif passed_opened_value == i:
+                        opened_value.append(value_uid)
+                elif passed_opened_value == i:
+                    opened_value = value_uid
 
         return dmc.Accordion(
             items,
             id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
-            value=first_uid or None if wrapper_kwargs.pop("initially_opened_items", False) else None,
+            value=opened_value,
             styles=styles,
             className=wrapper_class_name,
             **wrapper_kwargs,
@@ -763,7 +772,6 @@ class ListField(BaseField):
             fields_order=self.fields_order,
         )
 
-        template = template[0] if isinstance(template, tuple) else template
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 

@@ -5,6 +5,7 @@ from typing import Literal
 
 import dash_mantine_components as dmc
 from dash import Dash, Input, Output
+from dash.testing.wait import until
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
 from tests.utils import (
@@ -17,8 +18,6 @@ from tests.utils import (
     set_select,
     stringify_id,
 )
-
-from dash.testing.wait import until
 
 from dash_pydantic_form import ModelForm, fields, ids
 
@@ -226,7 +225,10 @@ def test_bf0006_store_progress_notify(dash_duo):
     for field in ["a", "b"]:
         fid = ids.value_field(aio_id, form_id, field)
         str_id = stringify_id(fid)
-        until(lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]), timeout=3)
+        until(
+            lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]),
+            timeout=3,
+        )
 
     dash_duo.driver.refresh()
     dash_duo.wait_for_page()
@@ -237,8 +239,10 @@ def test_bf0006_store_progress_notify(dash_duo):
     for field in ["a", "b"]:
         fid = ids.value_field(aio_id, form_id, field)
         str_id = stringify_id(fid)
-        until(lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]),
-              timeout=3)
+        until(
+            lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]),
+            timeout=3,
+        )
 
     dash_duo.driver.refresh()
     dash_duo.wait_for_page()

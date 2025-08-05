@@ -61,7 +61,7 @@ class DictField(ListField):
     ):
         """Create an item with bare forms for the model dict field."""
         key_suggestions = input_kwargs.pop("key_suggestions", None)
-        contents, _ = super().accordion_item(
+        contents = super().accordion_item(
             item=item,
             aio_id=aio_id,
             form_id=form_id,
