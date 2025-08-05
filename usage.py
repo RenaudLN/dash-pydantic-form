@@ -168,7 +168,10 @@ class Employee(BaseModel):
     metadata: Metadata | None = Field(title="Employee metadata", default=None)
     pets: list[Pet] = Field(title="Pets", description="Employee pets", default_factory=list)
     jobs: list[str] = Field(
-        title="Past jobs", description="List of previous jobs the employee has held", default_factory=list
+        title="Past jobs",
+        description="List of previous jobs the employee has held",
+        default_factory=list,
+        repr_kwargs={"items_deletable": False},
     )
 
 
