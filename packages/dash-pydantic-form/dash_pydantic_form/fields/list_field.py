@@ -143,12 +143,11 @@ class ListField(BaseField):
         form_cols: int = 4,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
+        _value_uid: str | None = None,
         **_kwargs,
     ):
         """Create an accordion item for the model list field."""
         from dash_pydantic_form import ModelForm
-
-        new_parent = get_fullpath(parent, field, index)
 
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
@@ -156,7 +155,7 @@ class ListField(BaseField):
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
-            value="uuid:" + uuid.uuid4().hex,
+            value=_value_uid,
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[
@@ -243,30 +242,43 @@ class ListField(BaseField):
             },
             wrapper_kwargs.pop("styles", {}),
         )
+
+        items = []
+        opened_value = [] if wrapper_kwargs.get("multiple", False) else None
+        passed_opened_value = wrapper_kwargs.pop("initially_opened_value", None)
+        for i, val in enumerate(value):
+            value_uid = "uuid:" + uuid.uuid4().hex
+            list_item = cls.accordion_item(
+                item=item,
+                aio_id=aio_id,
+                form_id=form_id,
+                field=field,
+                parent=parent,
+                index=i,
+                value=val,
+                fields_repr=fields_repr,
+                form_layout=form_layout,
+                items_deletable=items_deletable,
+                read_only=read_only,
+                discriminator=discriminator,
+                form_cols=form_cols,
+                excluded_fields=excluded_fields,
+                fields_order=fields_order,
+                _value_uid=value_uid,
+                input_kwargs=input_kwargs,
+            )
+            items.append(list_item)
+            if passed_opened_value is not None:
+                if wrapper_kwargs.get("multiple", False):
+                    if (isinstance(passed_opened_value, list) and i in passed_opened_value) or passed_opened_value == i:
+                        opened_value.append(value_uid)
+                elif passed_opened_value == i:
+                    opened_value = value_uid
+
         return dmc.Accordion(
-            [
-                cls.accordion_item(
-                    item=item,
-                    aio_id=aio_id,
-                    form_id=form_id,
-                    field=field,
-                    parent=parent,
-                    index=i,
-                    value=val,
-                    fields_repr=fields_repr,
-                    form_layout=form_layout,
-                    items_deletable=items_deletable,
-                    read_only=read_only,
-                    discriminator=discriminator,
-                    form_cols=form_cols,
-                    excluded_fields=excluded_fields,
-                    fields_order=fields_order,
-                    input_kwargs=input_kwargs,
-                )
-                for i, val in enumerate(value)
-            ],
+            items,
             id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
-            value=None,
+            value=opened_value,
             styles=styles,
             className=wrapper_class_name,
             **wrapper_kwargs,
@@ -757,6 +769,7 @@ class ListField(BaseField):
             excluded_fields=self.excluded_fields,
             fields_order=self.fields_order,
         )
+
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 
