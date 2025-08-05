@@ -182,3 +182,48 @@ def test_li0004_model_list_first_opened(dash_duo):
     input1 = dash_duo.driver.find_element(By.ID, stringify_id(ids.value_field(aio_id, form_id, "name", parent="a:1")))
     assert input0.is_displayed()
     assert not input1.is_displayed()
+
+def test_li0005_model_list_first_opened(dash_duo):
+    """Test a model list with initially opened items."""
+
+    class Nested(BaseModel):
+        name: str | None = Field(
+            default=None,
+            title="Name",
+            description="Enter a name",
+        )
+
+    class Basic(BaseModel):
+        a: list[Nested] = Field(repr_kwargs=dict(wrapper_kwargs={"initially_opened_value": [0,2],
+                                                                 'multiple': True}))
+
+    app = Dash(__name__)
+    item = Basic(**{"a": [{"name": "Item 1"}, {"name": "Item 2"}, {"name": "Item 3"}]})
+    aio_id = "aio"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(
+        [
+            ModelForm(item, aio_id=aio_id, form_id=form_id),
+            dmc.Text(id="output"),
+        ],
+    )
+
+    @app.callback(
+        Output("output", "children"),
+        Input(ModelForm.ids.main(aio_id, form_id), "data"),
+    )
+    def display(form_data):
+        return json.dumps(form_data)
+
+    dash_duo.start_server(app)
+
+    # Check that the output contains the initial values
+    dash_duo.wait_for_text_to_equal("#output", '{"a": [{"name": "Item 1"}, {"name": "Item 2"}, {"name": "Item 3"}]}')
+
+    # Optionally, check that the input fields for both items are present and visible
+    input0 = dash_duo.driver.find_element(By.ID, stringify_id(ids.value_field(aio_id, form_id, "name", parent="a:0")))
+    input1 = dash_duo.driver.find_element(By.ID, stringify_id(ids.value_field(aio_id, form_id, "name", parent="a:1")))
+    input2 = dash_duo.driver.find_element(By.ID, stringify_id(ids.value_field(aio_id, form_id, "name", parent="a:2")))
+    assert input0.is_displayed()
+    assert not input1.is_displayed()
+    assert input2.is_displayed()

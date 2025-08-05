@@ -75,7 +75,6 @@ class DictField(ListField):
             read_only=read_only,
             **kwargs,
         )
-
         contents.children[0].children[0] = cls.key_input(
             aio_id,
             form_id,
