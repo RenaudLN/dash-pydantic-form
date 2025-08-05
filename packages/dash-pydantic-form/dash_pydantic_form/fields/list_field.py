@@ -219,6 +219,7 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
+        input_kwargs: dict,
         **_kwargs,
     ):
         """Create a list of accordion items."""
@@ -260,6 +261,7 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
+                    input_kwargs=input_kwargs,
                 )
                 for i, val in enumerate(value)
             ],
@@ -346,6 +348,7 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
+        input_kwargs: dict,
         **_kwargs,
     ):
         """Create a list of list items."""
@@ -367,6 +370,7 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
+                    input_kwargs=input_kwargs,
                 )
                 for i, _ in enumerate(value)
             ],
@@ -501,6 +505,7 @@ class ListField(BaseField):
         wrapper_kwargs: dict,
         excluded_fields: list[str] | None = None,
         fields_order: list[str] | None = None,
+        input_kwargs: dict,
         **_kwargs,
     ):
         """Create a list of modal items."""
@@ -532,6 +537,7 @@ class ListField(BaseField):
                     form_cols=form_cols,
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
+                    input_kwargs=input_kwargs,
                 )
                 for i, val in enumerate(value)
             ],
