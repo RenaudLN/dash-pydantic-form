@@ -45,7 +45,7 @@ class DictField(ListField):
         **kwargs,
     ):
         """Create an item with bare forms for the model dict field."""
-        contents = super().accordion_item(
+        contents, _ = super().accordion_item(
             item=item,
             aio_id=aio_id,
             form_id=form_id,
@@ -59,6 +59,7 @@ class DictField(ListField):
             read_only=read_only,
             **kwargs,
         )
+
         contents.children[0].children[0] = cls.key_input(
             aio_id, form_id, field, parent, index, key=value, read_only=read_only, w="calc(100% - 3.5rem)"
         )

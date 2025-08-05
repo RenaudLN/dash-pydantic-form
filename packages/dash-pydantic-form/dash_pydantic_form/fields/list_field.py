@@ -149,14 +149,14 @@ class ListField(BaseField):
         from dash_pydantic_form import ModelForm
 
         new_parent = get_fullpath(parent, field, index)
-
-        new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
+
+        value_uid = "uuid:" + uuid.uuid4().hex
 
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
-            value=str(index),
+            value=value_uid,
             style={"position": "relative"},
             className="pydf-model-list-accordion-item",
             children=[
@@ -197,7 +197,7 @@ class ListField(BaseField):
                     ),
                 ),
             ],
-        )
+        ), value_uid
 
     @classmethod
     def accordion_items(  # noqa: PLR0913
@@ -242,9 +242,11 @@ class ListField(BaseField):
             },
             wrapper_kwargs.pop("styles", {}),
         )
-        return dmc.Accordion(
-            [
-                cls.accordion_item(
+
+        items = []
+        first_uid = None
+        for i, val in enumerate(value):
+            list_item, value_uid = cls.accordion_item(
                     item=item,
                     aio_id=aio_id,
                     form_id=form_id,
@@ -261,10 +263,14 @@ class ListField(BaseField):
                     excluded_fields=excluded_fields,
                     fields_order=fields_order,
                 )
-                for i, val in enumerate(value)
-            ],
+            items.append(list_item)
+            if i == 0:
+                first_uid = value_uid
+
+        return dmc.Accordion(
+            items,
             id=cls.ids.wrapper(aio_id, form_id, field, parent=parent),
-            value=wrapper_kwargs.pop("value", None),
+            value=first_uid or None if wrapper_kwargs.pop("initially_opened_items", False) else None,
             styles=styles,
             className=wrapper_class_name,
             **wrapper_kwargs,
@@ -750,6 +756,8 @@ class ListField(BaseField):
             excluded_fields=self.excluded_fields,
             fields_order=self.fields_order,
         )
+
+        template = template[0] if isinstance(template, tuple) else template
         title = self.get_title(field_info, field_name=field)
         description = self.get_description(field_info)
 
