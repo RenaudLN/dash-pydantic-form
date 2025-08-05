@@ -226,7 +226,8 @@ def test_bf0006_store_progress_notify(dash_duo):
         fid = ids.value_field(aio_id, form_id, field)
         str_id = stringify_id(fid)
         until(
-            lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]),
+            lambda str_id=str_id, field=field: dash_duo.driver.find_element(By.ID, str_id).get_property("value")
+            == str(basic_data[field]),
             timeout=3,
         )
 
@@ -240,7 +241,8 @@ def test_bf0006_store_progress_notify(dash_duo):
         fid = ids.value_field(aio_id, form_id, field)
         str_id = stringify_id(fid)
         until(
-            lambda: dash_duo.driver.find_element(By.ID, str_id).get_property("value") == str(basic_data[field]),
+            lambda str_id=str_id, field=field: dash_duo.driver.find_element(By.ID, str_id).get_property("value")
+            == str(basic_data[field]),
             timeout=3,
         )
 

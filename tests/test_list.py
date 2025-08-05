@@ -1,6 +1,5 @@
 import json
 from datetime import date, time
-from typing import Optional
 
 import dash_mantine_components as dmc
 from dash import Dash, Input, Output
@@ -152,7 +151,7 @@ def test_li0004_model_list_first_opened(dash_duo):
         )
 
     class Basic(BaseModel):
-        a: list[Nested] = Field(repr_kwargs=dict(wrapper_kwargs={"initially_opened_value": 0}))
+        a: list[Nested] = Field(repr_kwargs={"wrapper_kwargs": {"initially_opened_value": 0}})
 
     app = Dash(__name__)
     item = Basic(**{"a": [{"name": "Item 1"}, {"name": "Item 2"}]})
@@ -183,6 +182,7 @@ def test_li0004_model_list_first_opened(dash_duo):
     assert input0.is_displayed()
     assert not input1.is_displayed()
 
+
 def test_li0005_model_list_first_opened(dash_duo):
     """Test a model list with initially opened items."""
 
@@ -194,8 +194,7 @@ def test_li0005_model_list_first_opened(dash_duo):
         )
 
     class Basic(BaseModel):
-        a: list[Nested] = Field(repr_kwargs=dict(wrapper_kwargs={"initially_opened_value": [0,2],
-                                                                 'multiple': True}))
+        a: list[Nested] = Field(repr_kwargs={"wrapper_kwargs": {"initially_opened_value": [0, 2], "multiple": True}})
 
     app = Dash(__name__)
     item = Basic(**{"a": [{"name": "Item 1"}, {"name": "Item 2"}, {"name": "Item 3"}]})

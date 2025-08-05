@@ -270,10 +270,7 @@ class ListField(BaseField):
             items.append(list_item)
             if passed_opened_value is not None:
                 if wrapper_kwargs.get("multiple", False):
-                    if isinstance(passed_opened_value, list):
-                        if i in passed_opened_value:
-                            opened_value.append(value_uid)
-                    elif passed_opened_value == i:
+                    if (isinstance(passed_opened_value, list) and i in passed_opened_value) or passed_opened_value == i:
                         opened_value.append(value_uid)
                 elif passed_opened_value == i:
                     opened_value = value_uid
