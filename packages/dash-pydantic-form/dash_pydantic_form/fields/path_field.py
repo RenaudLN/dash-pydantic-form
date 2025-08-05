@@ -436,7 +436,8 @@ def update_filetree(  # noqa: PLR0913
     if path_type == "glob":
         path_type = "directory"
 
-    vals: list[dict] = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True)
+    refresh_ls = isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("component") == "_pydf-path-field-nav"
+    vals: list[dict] = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True, refresh=refresh_ls)
 
     filtered_vals = []
     for val in vals:
