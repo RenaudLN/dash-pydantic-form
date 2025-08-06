@@ -274,7 +274,8 @@ class DictField(ListField):
             opened=True,
             fields_repr=self.fields_repr,
             form_layout=self.form_layout,
-            items_deletable=self.items_deletable,
+            # The template items (used when adding new ones) should always be deletable
+            items_deletable=True,
             read_only=self.read_only,
             input_kwargs=self.input_kwargs,
             discriminator=discriminator,
