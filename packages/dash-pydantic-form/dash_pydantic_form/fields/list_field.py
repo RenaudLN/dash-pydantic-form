@@ -119,9 +119,14 @@ class ListField(BaseField):
 
     @staticmethod
     def get_value_str(value: Any):
-        """Get value string."""
-        if isinstance(value, BaseModel) and "name" in value.model_fields and getattr(value, "name", None):
-            return str(value.name)
+        """Get value string, using custom __str__ if present."""
+        if isinstance(value, BaseModel):
+            # Check if __str__ is custom (not BaseModel.__str__)
+            if type(value).__str__ is not BaseModel.__str__:
+                return str(value)
+            # Fallback: use 'name' if present
+            if "name" in value.model_fields and getattr(value, "name", None):
+                return str(value.name)
         return str(value)
 
     @classmethod
