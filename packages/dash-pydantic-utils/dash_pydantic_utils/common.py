@@ -63,10 +63,7 @@ def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
     if DEV_CONFIG.get("find_model_class"):
         match = re.match(r"<class '.*\.(\w+)'>", str_repr.strip())
-        if match:
-            stripped_name = match.group(1)
-        else:
-            stripped_name = str_repr.strip()
+        stripped_name = match.group(1) if match else str_repr.strip()
         model = DEV_CONFIG.get("find_model_class")(stripped_name)
         if model:
             return model
