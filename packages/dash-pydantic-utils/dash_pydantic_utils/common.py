@@ -61,13 +61,16 @@ def get_all_subclasses(cls: type):
 
 def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
-    if DEV_CONFIG.get("find_model_class"):
-        match = re.match(r"<class '.*\.(\w+)'>", str_repr.strip())
-        stripped_name = match.group(1) if match else str_repr.strip()
-        model = DEV_CONFIG.get("find_model_class")(stripped_name)
-        if model:
-            return model
-    return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
+    try:
+        if DEV_CONFIG.get("find_model_class"):
+            match = re.match(r"<class '.*\.(\w+)'>", str_repr.strip())
+            stripped_name = match.group(1) if match else str_repr.strip()
+            model = DEV_CONFIG.get("find_model_class")(stripped_name)
+            if model:
+                return model
+        return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
+    except (StopIteration, KeyError, AttributeError) as exc:
+        raise ValueError(f"Could not find a model class for identifier '{str_repr}'.") from exc
 
 
 def is_subclass(cls: Any, base_cls: type | UnionType) -> bool:
