@@ -1,4 +1,5 @@
 from .common import (
+    DEV_CONFIG,
     deep_diff,
     deep_merge,
     get_all_subclasses,
@@ -22,6 +23,7 @@ from .quantity import Quantity, QuantityDtype
 from .types import Type, get_discriminator_from_annotated, get_str_discriminator
 
 __all__ = [
+    "DEV_CONFIG",
     "convert_root_to_base_model",
     "deep_diff",
     "deep_merge",
