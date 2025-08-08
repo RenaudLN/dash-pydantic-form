@@ -2,8 +2,7 @@ import json
 from typing import Any
 
 import dash_mantine_components as dmc
-import flask
-from dash import Dash, Input, Output, html
+from dash import Dash, Input, Output
 from pydantic import BaseModel, Field, create_model
 from selenium.webdriver.common.by import By
 
