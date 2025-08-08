@@ -1,11 +1,11 @@
 from .common import (
+    DEV_CONFIG,
     deep_diff,
     deep_merge,
     get_all_subclasses,
     get_model_cls,
     get_non_null_annotation,
     is_subclass,
-    DEV_CONFIG
 )
 from .path import (
     SEP,

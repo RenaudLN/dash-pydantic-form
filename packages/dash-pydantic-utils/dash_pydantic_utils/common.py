@@ -1,12 +1,14 @@
+from collections.abc import Callable
 from copy import deepcopy
 from types import UnionType
-from typing import Any, Union, get_args, get_origin, Callable
+from typing import Any, Union, get_args, get_origin
 
 from pydantic import BaseModel
 
 find_model_class: Callable[[str], type[BaseModel]] | None = None
 
 DEV_CONFIG = {"find_model_class": find_model_class}
+
 
 def deep_merge(dict1: dict, dict2: dict) -> dict:
     """Deep merge two dictionaries, the second input is given priority."""
