@@ -5,6 +5,7 @@ from .common import (
     get_model_cls,
     get_non_null_annotation,
     is_subclass,
+    DEV_CONFIG
 )
 from .path import (
     SEP,
@@ -22,6 +23,7 @@ from .quantity import Quantity, QuantityDtype
 from .types import Type, get_discriminator_from_annotated, get_str_discriminator
 
 __all__ = [
+    "DEV_CONFIG",
     "convert_root_to_base_model",
     "deep_diff",
     "deep_merge",

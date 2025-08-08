@@ -1,9 +1,12 @@
 from copy import deepcopy
 from types import UnionType
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin, Callable
 
 from pydantic import BaseModel
 
+find_model_class: Callable[[str], type[BaseModel]] | None = None
+
+DEV_CONFIG = {"find_model_class": find_model_class}
 
 def deep_merge(dict1: dict, dict2: dict) -> dict:
     """Deep merge two dictionaries, the second input is given priority."""
@@ -55,6 +58,10 @@ def get_all_subclasses(cls: type):
 
 def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
+    if DEV_CONFIG.get("find_model_class"):
+        model = DEV_CONFIG.get("find_model_class")(str_repr)
+        if model:
+            return model
     return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
 
 
