@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from copy import deepcopy
 from types import UnionType
@@ -61,7 +62,12 @@ def get_all_subclasses(cls: type):
 def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
     if DEV_CONFIG.get("find_model_class"):
-        model = DEV_CONFIG.get("find_model_class")(str_repr)
+        match = re.match(r"<class '.*\.(\w+)'>", str_repr.strip())
+        if match:
+            stripped_name = match.group(1)
+        else:
+            stripped_name = str_repr.strip()
+        model = DEV_CONFIG.get("find_model_class")(stripped_name)
         if model:
             return model
     return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
