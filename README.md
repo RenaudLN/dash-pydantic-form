@@ -344,7 +344,7 @@ form = ModelForm(
 
 ## Custom Model Lookup
 
-In some advanced use-cases, you might need to customize how model classes are resolved—such as when restoring forms from serialized state, using dynamic imports, or working with model registries.  
+In some advanced use-cases, you might need to customize how model classes are resolved—such as when restoring forms from serialized state, using dynamic imports, or working with model registries.
 You can now provide your own model-finding logic via the `DEV_CONFIG` dictionary in `dash_pydantic_utils.common`.
 
 **How to use:**
