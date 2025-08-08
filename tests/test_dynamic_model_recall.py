@@ -171,7 +171,6 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
         [
             ModelForm(BasicForm, aio_id=aio_id, form_id=form_id),
             dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
-            dmc.Button("ping", id="ping"),
             dmc.Text(id="output"),
         ]
     )
