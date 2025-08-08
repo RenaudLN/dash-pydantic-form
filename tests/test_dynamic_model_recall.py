@@ -4,11 +4,45 @@ from typing import Any
 import dash_mantine_components as dmc
 import flask
 from dash import Dash, Input, Output, html
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, Field, create_model
 from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ModelForm
 from dash_pydantic_utils import DEV_CONFIG
+
+called = {"value": False}
+
+cached_models = {
+    "Employees1": {
+        "$defs": {
+            "Employee1": {
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "age": {"title": "Age", "type": "integer"},
+                    "is_active": {"default": True, "title": "Is Active", "type": "boolean"},
+                },
+                "required": ["name", "age"],
+                "title": "Employee1",
+                "type": "object",
+            }
+        },
+        "properties": {"employees": {"items": {"$ref": "#/$defs/Employee1"}, "title": "Employees", "type": "array"}},
+        "required": ["employees"],
+        "title": "Employees1",
+        "type": "object",
+    }
+}
+
+
+def find_model_class_test(model_name: str):
+    """Find and return the Employees model class."""
+    called["value"] = True
+    if model_name == "Employees":
+        return create_employees_model()
+    return None
+
+
+DEV_CONFIG["find_model_class"] = find_model_class_test
 
 
 def create_employees_model():
@@ -26,22 +60,51 @@ def create_employees_model():
     )
 
 
-called = {"value": False}
+def cache_model_and_dependencies(model, cache):
+    """Cache the model and its JSON schema, including definitions."""
+    schema = model.model_json_schema()
+    cache[model.__name__] = schema
+    definitions = schema.get("definitions", {})
+    for def_name, def_schema in definitions.items():
+        if def_name not in cache:
+            cache[def_name] = def_schema
 
 
-def find_model_class_test(model_name: str):
-    """Find and return the Employees model class."""
-    called["value"] = True
-    if model_name == "Employees":
-        return create_employees_model()
-    return None
-
-
-DEV_CONFIG["find_model_class"] = find_model_class_test
+def reconstruct_model_from_schema(schema, definitions):
+    """Reconstruct a Pydantic model from a JSON schema."""
+    type_map = {
+        "string": str,
+        "integer": int,
+        "number": float,
+        "boolean": bool,
+        "object": dict,
+        "array": list,
+        "null": type(None),
+        "any": object,
+    }
+    fields = {}
+    for field_name, field_info in schema.get("properties", {}).items():
+        if "$ref" in field_info:
+            ref = field_info["$ref"].split("/")[-1]
+            nested_schema = definitions[ref]
+            py_type = reconstruct_model_from_schema(nested_schema, definitions)
+        elif field_info.get("type") == "array" and "items" in field_info:
+            items = field_info["items"]
+            if "$ref" in items:
+                ref = items["$ref"].split("/")[-1]
+                item_model = reconstruct_model_from_schema(definitions[ref], definitions)
+                py_type = list[item_model]
+            else:
+                py_type = list
+        else:
+            py_type = type_map.get(field_info.get("type"), str)
+        field_args = {k: v for k, v in field_info.items() if k not in ("type", "items", "title", "$ref")}
+        fields[field_name] = (py_type, Field(**field_args))
+    return create_model(schema["title"], **fields)
 
 
 def test_dmr0001_dynamic_model_recall(dash_duo):
-    """Test a form with a simple RootModel."""
+    """Test a form with a simple dynamic model."""
 
     class Employees(BaseModel):
         name: str
@@ -84,29 +147,38 @@ def test_dmr0001_dynamic_model_recall(dash_duo):
 
 
 def test_dmr0002_dynamic_model_recall(dash_duo):
-    """Test a form with a simple RootModel."""
-    app = Dash(__name__)
+    """Test a form with a simple dynamic model that reloads from a cached schema."""
+
+    # Function to find and load model from cache
+    def find_cached_model_class(model_name: str):
+        """Find and return a cached model class by its name."""
+        cached_model = cached_models.get(model_name)
+        if cached_model:
+            called["value"] = True
+            return reconstruct_model_from_schema(cached_model, cached_model.get("$defs", {}))
+        return None
+
+    DEV_CONFIG["find_model_class"] = find_cached_model_class
+
+    app = Dash(__name__, suppress_callback_exceptions=True)
     aio_id = "test"
     form_id = "test"
 
-    def layout():
-        """Define the layout of the app."""
-        if not flask.request:
-            return html.Div("This test requires a Flask request context.")
+    class BasicForm(BaseModel):
+        name: str
 
-        form = ModelForm(create_employees_model(), aio_id=aio_id, form_id=form_id)
-        return dmc.MantineProvider(
-            [
-                form,
-                dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
-                dmc.Text(id="output"),
-            ]
-        )
-
-    app.layout = layout
+    app.layout = dmc.MantineProvider(
+        [
+            ModelForm(BasicForm, aio_id=aio_id, form_id=form_id),
+            dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
+            dmc.Button("ping", id="ping"),
+            dmc.Text(id="output"),
+        ]
+    )
 
     @app.callback(
         Output(ModelForm.ids.form(aio_id, form_id), "data-update", allow_duplicate=True),
+        Output(ModelForm.ids.model_store(aio_id, form_id), "data", allow_duplicate=True),
         Input("load-saved-data", "n_clicks"),
         prevent_initial_call=True,
     )
@@ -114,7 +186,7 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
         """Load saved data into the form."""
         # Simulate loading data from a source
         saved_data = {"employees": [{"name": "John Doe"}]}
-        return saved_data
+        return saved_data, "Employees1"
 
     @app.callback(
         Output("output", "children"),
@@ -124,13 +196,6 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
         return json.dumps(form_data)
 
     dash_duo.start_server(app)
-    port = dash_duo.server.port
-    dash_duo.driver.find_element(By.ID, "load-saved-data")
-    dash_duo.server.stop()
-    dash_duo.server.start(app, port=port)
-    import time
-
-    time.sleep(5)  # Allow the server to start properly
     load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
     load_btn.click()
     dash_duo.wait_for_text_to_equal("#output", '{"employees": [{"name": "John Doe", "is_active": true}]}', timeout=10)
