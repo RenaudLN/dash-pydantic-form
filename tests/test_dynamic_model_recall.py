@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 import dash_mantine_components as dmc
-from dash import Dash, Input, Output
+from dash import Dash, Input, Output, State
 from pydantic import BaseModel, Field, create_model
 from selenium.webdriver.common.by import By
 
@@ -153,7 +153,6 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
         """Find and return a cached model class by its name."""
         cached_model = cached_models.get(model_name)
         if cached_model:
-            called["value"] = True
             return reconstruct_model_from_schema(cached_model, cached_model.get("$defs", {}))
         return None
 
@@ -170,6 +169,7 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
         [
             ModelForm(BasicForm, aio_id=aio_id, form_id=form_id),
             dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
+            dmc.Button("Test Data", id="test-data", variant="outline"),
             dmc.Text(id="output"),
         ]
     )
@@ -192,6 +192,20 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
     )
     def display(form_data):
         return json.dumps(form_data)
+
+    @app.callback(
+        Input("test-data", "n_clicks"),
+        State(ModelForm.ids.main(aio_id, form_id), "data"),
+        State(ModelForm.ids.model_store(aio_id, form_id), "data"),
+        prevent_initial_call=True,
+    )
+    def test_data(n_clicks, data, model_name):
+        """Test callback to verify data retrieval."""
+        if n_clicks:
+            mod = find_cached_model_class(model_name)
+            if mod:
+                mod.model_validate(data)
+                called["value"] = True
 
     dash_duo.start_server(app)
     load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
