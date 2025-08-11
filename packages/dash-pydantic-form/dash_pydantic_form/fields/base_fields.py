@@ -25,6 +25,7 @@ from dash_pydantic_utils import (
     get_fullpath,
     get_model_value,
     get_non_null_annotation,
+    is_subclass,
 )
 
 CHECKED_COMPONENTS = [
@@ -680,7 +681,7 @@ class SelectField(BaseField):
                 return self._get_data_list_recursive(annotation_args[0], **kwargs)
         elif get_origin(non_null_annotation) == Literal:
             data = list(get_args(non_null_annotation))
-        elif issubclass(non_null_annotation, Enum):
+        elif is_subclass(non_null_annotation, Enum):
             data = [{"value": x.value, "label": x.name} for x in non_null_annotation]
 
         return data
@@ -708,7 +709,9 @@ class SelectField(BaseField):
 
     def _additional_kwargs(self, **kwargs) -> dict:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
-        return {"data": self.data_gotten or self.input_kwargs.get("data", self._get_data(**kwargs))}
+        return {
+            "data": self.data_gotten if self.data_getter else self.input_kwargs.get("data", self._get_data(**kwargs))
+        }
 
     def _get_value_repr(self, value: Any, field_info: FieldInfo):
         value_repr = super()._get_value_repr(value, field_info)
