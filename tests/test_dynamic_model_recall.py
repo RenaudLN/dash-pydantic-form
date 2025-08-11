@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, create_model
 from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ModelForm
-from dash_pydantic_utils import DEV_CONFIG
+from dash_pydantic_utils import register_model_retrieval
 
 called = {"value": False}
 
@@ -41,7 +41,7 @@ def find_model_class_test(model_name: str):
     return None
 
 
-DEV_CONFIG["find_model_class"] = find_model_class_test
+register_model_retrieval(find_model_class_test)
 
 
 def create_employees_model():
@@ -157,7 +157,7 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
             return reconstruct_model_from_schema(cached_model, cached_model.get("$defs", {}))
         return None
 
-    DEV_CONFIG["find_model_class"] = find_cached_model_class
+    register_model_retrieval(find_cached_model_class)
 
     app = Dash(__name__, suppress_callback_exceptions=True)
     aio_id = "test"

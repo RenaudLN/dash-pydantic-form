@@ -6,9 +6,12 @@ from typing import Any, Union, get_args, get_origin
 
 from pydantic import BaseModel
 
-find_model_class: Callable[[str], type[BaseModel]] | None = None
+_DEV_CONFIG = {}
 
-DEV_CONFIG = {"find_model_class": find_model_class}
+
+def register_model_retrieval(func: Callable[[str], type[BaseModel]]) -> None:
+    """Register a function to find model classes by their string representation."""
+    _DEV_CONFIG["find_model_class"] = func
 
 
 def deep_merge(dict1: dict, dict2: dict) -> dict:
@@ -62,10 +65,11 @@ def get_all_subclasses(cls: type):
 def get_model_cls(str_repr: str) -> type[BaseModel]:
     """Get the model class from a string representation."""
     try:
-        if DEV_CONFIG.get("find_model_class"):
+        retrieval = _DEV_CONFIG.get("find_model_class")
+        if retrieval:
             match = re.match(r"<class '.*\.(\w+)'>", str_repr.strip())
             stripped_name = match.group(1) if match else str_repr.strip()
-            model = DEV_CONFIG.get("find_model_class")(stripped_name)
+            model = retrieval(stripped_name)
             if model:
                 return model
         return next(cls for cls in get_all_subclasses(BaseModel) if str(cls) == str_repr)
