@@ -1,4 +1,6 @@
 import json
+import re
+import time
 from typing import Any
 
 import dash_mantine_components as dmc
@@ -8,6 +10,7 @@ from selenium.webdriver.common.by import By
 
 from dash_pydantic_form import ModelForm
 from dash_pydantic_utils import register_model_retrieval
+from dash_pydantic_utils.common import _DEV_CONFIG
 
 called = {"value": False}
 
@@ -31,17 +34,6 @@ cached_models = {
         "type": "object",
     }
 }
-
-
-def find_model_class_test(model_name: str):
-    """Find and return the Employees model class."""
-    called["value"] = True
-    if model_name == "Employees":
-        return create_employees_model()
-    return None
-
-
-register_model_retrieval(find_model_class_test)
 
 
 def create_employees_model():
@@ -105,44 +97,61 @@ def reconstruct_model_from_schema(schema, definitions):
 def test_dmr0001_dynamic_model_recall(dash_duo):
     """Test a form with a simple dynamic model."""
 
-    class Employees(BaseModel):
-        name: str
+    def find_model_class_test(model_name: str):
+        """Find and return the Employees model class."""
+        called["value"] = True
+        if model_name == "Employees":
+            return create_employees_model()
+        return None
 
-    aio_id = "test"
-    form_id = "test"
-    form = ModelForm(Employees, aio_id=aio_id, form_id=form_id)
-    app = Dash(__name__)
-    app.layout = dmc.MantineProvider(
-        [
-            form,
-            dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
-            dmc.Text(id="output"),
-        ]
-    )
+    register_model_retrieval(find_model_class_test)
 
-    @app.callback(
-        Output(ModelForm.ids.form(aio_id, form_id), "data-update", allow_duplicate=True),
-        Input("load-saved-data", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def load_saved_data(_: int) -> Any:
-        """Load saved data into the form."""
-        # Simulate loading data from a source
-        saved_data = {"employees": [{"name": "John Doe"}]}
-        return saved_data
+    try:
 
-    @app.callback(
-        Output("output", "children"),
-        Input(ModelForm.ids.main(aio_id, form_id), "data"),
-    )
-    def display(form_data):
-        return json.dumps(form_data)
+        class Employees(BaseModel):
+            name: str
 
-    dash_duo.start_server(app)
-    load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
-    load_btn.click()
-    dash_duo.wait_for_text_to_equal("#output", '{"employees": [{"name": "John Doe", "is_active": true}]}', timeout=10)
-    assert called["value"], "find_model_class_test should have been called"
+        aio_id = "test"
+        form_id = "test"
+        form = ModelForm(Employees, aio_id=aio_id, form_id=form_id)
+        app = Dash(__name__)
+        app.layout = dmc.MantineProvider(
+            [
+                form,
+                dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
+                dmc.Text(id="output"),
+            ]
+        )
+
+        @app.callback(
+            Output(ModelForm.ids.form(aio_id, form_id), "data-update", allow_duplicate=True),
+            Input("load-saved-data", "n_clicks"),
+            prevent_initial_call=True,
+        )
+        def load_saved_data(_: int) -> Any:
+            """Load saved data into the form."""
+            # Simulate loading data from a source
+            saved_data = {"employees": [{"name": "John Doe", "age": 35}]}
+            return saved_data
+
+        @app.callback(
+            Output("output", "children"),
+            Input(ModelForm.ids.main(aio_id, form_id), "data"),
+        )
+        def display(form_data):
+            return json.dumps(form_data)
+
+        dash_duo.start_server(app)
+        load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
+        load_btn.click()
+        dash_duo.wait_for_text_to_equal(
+            "#output", '{"employees": [{"name": "John Doe", "age": 35, "is_active": true}]}', timeout=10
+        )
+        assert called["value"], "find_model_class_test should have been called"
+    finally:
+        # Clean up the registered model retrieval function
+        _DEV_CONFIG = {}
+        called["value"] = False
 
 
 def test_dmr0002_dynamic_model_recall(dash_duo):
@@ -158,57 +167,73 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
 
     register_model_retrieval(find_cached_model_class)
 
-    app = Dash(__name__, suppress_callback_exceptions=True)
-    aio_id = "test"
-    form_id = "test"
+    try:
+        app = Dash(__name__, suppress_callback_exceptions=True)
+        aio_id = "test"
+        form_id = "test"
 
-    class BasicForm(BaseModel):
-        name: str
+        class BasicForm(BaseModel):
+            name: str
 
-    app.layout = dmc.MantineProvider(
-        [
-            ModelForm(BasicForm, aio_id=aio_id, form_id=form_id),
-            dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
-            dmc.Button("Test Data", id="test-data", variant="outline"),
-            dmc.Text(id="output"),
-        ]
-    )
+        app.layout = dmc.MantineProvider(
+            [
+                ModelForm(BasicForm, aio_id=aio_id, form_id=form_id),
+                dmc.Button("Load Saved Data", id="load-saved-data", variant="outline"),
+                dmc.Button("Test Data", id="test-data", variant="outline"),
+                dmc.Text(id="output"),
+            ]
+        )
 
-    @app.callback(
-        Output(ModelForm.ids.form(aio_id, form_id), "data-update", allow_duplicate=True),
-        Output(ModelForm.ids.model_store(aio_id, form_id), "data", allow_duplicate=True),
-        Input("load-saved-data", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def load_saved_data(_: int) -> Any:
-        """Load saved data into the form."""
-        # Simulate loading data from a source
-        saved_data = {"employees": [{"name": "John Doe"}]}
-        return saved_data, "Employees1"
+        @app.callback(
+            Output(ModelForm.ids.form(aio_id, form_id), "data-update", allow_duplicate=True),
+            Output(ModelForm.ids.model_store(aio_id, form_id), "data", allow_duplicate=True),
+            Input("load-saved-data", "n_clicks"),
+            prevent_initial_call=True,
+        )
+        def load_saved_data(_: int) -> Any:
+            """Load saved data into the form."""
+            # Simulate loading data from a source
+            saved_data = {"employees": [{"name": "John Doe", "age": 35, "is_active": True}]}
+            return saved_data, "Employees1"
 
-    @app.callback(
-        Output("output", "children"),
-        Input(ModelForm.ids.main(aio_id, form_id), "data"),
-    )
-    def display(form_data):
-        return json.dumps(form_data)
+        @app.callback(
+            Output("output", "children"),
+            Input(ModelForm.ids.main(aio_id, form_id), "data"),
+        )
+        def display(form_data):
+            return json.dumps(form_data)
 
-    @app.callback(
-        Input("test-data", "n_clicks"),
-        State(ModelForm.ids.main(aio_id, form_id), "data"),
-        State(ModelForm.ids.model_store(aio_id, form_id), "data"),
-        prevent_initial_call=True,
-    )
-    def test_data(n_clicks, data, model_name):
-        """Test callback to verify data retrieval."""
-        if n_clicks:
-            mod = find_cached_model_class(model_name)
-            if mod:
-                mod.model_validate(data)
-                called["value"] = True
+        @app.callback(
+            Input("test-data", "n_clicks"),
+            State(ModelForm.ids.main(aio_id, form_id), "data"),
+            State(ModelForm.ids.model_store(aio_id, form_id), "data"),
+            prevent_initial_call=True,
+        )
+        def test_data(n_clicks, data, model_name):
+            """Test callback to verify data retrieval."""
+            if n_clicks:
+                match = re.match(r"<class '.*\.(\w+)'>", model_name.strip())
+                stripped_name = match.group(1) if match else model_name.strip()
+                mod = find_cached_model_class(stripped_name)
+                if mod:
+                    mod.model_validate(data)
+                    called["value"] = True
 
-    dash_duo.start_server(app)
-    load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
-    load_btn.click()
-    dash_duo.wait_for_text_to_equal("#output", '{"employees": [{"name": "John Doe", "is_active": true}]}', timeout=10)
-    assert called["value"], "find_model_class_test should have been called"
+                else:
+                    print(f"Model {stripped_name} not found in cache.")
+                    called["value"] = False
+
+        dash_duo.start_server(app)
+        load_btn = dash_duo.driver.find_element(By.ID, "load-saved-data")
+        load_btn.click()
+        time.sleep(1)
+        dash_duo.driver.find_element(By.ID, "test-data").click()
+        dash_duo.wait_for_text_to_equal(
+            "#output", '{"employees": [{"name": "John Doe", "age": 35, "is_active": true}]}', timeout=10
+        )
+        assert called["value"], "find_model_class_test should have been called"
+
+    finally:
+        # Clean up the registered model retrieval function
+        _DEV_CONFIG = {}
+        called["value"] = False
