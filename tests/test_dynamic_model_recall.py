@@ -104,6 +104,7 @@ def test_dmr0001_dynamic_model_recall(dash_duo):
             return create_employees_model()
         return None
 
+    original = _DEV_CONFIG.copy()
     register_model_retrieval(find_model_class_test)
 
     try:
@@ -150,7 +151,8 @@ def test_dmr0001_dynamic_model_recall(dash_duo):
         assert called["value"], "find_model_class_test should have been called"
     finally:
         # Clean up the registered model retrieval function
-        _DEV_CONFIG = {}
+        _DEV_CONFIG.clear()
+        _DEV_CONFIG.update(original)
         called["value"] = False
 
 
@@ -165,6 +167,7 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
             return reconstruct_model_from_schema(cached_model, cached_model.get("$defs", {}))
         return None
 
+    original = _DEV_CONFIG.copy()
     register_model_retrieval(find_cached_model_class)
 
     try:
@@ -235,5 +238,6 @@ def test_dmr0002_dynamic_model_recall(dash_duo):
 
     finally:
         # Clean up the registered model retrieval function
-        _DEV_CONFIG = {}
+        _DEV_CONFIG.clear()
+        _DEV_CONFIG.update(original)
         called["value"] = False
