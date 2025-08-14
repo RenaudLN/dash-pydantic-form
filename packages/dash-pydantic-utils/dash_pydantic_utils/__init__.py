@@ -5,6 +5,7 @@ from .common import (
     get_model_cls,
     get_non_null_annotation,
     is_subclass,
+    register_model_retrieval,
 )
 from .path import (
     SEP,
@@ -38,6 +39,7 @@ __all__ = [
     "handle_discriminated",
     "is_subclass",
     "model_construct_recursive",
+    "register_model_retrieval",
     "Quantity",
     "QuantityDtype",
     "SEP",

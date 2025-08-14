@@ -342,6 +342,30 @@ form = ModelForm(
 
 *To be written*
 
+## Custom Model Lookup
+
+In some advanced use-cases, you might need to customize how model classes are resolved—such as when restoring forms from serialized state, using dynamic imports, or working with model registries.
+You can now provide your own model-finding logic via the `register_model_retrieval` dictionary in `dash_pydantic_utils`.
+
+**How to use:**
+
+```python
+from dash_pydantic_utils import register_model_retrieval
+
+def my_custom_model_finder(model_identifier: str):
+    # Implement your logic to return the appropriate model class
+    # For example, use a registry, dynamic import, etc.
+    ...
+
+register_model_retrieval(my_custom_model_finder)
+```
+
+Once set, `dash-pydantic-form` will invoke your function whenever it needs to resolve a model class from an identifier (such as when restoring a form from serialized state).
+
+**Your function should return a valid Pydantic model class, or None if not found.**
+
+Need more examples? [See the pull request introducing this feature.](https://github.com/RenaudLN/dash-pydantic-form/pull/130)
+
 ## Contributing
 
 This project uses [pixi](https://pixi.sh/latest/) to manage the environment. Install the pixi cli with

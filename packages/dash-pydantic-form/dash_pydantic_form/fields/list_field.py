@@ -125,7 +125,7 @@ class ListField(BaseField):
             if type(value).__str__ is not BaseModel.__str__:
                 return str(value)
             # Fallback: use 'name' if present
-            if "name" in value.model_fields and getattr(value, "name", None):
+            if "name" in value.__class__.model_fields and getattr(value, "name", None):
                 return str(value.name)
         return str(value)
 
@@ -693,7 +693,7 @@ class ListField(BaseField):
                 for part in parent.split(SEP):
                     pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
             default_val = None
-            field_info = subitem.model_fields[field]
+            field_info = subitem.__class__.model_fields[field]
             if field_info.default is not PydanticUndefined:
                 default_val = field_info.default
             if field_info.default_factory is not None:
