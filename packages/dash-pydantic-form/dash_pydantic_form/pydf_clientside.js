@@ -58,9 +58,13 @@ dash_clientside.pydf = {
       // Store the latest form data
       store.setItem(storageKey, sortedJson(formData))
     }
-    valuesDebounce(dash_clientside.set_props, debounce || 0)(
-      dash_clientside.callback_context.outputs_list.id, {data: formData}
-    )
+    if (debounce && debounce > 0) {
+      valuesDebounce(dash_clientside.set_props, debounce || 0)(
+        dash_clientside.callback_context.outputs_list.id, {data: formData}
+      )
+    } else {
+      dash_clientside.set_props(dash_clientside.callback_context.outputs_list.id, {data: formData})
+    }
     return dash_clientside.no_update
   },
   restoreData: (trigger, data) => {
@@ -264,11 +268,14 @@ dash_clientside.pydf = {
   },
 }
 
-let valuesTimer;
+let valuesTimer = {};
 function valuesDebounce(func, timeout){
   return (...args) => {
-    clearTimeout(valuesTimer);
-    valuesTimer = setTimeout(() => { func.apply(this, args); }, timeout);
+    const strId = sortedJson(args[0]);
+    if (!!valuesTimer[strId]) {
+      clearTimeout(valuesTimer[strId]);
+    }
+    valuesTimer[strId] = setTimeout(() => { func.apply(this, args); }, timeout);
   };
 }
 
