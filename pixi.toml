@@ -37,6 +37,7 @@ pandas = "*"
 python = ">=3.10,<3.11"
 pre-commit = "*"
 pytest = ">=6.0.2"
+pytest-mock = "*"
 ipykernel = "*"
 pixi-kernel = "*"
 gcsfs = "*"  # For Path field in usage.py

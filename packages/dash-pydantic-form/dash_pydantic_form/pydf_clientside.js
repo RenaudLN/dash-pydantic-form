@@ -58,13 +58,9 @@ dash_clientside.pydf = {
       // Store the latest form data
       store.setItem(storageKey, sortedJson(formData))
     }
-    if (debounce && debounce > 0) {
-      valuesDebounce(dash_clientside.set_props, debounce || 0)(
-        dash_clientside.callback_context.outputs_list.id, {data: formData}
-      )
-    } else {
-      dash_clientside.set_props(dash_clientside.callback_context.outputs_list.id, {data: formData})
-    }
+    valuesDebounce(dash_clientside.set_props, debounce || 0)(
+      dash_clientside.callback_context.outputs_list.id, {data: formData}
+    )
     return dash_clientside.no_update
   },
   restoreData: (trigger, data) => {
