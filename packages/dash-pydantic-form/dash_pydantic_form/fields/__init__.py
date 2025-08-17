@@ -27,6 +27,9 @@ DEFAULT_FIELDS_REPR: dict[type, BaseField] = {
 DEFAULT_REPR = fields.Json
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_default_repr(field_info: FieldInfo | None, annotation: type | None = None, **kwargs) -> BaseField:  # noqa: PLR0911, PLR0912
     """Get default field representation."""
     if "__class__" in kwargs:
@@ -45,7 +48,7 @@ def get_default_repr(field_info: FieldInfo | None, annotation: type | None = Non
             repr_cls = getattr(fields, repr_type, None)
             if repr_cls is not None:
                 return repr_cls(**kwargs)
-            logging.warning("Unknown repr_type: %s", repr_type)
+            logger.warning("Unknown repr_type: %s", repr_type)
 
         ann = get_non_null_annotation(field_info.annotation)
         type_ = Type.classify(field_info.annotation, discriminator=field_info.discriminator)

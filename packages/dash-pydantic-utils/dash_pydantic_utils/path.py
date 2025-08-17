@@ -13,6 +13,8 @@ from dash_pydantic_utils.types import Type, get_discriminator_from_annotated, ge
 
 SEP = ":"
 
+logger = logging.getLogger(__name__)
+
 
 def get_model_value(item: BaseModel | None, field: str, parent: str, allow_default: bool = True):  # noqa: PLR0911, PLR0912
     """Get the value of a model (parent, field) pair.
@@ -54,7 +56,7 @@ def get_model_value(item: BaseModel | None, field: str, parent: str, allow_defau
                 try:
                     return field_info.default_factory()
                 except TypeError:
-                    logging.warning("Default factory with validated data not supported in allow_default")
+                    logger.warning("Default factory with validated data not supported in allow_default")
             return None
         raise
 
@@ -355,10 +357,10 @@ def from_form_data(data: dict, data_model: type[BaseModel]):
                         defaulted_fields.append(path)
                         break
                     except TypeError:
-                        logging.warning("Default factory with validated data not supported in allow_default")
+                        logger.warning("Default factory with validated data not supported in allow_default")
 
         if defaulted_fields:
-            logging.info(
+            logger.info(
                 "Could not validate the following fields: %s for %s, using default values instead.",
                 defaulted_fields,
                 data_model.__name__,
