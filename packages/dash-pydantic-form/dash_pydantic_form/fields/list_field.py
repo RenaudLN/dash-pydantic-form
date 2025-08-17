@@ -37,6 +37,8 @@ from dash_pydantic_utils import (
     model_construct_recursive,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ListField(BaseField):
     """List field, used for list of nested models or scalars.
@@ -700,7 +702,7 @@ class ListField(BaseField):
                 try:
                     default_val = field_info.default_factory()
                 except TypeError:
-                    logging.warning("Default factory with validated data not supported in allow_default")
+                    logger.warning("Default factory with validated data not supported in allow_default")
             setattr(pointer, field, default_val)
 
         return template_item

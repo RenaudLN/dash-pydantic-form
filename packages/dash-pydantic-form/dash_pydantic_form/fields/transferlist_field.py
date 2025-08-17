@@ -26,6 +26,8 @@ from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
 from dash_pydantic_form.i18n import _
 
+logger = logging.getLogger(__name__)
+
 
 def side_id(  # noqa: PLR0913
     component: str,
@@ -79,7 +81,7 @@ class TransferListField(BaseField):
         """Register a data_getter."""
         name = name or str(data_getter)
         if name in cls.getters:
-            logging.warning("Data getter %s already registered for TransferList field.", name)
+            logger.warning("Data getter %s already registered for TransferList field.", name)
         cls.getters[name] = data_getter
 
     @classmethod
@@ -88,9 +90,7 @@ class TransferListField(BaseField):
         try:
             getter = cls.getters[data_getter]
         except KeyError as exc:
-            logging.error(
-                "Data getter %s could not be found, make sure you register it at the root level.", data_getter
-            )
+            logger.error("Data getter %s could not be found, make sure you register it at the root level.", data_getter)
             raise exc
         search_data = getter(search, max_items + len(value) if max_items else max_items)
         data = [x for x in search_data if x not in value]

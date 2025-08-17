@@ -34,6 +34,8 @@ from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_utils import deep_merge, get_fullpath, get_non_null_annotation
 
+logger = logging.getLogger(__name__)
+
 
 class JSFunction(BaseModel):
     """JS function."""
@@ -391,7 +393,7 @@ class TableField(BaseField):
             try:
                 column_def["default_value"] = field_info.default_factory()
             except TypeError:
-                logging.warning("Default factory with validated data not supported in allow_default")
+                logger.warning("Default factory with validated data not supported in allow_default")
 
         # if select field, generate column of dropdowns
         if isinstance(
