@@ -34,13 +34,15 @@ from .quantity_field import QuantityField as Quantity
 from .table_field import TableField as Table
 from .transferlist_field import TransferListField as TransferList
 
+logger = logging.getLogger(__name__)
+
 
 def deprecated_field_factory(name: str, base_class: type):
     """Create a field class with a deprecation warning message."""
     old_post_init = getattr(base_class, "model_post_init", None)
 
     def post_init(self, _context):
-        logging.warning(f"{name} is deprecated, use {base_class.__name__.removesuffix('Field')} instead.")
+        logger.warning(f"{name} is deprecated, use {base_class.__name__.removesuffix('Field')} instead.")
         if old_post_init is not None:
             old_post_init(self, _context)
 

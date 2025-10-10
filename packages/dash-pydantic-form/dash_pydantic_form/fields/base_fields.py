@@ -50,6 +50,9 @@ FilterOperator = Literal["==", "!=", "in", "not in", "array_contains", "array_co
 VisibilityFilter = tuple[str, FilterOperator, Any]
 
 
+logger = logging.getLogger(__name__)
+
+
 class BaseField(BaseModel):
     """Base field representation class."""
 
@@ -136,7 +139,11 @@ class BaseField(BaseModel):
             ignored_kwargs = set(self.input_kwargs) - set(valid_input_kwargs)
             self.input_kwargs = valid_input_kwargs
             if ignored_kwargs:
-                logging.debug("The following kwargs were ignored for %s: %s", self.__class__.__name__, ignored_kwargs)
+                logger.debug(
+                    "The following kwargs were ignored for %s: %s",
+                    self.__class__.__name__,
+                    ignored_kwargs,
+                )
         if self.read_only:
             self.input_kwargs["className"] = self.input_kwargs.get("className", "") + " read-only"
 
@@ -194,7 +201,7 @@ class BaseField(BaseModel):
             )
 
         if field_info.default == PydanticUndefined and field_info.default_factory is None:
-            logging.warning(
+            logger.warning(
                 "Conditional visibility is set on a field without default value, "
                 f"this will likely lead to validation errors. Field: {get_fullpath(parent, field)}"
             )
@@ -635,7 +642,7 @@ class SelectField(BaseField):
         """Register a data_getter."""
         name = name or str(data_getter)
         if name in cls.getters:
-            logging.warning("Data getter %s already registered for Select field.", name)
+            logger.warning("Data getter %s already registered for Select field.", name)
         cls.getters[name] = data_getter
 
     def _get_data(self, field_info: FieldInfo, **kwargs) -> list[dict]:
