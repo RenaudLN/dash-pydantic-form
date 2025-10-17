@@ -883,5 +883,4 @@ clientside_callback(
     Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, ALL), "value"),
     Input(common_ids.checked_field(MATCH, MATCH, MATCH, MATCH, ALL), "checked"),
     State(BaseField.ids.visibility_wrapper(MATCH, MATCH, MATCH, MATCH, ALL), "style"),
-    prevent_initial_call=True,
 )
