@@ -210,6 +210,12 @@ dash_clientside.pydf = {
                 { value: templateCopy.props.value },
             );
         }
+        const firstValueField = findFirstValueField(templateCopy);
+        if (firstValueField) {
+            waitForElem(sortedJson(firstValueField)).then((el) => {
+                el.focus();
+            });
+        }
         return [...current, templateCopy];
     },
     deleteFromList: (trigger, current) => {
@@ -467,3 +473,21 @@ const updateModelListIds = (child, path, newIdx) => {
     });
     return child;
 };
+
+function findFirstValueField(obj) {
+    if (
+        obj.props &&
+        obj.props.id &&
+        obj.props.id.component === "_pydf-value-field"
+    )
+        return obj.props.id;
+    if (obj.props && Array.isArray(obj.props?.children)) {
+        for (const child of obj.props.children) {
+            const out = findFirstValueField(child);
+            if (!!out) return out;
+        }
+    } else if (obj.props && obj.props?.children) {
+        return findFirstValueField(obj.props.children);
+    }
+    return null;
+}
