@@ -200,14 +200,14 @@ class BaseField(BaseModel):
                 inputs, className="pydantic-form-field", style={"--pydf-field-cols": self.n_cols_css}, title=title
             )
 
+        if visible is False:
+            return html.Div(inputs, style={"display": "none"}, title=title)
+
         if field_info.default == PydanticUndefined and field_info.default_factory is None:
             logger.warning(
                 "Conditional visibility is set on a field without default value, "
                 f"this will likely lead to validation errors. Field: {get_fullpath(parent, field)}"
             )
-
-        if visible is False:
-            return html.Div(inputs, style={"display": "none"}, title=title)
 
         if isinstance(visible, tuple):
             visible = [visible]
