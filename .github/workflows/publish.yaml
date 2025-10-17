@@ -1,73 +1,72 @@
 name: Publish to Pypi
 
 on:
-  pull_request:
-    branches:
-      - '**'
-  push:
-    tags:
-      - '*.*.*'
+    pull_request:
+        branches:
+            - "**"
+    push:
+        tags:
+            - "*.*.*"
 
 jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                environment: [default, dash2]
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-  lint-and-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [default, dash2]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+            - name: Install pixi env
+              uses: prefix-dev/setup-pixi@v0.8.3
+              with:
+                  cache: true
+                  environments: ${{ matrix.environment }}
 
-      - name: Install pixi env
-        uses: prefix-dev/setup-pixi@v0.8.3
-        with:
-          cache: true
-          environments: ${{ matrix.environment }}
+            - name: Install chromedriver
+              uses: nanasess/setup-chromedriver@v2
+              with:
+                  chromedriver-version: "141.0.7390.107"
 
-      - name: Install chromedriver
-        uses: nanasess/setup-chromedriver@v2
-        with:
-          chromedriver-version: '139.0.7258.66'
+            - name: Start chromedriver
+              run: |
+                  chromedriver --url-base=/wd/hub &
+                  sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
 
-      - name: Start chromedriver
-        run: |
-          chromedriver --url-base=/wd/hub &
-          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
+            - name: Pre-commit and tests
+              run: |
+                  pixi r lint
+                  pixi r test
 
-      - name: Pre-commit and tests
-        run: |
-          pixi r lint
-          pixi r test
+    publish:
+        runs-on: ubuntu-latest
+        needs: [lint-and-test]
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-  publish:
-    runs-on: ubuntu-latest
-    needs: [lint-and-test]
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+            - name: Install pixi env
+              uses: prefix-dev/setup-pixi@v0.8.1
+              with:
+                  cache: true
 
-      - name: Install pixi env
-        uses: prefix-dev/setup-pixi@v0.8.1
-        with:
-          cache: true
+            - name: Install gettext
+              run: |
+                  sudo apt-get install -y gettext
 
-      - name: Install gettext
-        run: |
-          sudo apt-get install -y gettext
+            - name: Create .mo translations
+              run: |
+                  msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.po
+                  msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.po
 
-      - name: Create .mo translations
-        run: |
-          msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/en/LC_MESSAGES/pydf.po
-          msgfmt -o packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.mo packages/dash-pydantic-form/dash_pydantic_form/locales/fr/LC_MESSAGES/pydf.po
-
-      - name: Build and Publish package
-        run: |
-          python3 -m build packages/dash-pydantic-utils
-          python3 -m build packages/dash-pydantic-form
-          twine upload packages/dash-pydantic-utils/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN_UTILS}} --non-interactive
-          twine upload packages/dash-pydantic-form/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
-        shell: pixi run bash -e {0}
+            - name: Build and Publish package
+              run: |
+                  python3 -m build packages/dash-pydantic-utils
+                  python3 -m build packages/dash-pydantic-form
+                  twine upload packages/dash-pydantic-utils/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN_UTILS}} --non-interactive
+                  twine upload packages/dash-pydantic-form/dist/* -u __token__ -p ${{secrets.PYPI_TOKEN}} --non-interactive
+              shell: pixi run bash -e {0}
