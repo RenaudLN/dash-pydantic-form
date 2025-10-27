@@ -14,6 +14,7 @@ dash_clientside.pydf = {
         restoreWrapperId,
         restoreBehavior,
         debounce,
+        _changesStore,
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
@@ -42,7 +43,7 @@ dash_clientside.pydf = {
             storeProgress === "session" ||
             storeProgress === "local"
         ) {
-            const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list.id)}`;
+            const storageKey = `pydfFormData-${sortedJson(dash_clientside.callback_context.outputs_list[0].id)}`;
             const store =
                 storeProgress === "session" ? sessionStorage : localStorage;
             // If this is the first time the form is rendered, try retrieving the stored data
@@ -51,7 +52,7 @@ dash_clientside.pydf = {
                 // No data in the ids.main data
                 !currentFormData &&
                 // And top-level form
-                dash_clientside.callback_context.outputs_list.id.parent == "" &&
+                dash_clientside.callback_context.outputs_list[0].id.parent == "" &&
                 // And not triggered by data-getvalue
                 !(
                     dash_clientside.callback_context.triggered.length > 0 &&
@@ -69,23 +70,32 @@ dash_clientside.pydf = {
                         dash_clientside.set_props(restoreWrapperId, {
                             style: null,
                         });
-                        return dash_clientside.no_update;
+                        return [dash_clientside.no_update, dash_clientside.no_update];
                     } else if (restoreBehavior === "auto") {
                         dash_clientside.set_props(formId, {
                             "data-update": JSON.parse(oldData),
                         });
-                        return dash_clientside.no_update;
+                        return [dash_clientside.no_update, dash_clientside.no_update];
                     }
                 }
             }
             // Store the latest form data
             store.setItem(storageKey, sortedJson(formData));
         }
+
+        if (dash_clientside.callback_context.triggered_id) {
+            const {field, parent} = dash_clientside.callback_context.triggered_id
+            if (field) {
+                _changesStore[getFullpath(parent, field)] = 1;
+            }
+        }
+
         valuesDebounce(dash_clientside.set_props, debounce || 0)(
-            dash_clientside.callback_context.outputs_list.id,
+            dash_clientside.callback_context.outputs_list[0].id,
             { data: formData },
         );
-        return dash_clientside.no_update;
+
+        return [dash_clientside.no_update, _changesStore || {}];
     },
     restoreData: (trigger, data) => {
         if (!data || !trigger) return Array(3).fill(dash_clientside.no_update);

@@ -370,6 +370,43 @@ Need more examples? [See the pull request introducing this feature.](https://git
 
 This project uses [pixi](https://pixi.sh/latest/) to manage the environment. Install the pixi cli with
 
+## Dirty Field Tracking
+
+This package tracks which fields have been changed (“dirty fields”) in your form. When a field value is updated, its path is recorded—allowing you to identify and submit only changed data.
+
+### What’s Tracked
+
+- **Changed fields:** Any field whose value is edited.
+- **Nested fields:** Changes in nested objects or arrays are tracked by their full path (e.g., `items.2.price`).
+
+### What’s NOT Tracked
+
+- **Deletions or removals:** If you remove an item from a list/array, this is not explicitly tracked. Only fields that are changed remain in the dirty field record.
+- **Index shifting:** If you remove an item from an array, the indices of subsequent items are not updated in the dirty field record.
+
+### Example
+
+If you change `user.name` and `items.2.price`, the dirty tracker will report that the following fields are dirty:
+```json
+{
+  "user.name": 1,
+  "items.2.price": 1
+}
+```
+
+If you remove `items.2`, removals are not tracked—only changed fields are reported.
+
+### Rationale
+
+This simple approach keeps the package lightweight and covers most use cases for partial form updates. For advanced change tracking (deletions, index shifts, etc.), consider post-processing dirty fields or handling these scenarios in your backend.
+
+---
+
+**Limitations:**  
+Dirty tracking does not record deleted fields or index changes. If your workflow requires tracking removals, handle this logic outside the package.
+
+## Contributing
+
 ```sh
 curl -fsSL https://pixi.sh/install.sh | bash
 ```
