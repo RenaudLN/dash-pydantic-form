@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-17 22:55+1100\n"
+"POT-Creation-Date: 2025-11-17 21:21+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,120 +17,124 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: dash_pydantic_form/model_form.py:494
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:452
 msgid "Found previous form data. Do you want to restore it?"
 msgstr ""
 
-#: dash_pydantic_form/model_form.py:498
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:456
 msgid "Restore"
 msgstr ""
 
-#: dash_pydantic_form/model_form.py:503
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:461
 msgid "Cancel"
 msgstr ""
 
-#: dash_pydantic_form/model_form.py:683
-msgid "Back"
-msgstr ""
-
-#: dash_pydantic_form/model_form.py:690
-msgid "Next"
-msgstr ""
-
-#: dash_pydantic_form/fields/dict_field.py:349
-#: dash_pydantic_form/fields/list_field.py:576
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/dict_field.py:319
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:816
 msgid "Add"
 msgstr ""
 
-#: dash_pydantic_form/fields/list_field.py:282
-#: dash_pydantic_form/fields/model_field.py:109
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:482
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/model_field.py:167
 msgid "Save"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:76
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:76
 #, python-brace-format
 msgid "Click to select a {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:115
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:115
 msgid "Click to select a directory"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:125
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:125
 msgid "Enter glob pattern"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:174
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:173
 #, python-brace-format
 msgid "Select a {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:175
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:174
 msgid "glob"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:276
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:275
 msgid "Filter with prefix"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:364
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:363
 #, python-brace-format
 msgid "Select {path_type}"
 msgstr ""
 
-#: dash_pydantic_form/fields/path_field.py:371
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/path_field.py:370
 msgid "No match"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:132
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:144
 msgid "Drag & drop a csv file or "
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:133
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:145
 msgid "select it"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:138
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:150
 msgid "CSV columns"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:141
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:153
 msgid "REQUIRED"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:168
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:180
 msgid "OPTIONAL"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:211
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:223
 msgid "Upload CSV"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:224
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:236
 msgid "Download CSV"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:235
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:251
+msgid "Copy table data"
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:259
 msgid "Add row"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:516
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:542
 msgid "Wrong column names"
 msgstr ""
 
-#: dash_pydantic_form/fields/table_field.py:517
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:543
 msgid "CSV upload failed, the file should contain the following columns: "
 msgstr ""
 
-#: dash_pydantic_form/fields/transferlist_field.py:293
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/transferlist_field.py:293
 msgid "Transfer all"
 msgstr ""
 
-#: dash_pydantic_form/fields/transferlist_field.py:320
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/transferlist_field.py:320
 msgid "Transfer selected"
 msgstr ""
 
-#: dash_pydantic_form/fields/transferlist_field.py:332
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/transferlist_field.py:332
 #, python-brace-format
 msgid "Showing first {max_items} items, refine your search for more..."
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/form_layouts/steps_form_layout.py:92
+msgid "Back"
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/form_layouts/steps_form_layout.py:99
+msgid "Next"
 msgstr ""
