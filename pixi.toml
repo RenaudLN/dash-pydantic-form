@@ -1,4 +1,4 @@
-[project]
+[workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-arm64"]
 name = "dash-pydantic-form"
