@@ -92,3 +92,6 @@ msgstr "Transférer la sélection"
 
 msgid "Showing first {max_items} items, refine your search for more..."
 msgstr "Les {max_items} premiers résultats sont affichés, affinez votre recherche pour en voir plus..."
+
+msgid "Copy table data"
+msgstr "Copier les données"

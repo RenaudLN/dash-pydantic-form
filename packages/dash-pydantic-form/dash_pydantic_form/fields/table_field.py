@@ -55,12 +55,12 @@ class TableField(BaseField):
     with_download: bool | None = Field(
         default=None,
         description="Whether to allow downloading the table as a CSV file."
-                    " If not set, it has the same value as `with_upload` by default.",
+        " If not set, it has the same value as `with_upload` by default.",
     )
     with_clipboard: bool | None = Field(
         default=None,
         description="Whether to allow copying the table as tab delimited values."
-                    " If not set, it has the same value as `with_upload` by default.",
+        " If not set, it has the same value as `with_upload` by default.",
     )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
@@ -68,13 +68,13 @@ class TableField(BaseField):
     dynamic_options: dict[str, JSFunction] | None = Field(
         default=None,
         description="Clientside function to use for dynamic options, defined per columnn."
-                    " The functions should take as argument the original options and the row data."
-                    " The functions should be defined on a sub-namespace of dash_clientside.",
+        " The functions should take as argument the original options and the row data."
+        " The functions should be defined on a sub-namespace of dash_clientside.",
     )
     grid_kwargs: dict = Field(
         default_factory=dict,
         description="Additional keyword arguments passed to the AGGrid instance. "
-                    "columnDefs passed here will not be considered, use column_defs_overrides.",
+        "columnDefs passed here will not be considered, use column_defs_overrides.",
     )
     excluded_fields: list[str] | None = Field(default=None, description="Fields excluded from the sub-form")
     fields_order: list[str] | None = Field(default=None, description="Order of fields in the sub-form")
@@ -112,14 +112,14 @@ class TableField(BaseField):
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 
     def _render(  # noqa: PLR0913
-            self,
-            *,
-            item: BaseModel,
-            aio_id: str,
-            form_id: str,
-            field: str,
-            parent: str = "",
-            field_info: FieldInfo,
+        self,
+        *,
+        item: BaseModel,
+        aio_id: str,
+        form_id: str,
+        field: str,
+        parent: str = "",
+        field_info: FieldInfo,
     ) -> Component:
         """Create a form field of type Editable Table input to interact with the model."""
         value = self.get_value(item, field, parent) or []
@@ -243,7 +243,13 @@ class TableField(BaseField):
         clipboard = []
         if self.with_clipboard:
             clipboard = [
-                dcc.Clipboard(id=self.ids.clipboard(aio_id, form_id, field, parent=parent)),
+                dmc.Tooltip(
+                    dcc.Clipboard(
+                        id=self.ids.clipboard(aio_id, form_id, field, parent=parent),
+                        className="pydf-table-clipboard",
+                    ),
+                    label=_("Copy table data"),
+                ),
             ]
 
         add_row = []
@@ -281,10 +287,10 @@ class TableField(BaseField):
         ]
         if self.fields_order:
             column_defs = [
-                              next(col for col in column_defs if col["field"] == field)
-                              for field in self.fields_order
-                              if field in template.model_fields
-                          ] + [col for col in column_defs if col["field"] not in self.fields_order]
+                next(col for col in column_defs if col["field"] == field)
+                for field in self.fields_order
+                if field in template.model_fields
+            ] + [col for col in column_defs if col["field"] not in self.fields_order]
         title_children: list = [title] + [
             html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
         ] * self.is_required(field_info)
@@ -310,45 +316,45 @@ class TableField(BaseField):
                 dag.AgGrid(
                     id=self.ids.editable_table(aio_id, form_id, field, parent=parent),
                     columnDefs=(
-                                   [
-                                       {
-                                           "headerName": "",
-                                           "cellRenderer": "PydfDeleteButton",
-                                           "lockPosition": "left",
-                                           "maxWidth": 35,
-                                           "filter": False,
-                                           "cellStyle": {
-                                               "padding": 0,
-                                               "display": "grid",
-                                               "placeContent": "center",
-                                           },
-                                           "editable": False,
-                                       }
-                                   ]
-                                   # removes the delete button if add button is removed
-                                   if self.rows_editable
-                                   else []
-                               )
-                               + column_defs,
+                        [
+                            {
+                                "headerName": "",
+                                "cellRenderer": "PydfDeleteButton",
+                                "lockPosition": "left",
+                                "maxWidth": 35,
+                                "filter": False,
+                                "cellStyle": {
+                                    "padding": 0,
+                                    "display": "grid",
+                                    "placeContent": "center",
+                                },
+                                "editable": False,
+                            }
+                        ]
+                        # removes the delete button if add button is removed
+                        if self.rows_editable
+                        else []
+                    )
+                    + column_defs,
                     defaultColDef={"resizable": True, "sortable": True, "filter": True}
-                                  | grid_kwargs.pop("defaultColDef", {})
-                                  | {"editable": not self.read_only},
+                    | grid_kwargs.pop("defaultColDef", {})
+                    | {"editable": not self.read_only},
                     rowData=value,
                     columnSize=grid_kwargs.pop("columnSize", "responsiveSizeToFit"),
                     style=grid_kwargs.pop("style", {}) | {"height": self.table_height},
                     dashGridOptions={
-                                        "singleClickEdit": True,
-                                        "rowSelection": "multiple",
-                                        "stopEditingWhenCellsLoseFocus": True,
-                                    }
-                                    | grid_kwargs.pop("dashGridOptions", {})
-                                    | {
-                                        "suppressRowHoverHighlight": self.read_only,
-                                        "suppressRowClickSelection": self.read_only,
-                                    },
+                        "singleClickEdit": True,
+                        "rowSelection": "multiple",
+                        "stopEditingWhenCellsLoseFocus": True,
+                    }
+                    | grid_kwargs.pop("dashGridOptions", {})
+                    | {
+                        "suppressRowHoverHighlight": self.read_only,
+                        "suppressRowClickSelection": self.read_only,
+                    },
                     className=grid_kwargs.pop("className", "")
-                              + " ag-theme-alpine ag-themed overflowing-ag-grid"
-                              + (" read-only" if self.read_only else ""),
+                    + " ag-theme-alpine ag-themed overflowing-ag-grid"
+                    + (" read-only" if self.read_only else ""),
                     **grid_kwargs,
                 ),
             ]
@@ -370,13 +376,13 @@ class TableField(BaseField):
         )
 
     def _generate_field_column(  # noqa: PLR0913, PLR0912
-            self,
-            *,
-            field_name: str,
-            field_repr: BaseField | dict,
-            field_info: FieldInfo,
-            required_field: bool,
-            editable: bool = True,
+        self,
+        *,
+        field_name: str,
+        field_repr: BaseField | dict,
+        field_info: FieldInfo,
+        required_field: bool,
+        editable: bool = True,
     ):
         """Takes a field and generates the 'columnDefs' dictionary for said field based on its type."""
         from dash_pydantic_form.fields import get_default_repr
@@ -411,7 +417,7 @@ class TableField(BaseField):
 
         # if select field, generate column of dropdowns
         if isinstance(
-                field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
+            field_repr, SelectField | SegmentedControlField | RadioItemsField | MultiSelectField | ChecklistField
         ):
             data = field_repr._additional_kwargs(field_info=field_info)["data"]
             options = [
@@ -535,7 +541,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
             color="red",
             title=_("Wrong column names"),
             message=_("CSV upload failed, the file should contain the following columns: ")
-                    + f"{', '.join(required_columns)}",
+            + f"{', '.join(required_columns)}",
             id=uuid.uuid4().hex,
             action="show",
         )
@@ -559,12 +565,13 @@ clientside_callback(
 )
 def table_to_csv(n_clicks, table_data):
     """Send the table data to the user as a CSV file."""
-    if n_clicks and table_data:
-        import pandas as pd
+    if not (n_clicks and table_data):
+        return no_update
 
-        data_df = pd.DataFrame(table_data)
-        return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
-    return no_update
+    import pandas as pd
+
+    data_df = pd.DataFrame(table_data)
+    return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
 
 
 @callback(
@@ -574,24 +581,20 @@ def table_to_csv(n_clicks, table_data):
     prevent_initial_call=True,
 )
 def table_to_clipboard(n_clicks, table_data):
-    # polars alternative
-    #     import polars as pl
-    #     df = pl.DataFrame(table_data, infer_schema_length=None)
-    #     return df.write_csv(separator='\t')
-    # pandas alternative
-    #     import pandas as pd
-    #     df = pd.DataFrame(table_data)
-    #     return df.to_csv(sep='\t', index=False)
-    # csv alternative
+    """Copy the table data to the clipboard, in tab-separated format."""
+    if not (n_clicks and table_data):
+        return no_update
+
     import csv
+
     output = io.StringIO()
-    writer = csv.writer(output, delimiter='\t')
+    writer = csv.writer(output, delimiter="\t")
 
     headers = list(table_data[0].keys())
     writer.writerow(headers)
 
     for row in table_data:
-        writer.writerow([row.get(header, '') for header in headers])
+        writer.writerow([row.get(header, "") for header in headers])
 
     return output.getvalue()
 
