@@ -69,7 +69,6 @@ dash = {extras = ["testing"], version = ">=3,<4"}
 # Dash testing
 dash = {extras = ["testing"], version = ">=2.16,<3"}
 
-
 [feature.dev.tasks]
 lint = "pre-commit run --all-files"
 test = "pytest tests --headless"

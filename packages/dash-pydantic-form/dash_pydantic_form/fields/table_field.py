@@ -57,6 +57,11 @@ class TableField(BaseField):
         description="Whether to allow downloading the table as a CSV file."
         " If not set, it has the same value as `with_upload` by default.",
     )
+    with_clipboard: bool | None = Field(
+        default=None,
+        description="Whether to allow copying the table as tab delimited values."
+        " If not set, it has the same value as `with_upload` by default.",
+    )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] = Field(default_factory=dict, description="Ag-grid column_defs overrides.")
@@ -82,6 +87,8 @@ class TableField(BaseField):
         super().model_post_init(_context)
         if self.with_download is None:
             self.with_download = self.with_upload
+        if self.with_clipboard is None:
+            self.with_clipboard = self.with_upload
         if self.read_only:
             self.rows_editable = False
             self.with_upload = False
@@ -100,6 +107,7 @@ class TableField(BaseField):
         upload_csv = partial(field_dependent_id, "_pydf-editable-table-upload")
         download_csv = partial(field_dependent_id, "_pydf-editable-table-download")
         download_csv_btn = partial(field_dependent_id, "_pydf-editable-table-download-btn")
+        clipboard = partial(field_dependent_id, "_pydf-editable-table-clipboard")
         add_row = partial(field_dependent_id, "_pydf-editable-table-add-row")
         notification_wrapper = partial(field_dependent_id, "_pydf-editable-table-notification-wrapper")
 
@@ -232,6 +240,18 @@ class TableField(BaseField):
                 dcc.Download(id=self.ids.download_csv(aio_id, form_id, field, parent=parent)),
             ]
 
+        clipboard = []
+        if self.with_clipboard:
+            clipboard = [
+                dmc.Tooltip(
+                    dcc.Clipboard(
+                        id=self.ids.clipboard(aio_id, form_id, field, parent=parent),
+                        className="pydf-table-clipboard",
+                    ),
+                    label=_("Copy table data"),
+                ),
+            ]
+
         add_row = []
         if self.rows_editable:
             add_row = [
@@ -339,8 +359,8 @@ class TableField(BaseField):
                 ),
             ]
             + (
-                [dmc.Group(add_row + upload + download)]
-                if (self.rows_editable or self.with_upload or self.with_download)
+                [dmc.Group(add_row + upload + download + clipboard)]
+                if (self.rows_editable or self.with_upload or self.with_download or self.with_clipboard)
                 else []
             )
             + [
@@ -545,12 +565,38 @@ clientside_callback(
 )
 def table_to_csv(n_clicks, table_data):
     """Send the table data to the user as a CSV file."""
-    if n_clicks and table_data:
-        import pandas as pd
+    if not (n_clicks and table_data):
+        return no_update
 
-        data_df = pd.DataFrame(table_data)
-        return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
-    return no_update
+    import pandas as pd
+
+    data_df = pd.DataFrame(table_data)
+    return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
+
+
+@callback(
+    Output(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "content"),
+    Input(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
+    State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    prevent_initial_call=True,
+)
+def table_to_clipboard(n_clicks, table_data):
+    """Copy the table data to the clipboard, in tab-separated format."""
+    if not (n_clicks and table_data):
+        return no_update
+
+    import csv
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter="\t")
+
+    headers = list(table_data[0].keys())
+    writer.writerow(headers)
+
+    for row in table_data:
+        writer.writerow([row.get(header, "") for header in headers])
+
+    return output.getvalue()
 
 
 clientside_callback(
