@@ -366,10 +366,6 @@ Once set, `dash-pydantic-form` will invoke your function whenever it needs to re
 
 Need more examples? [See the pull request introducing this feature.](https://github.com/RenaudLN/dash-pydantic-form/pull/130)
 
-## Contributing
-
-This project uses [pixi](https://pixi.sh/latest/) to manage the environment. Install the pixi cli with
-
 ## Dirty Field Tracking
 
 This package tracks which fields have been changed (“dirty fields”) in your form. When a field value is updated, its path is recorded—allowing you to identify and submit only changed data.
@@ -406,6 +402,8 @@ This simple approach keeps the package lightweight and covers most use cases for
 Dirty tracking does not record deleted fields or index changes. If your workflow requires tracking removals, handle this logic outside the package.
 
 ## Contributing
+
+This project uses [pixi](https://pixi.sh/latest/) to manage the environment. Install the pixi cli with
 
 ```sh
 curl -fsSL https://pixi.sh/install.sh | bash
