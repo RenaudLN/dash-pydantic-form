@@ -398,7 +398,7 @@ This simple approach keeps the package lightweight and covers most use cases for
 
 ---
 
-**Limitations:**  
+**Limitations:**
 Dirty tracking does not record deleted fields or index changes. If your workflow requires tracking removals, handle this logic outside the package.
 
 ## Contributing

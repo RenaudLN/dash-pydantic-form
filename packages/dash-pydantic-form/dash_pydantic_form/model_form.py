@@ -415,7 +415,7 @@ class ModelForm(html.Div):
             )
             children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
-            children.append(dcc.Store(id=cls.ids.change_store(aio_id,form_id)))
+            children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
                 model_name = str(data_model)
             elif get_origin(data_model) in [Union, UnionType]:
@@ -484,7 +484,7 @@ class ModelForm(html.Div):
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="getValues"),
     Output(ModelForm.ids.main(MATCH, MATCH), "data"),
-    Output(ModelForm.ids.change_store(MATCH, MATCH), 'data'),
+    Output(ModelForm.ids.change_store(MATCH, MATCH), "data"),
     Input(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(common_ids.checked_field(MATCH, MATCH, ALL, ALL, ALL), "checked"),
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
