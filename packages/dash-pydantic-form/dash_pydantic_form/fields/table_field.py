@@ -518,7 +518,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
     import pandas as pd
 
     if contents is not None:
-        _, content_string = contents.split(",")
+        _unused, content_string = contents.split(",")
 
         decoded = base64.b64decode(content_string)
         data = pd.read_csv(
