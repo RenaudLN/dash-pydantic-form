@@ -8,10 +8,8 @@
             "name": "Python Debugger: Flask",
             "type": "debugpy",
             "request": "launch",
-            "module": "flask",
+            "program": "usage.py",
             "env": {
-                "FLASK_APP": "usage.py:server",
-                "FLASK_DEBUG": "1",
                 "DEBUG": "1",
             },
             "args": [
