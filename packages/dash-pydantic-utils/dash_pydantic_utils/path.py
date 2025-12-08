@@ -123,7 +123,7 @@ def root_model_converter(func):
 
 
 @root_model_converter
-def get_subitem_cls(  # noqa: PLR0912
+def get_subitem_cls(  # noqa: PLR0912, PLR0915
     model: type[BaseModel] | type[RootModel], parent: str, item: BaseModel | None = None
 ) -> type[BaseModel]:
     """Get the subitem class of a model at a given parent.
@@ -141,9 +141,12 @@ def get_subitem_cls(  # noqa: PLR0912
     if get_origin(model) is Annotated:
         model = get_args(model)[0]
         if get_origin(model) in [Union, UnionType]:
-            # NOTE: This might break if several models in the union have the same field name but different definitions
-            # or if they have further nesting / unions
-            model = next(m for m in get_args(model) if is_subclass(m, BaseModel) and first_part in m.model_fields)
+            if item is not None and type(item) in get_args(model):
+                model = type(item)
+            else:
+                # NOTE: This might break if several models in the union have the same field name
+                # but different definitions or if they have further nesting / unions
+                model = next(m for m in get_args(model) if is_subclass(m, BaseModel) and first_part in m.model_fields)
 
     if issubclass(model, RootModel):
         model = convert_root_to_base_model(model)
