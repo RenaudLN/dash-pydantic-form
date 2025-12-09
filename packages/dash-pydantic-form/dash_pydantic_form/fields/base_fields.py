@@ -402,7 +402,9 @@ class BaseField(BaseModel):
         dependent_field, operator, expected_value = visibility
         dependent_parent, dependent_field = self._get_dependent_field_and_parent(dependent_field, parent)
 
-        current_value = self.get_value(item, dependent_field, dependent_parent)
+        # Important: use get_model_value rather than self.get_value as a field can override
+        # get_value which may not be suitable for the dependent field
+        current_value = get_model_value(item, dependent_field, dependent_parent)
         if isinstance(current_value, Enum):
             current_value = current_value.value
         if os.getenv("DEBUG") and title is not None:
