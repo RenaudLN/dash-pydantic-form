@@ -28,7 +28,6 @@ from dash_pydantic_form.fields.base_fields import BaseField, FieldsRepr
 from dash_pydantic_form.form_layouts.form_layout import FormLayout
 from dash_pydantic_form.i18n import _
 from dash_pydantic_utils import (
-    SEP,
     Type,
     deep_merge,
     get_fullpath,
@@ -690,10 +689,7 @@ class ListField(BaseField):
         """Make a template item."""
         template_item = model_construct_recursive(item.model_dump(), item.__class__)
         if isinstance(subitem := get_subitem(item, parent), BaseModel):
-            pointer = template_item
-            if parent:
-                for part in parent.split(SEP):
-                    pointer = getattr(pointer, part) if not part.isdigit() else pointer[int(part)]
+            pointer = get_subitem(template_item, parent)
             default_val = None
             field_info = subitem.__class__.model_fields[field]
             if field_info.default is not PydanticUndefined:
@@ -703,7 +699,10 @@ class ListField(BaseField):
                     default_val = field_info.default_factory()
                 except TypeError:
                     logger.warning("Default factory with validated data not supported in allow_default")
-            setattr(pointer, field, default_val)
+            if isinstance(pointer, dict):
+                pointer[field] = default_val
+            else:
+                setattr(pointer, field, default_val)
 
         return template_item
 
