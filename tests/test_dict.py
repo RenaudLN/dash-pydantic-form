@@ -137,3 +137,60 @@ def test_di0003_model_dict(dash_duo):
     set_input(dash_duo, fields.Dict.ids.item_key(aio_id, form_id, "a", meta="0"), "a0")
     set_input(dash_duo, fields.Dict.ids.item_key(aio_id, form_id, "b", parent="a:0", meta="0"), "b0")
     dash_duo.wait_for_text_to_equal("#output", '{"a": {"a0": {"b": {"b0": "1"}}}}')
+
+
+def test_di0004_dict_nested_list_model(dash_duo):
+    """Test a list[BaseModel] nested in a dict[str, BaseModel] field."""
+
+    class Nested(BaseModel):
+        name: str
+
+    class Container(BaseModel):
+        items: list[Nested] = Field(default_factory=list)
+
+    class Basic(BaseModel):
+        data: dict[str, Container] = Field(default_factory=dict)
+
+    app = Dash(__name__)
+    item = Basic(
+        data={
+            "key0": Container(items=[Nested(name="item0")]),
+        }
+    )
+    aio_id = "aio"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(
+        [
+            ModelForm(item, aio_id=aio_id, form_id=form_id),
+            dmc.Text(id="output"),
+        ],
+    )
+
+    @app.callback(
+        Output("output", "children"),
+        Input(ModelForm.ids.main(aio_id, form_id), "data"),
+    )
+    def display(form_data):
+        return json.dumps(form_data, sort_keys=True)
+
+    dash_duo.start_server(app)
+
+    dash_duo.wait_for_text_to_equal("#output", '{"data": {"key0": {"items": [{"name": "item0"}]}}}')
+
+    # Add item to 'data' dict
+    dash_duo.driver.find_element(By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "data"))).click()
+    # Set dict key
+    set_input(dash_duo, fields.Dict.ids.item_key(aio_id, form_id, "data", meta="1"), "key1")
+
+    # Add item to 'items' list inside the new dict item
+    dash_duo.driver.find_element(
+        By.ID, stringify_id(fields.List.ids.add(aio_id, form_id, "items", parent="data:1"))
+    ).click()
+
+    # Set 'name' in the nested list item
+    set_input(dash_duo, ids.value_field(aio_id, form_id, "name", parent="data:1:items:0"), "item1")
+
+    dash_duo.wait_for_text_to_equal(
+        "#output",
+        '{"data": {"key0": {"items": [{"name": "item0"}]}, "key1": {"items": [{"name": "item1"}]}}}',
+    )
