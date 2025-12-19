@@ -125,17 +125,32 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
     }
   }
 
+  const onKeyDown = (event) => {
+    if (event.key === "Tab") {
+      delete colDef.suppressKeyboardEvent;
+      node.setDataValue(column.colId, value);
+      stopEditing();
+      if (event.shiftKey) {
+        props.api.tabToPreviousCell();
+      } else {
+        props.api.tabToNextCell();
+      }
+      event.preventDefault();
+    }
+  };
+
   return React.createElement(window.dash_mantine_components.Select, {
-      setProps,
-      data: options_,
-      value: value,
-      clearable: componentProps.clearable || true,
-      searchable: componentProps.searchable || true,
-      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-      allowDeselect: componentProps.allowDeselect || true,
-      style: { width: column.actualWidth },
-  })
-})
+    setProps,
+    onKeyDown,
+    data: options_,
+    value: value,
+    clearable: componentProps.clearable || true,
+    searchable: componentProps.searchable || true,
+    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
+    allowDeselect: componentProps.allowDeselect || true,
+    style: { width: column.actualWidth },
+  });
+});
 
 dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
   const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
@@ -172,16 +187,31 @@ dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
     }
   }
 
+  const onKeyDown = (event) => {
+    if (event.key === "Tab") {
+      delete colDef.suppressKeyboardEvent;
+      node.setDataValue(column.colId, value);
+      stopEditing();
+      if (event.shiftKey) {
+        props.api.tabToPreviousCell();
+      } else {
+        props.api.tabToNextCell();
+      }
+      event.preventDefault();
+    }
+  };
+
   return React.createElement(window.dash_mantine_components.MultiSelect, {
-      setProps,
-      data: options_,
-      value: value || [],
-      clearable: componentProps.clearable || true,
-      searchable: componentProps.searchable || true,
-      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-      style: { width: column.actualWidth },
-  })
-})
+    setProps,
+    onKeyDown,
+    data: options_,
+    value: value || [],
+    clearable: componentProps.clearable || true,
+    searchable: componentProps.searchable || true,
+    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
+    style: { width: column.actualWidth },
+  });
+});
 
 dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
