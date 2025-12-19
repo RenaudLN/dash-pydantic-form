@@ -350,6 +350,7 @@ function valuesDebounce(func, timeout) {
 }
 
 function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
+    if (inputs.length === 0) return {};
     const firstKey = getFullpath(inputs[0].id.parent, inputs[0].id.field);
     const startsWithArray =
         firstKey.startsWith(`${PYDF_ROOTMODEL_ROOT}:`) &&
