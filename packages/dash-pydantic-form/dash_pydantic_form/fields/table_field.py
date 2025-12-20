@@ -355,6 +355,9 @@ class TableField(BaseField):
                     className=grid_kwargs.pop("className", "")
                     + " ag-theme-alpine ag-themed overflowing-ag-grid"
                     + (" read-only" if self.read_only else ""),
+                    eventListeners={
+                        "cellKeyDown": ["tableKeyboardNavigation(params)"],
+                    },
                     **grid_kwargs,
                 ),
             ]

@@ -267,6 +267,7 @@ app.layout = dmc.MantineProvider(
                                     grid_kwargs={"dashGridOptions": {"suppressCellFocus": False}},
                                     excluded_fields=["alive"],
                                     fields_order=["species"],
+                                    # rows_editable=False,
                                 ),
                                 "jobs": {"placeholder": "A job name"},
                             },

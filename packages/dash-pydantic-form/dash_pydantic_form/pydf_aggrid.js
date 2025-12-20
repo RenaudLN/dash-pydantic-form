@@ -126,14 +126,15 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
   }
 
   const onKeyDown = (event) => {
-    if (event.key === "Tab") {
-      delete colDef.suppressKeyboardEvent;
-      node.setDataValue(column.colId, value);
+    if (event.key === "Escape") {
       stopEditing();
+    }
+    if (event.key === "Tab") {
+      let success;
       if (event.shiftKey) {
-        props.api.tabToPreviousCell();
+        success = props.api.tabToPreviousCell();
       } else {
-        props.api.tabToNextCell();
+        success = props.api.tabToNextCell();
       }
       event.preventDefault();
     }
@@ -188,14 +189,15 @@ dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
   }
 
   const onKeyDown = (event) => {
-    if (event.key === "Tab") {
-      delete colDef.suppressKeyboardEvent;
-      node.setDataValue(column.colId, value);
+    if (event.key === "Escape") {
       stopEditing();
+    }
+    if (event.key === "Tab") {
+      let success;
       if (event.shiftKey) {
-        props.api.tabToPreviousCell();
+        success = props.api.tabToPreviousCell();
       } else {
-        props.api.tabToNextCell();
+        success = props.api.tabToNextCell();
       }
       event.preventDefault();
     }
@@ -393,5 +395,44 @@ dagfuncs.PydfDateComparator = (filterDate, cellValue) => {
   }
   if (cellDate > filterDate) {
     return 1;
+  }
+};
+
+dagfuncs.tableKeyboardNavigation = (props) => {
+  const rows_editable = props.api.getColumnDefs()[0]?.cellRenderer === "PydfDeleteButton";
+  if (!rows_editable) {
+    return;
+  }
+  if (
+    props.column.userProvidedColDef?.cellRenderer === "PydfDeleteButton" &&
+    ["Enter", "NumpadEnter", "Space"].includes(props.event.code)
+  ) {
+    props.api.applyTransactionAsync({ remove: [props.node.data] });
+    return
+  }
+  const displayedColumns = props.api.getAllDisplayedColumns();
+  if (
+    props.event.code === "Tab" &&
+    !props.event.shiftKey &&
+    ["INPUT", "TEXTAREA", "SELECT"].includes(props.event.target.tagName) &&
+    props.node.rowIndex === props.api.getDisplayedRowCount() - 1 &&
+    props.column.colId === displayedColumns[displayedColumns.length - 1].colId
+  ) {
+    const columnDefs = props.api.getColumnDefs();
+    const newRow = Object.fromEntries(
+      columnDefs
+        .filter((colDef) => !!colDef.field)
+        .map((colDef) => [colDef.field, colDef.default_value]),
+    );
+    props.api.applyTransactionAsync({ add: [newRow] }, (transaction) => {
+      const firstColumn = displayedColumns.find((col) => col.getColDef().editable !== false);
+      if (firstColumn) {
+        props.api.setFocusedCell(transaction.add[0].rowIndex, firstColumn.colId);
+        props.api.startEditingCell({
+          rowIndex: transaction.add[0].rowIndex,
+          colKey: firstColumn.colId,
+        });
+      }
+    });
   }
 };
