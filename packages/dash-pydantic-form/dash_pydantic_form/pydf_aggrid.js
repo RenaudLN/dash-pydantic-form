@@ -399,10 +399,7 @@ dagfuncs.PydfDateComparator = (filterDate, cellValue) => {
 };
 
 dagfuncs.tableKeyboardNavigation = (props) => {
-  const rows_editable = props.api.getColumnDefs()[0]?.cellRenderer === "PydfDeleteButton";
-  if (!rows_editable) {
-    return;
-  }
+  if (!props.api.gos.gridOptions.context.rowsEditable) return;
   if (
     props.column.userProvidedColDef?.cellRenderer === "PydfDeleteButton" &&
     ["Enter", "NumpadEnter", "Space"].includes(props.event.code)
@@ -410,6 +407,7 @@ dagfuncs.tableKeyboardNavigation = (props) => {
     props.api.applyTransactionAsync({ remove: [props.node.data] });
     return
   }
+  if (!props.api.gos.gridOptions.context.autoAddRows) return;
   const displayedColumns = props.api.getAllDisplayedColumns();
   if (
     props.event.code === "Tab" &&
