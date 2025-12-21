@@ -125,17 +125,33 @@ dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
     }
   }
 
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") {
+      stopEditing();
+    }
+    if (event.key === "Tab") {
+      let success;
+      if (event.shiftKey) {
+        success = props.api.tabToPreviousCell();
+      } else {
+        success = props.api.tabToNextCell();
+      }
+      event.preventDefault();
+    }
+  };
+
   return React.createElement(window.dash_mantine_components.Select, {
-      setProps,
-      data: options_,
-      value: value,
-      clearable: componentProps.clearable || true,
-      searchable: componentProps.searchable || true,
-      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-      allowDeselect: componentProps.allowDeselect || true,
-      style: { width: column.actualWidth },
-  })
-})
+    setProps,
+    onKeyDown,
+    data: options_,
+    value: value,
+    clearable: componentProps.clearable || true,
+    searchable: componentProps.searchable || true,
+    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
+    allowDeselect: componentProps.allowDeselect || true,
+    style: { width: column.actualWidth },
+  });
+});
 
 dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
   const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
@@ -172,16 +188,32 @@ dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
     }
   }
 
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") {
+      stopEditing();
+    }
+    if (event.key === "Tab") {
+      let success;
+      if (event.shiftKey) {
+        success = props.api.tabToPreviousCell();
+      } else {
+        success = props.api.tabToNextCell();
+      }
+      event.preventDefault();
+    }
+  };
+
   return React.createElement(window.dash_mantine_components.MultiSelect, {
-      setProps,
-      data: options_,
-      value: value || [],
-      clearable: componentProps.clearable || true,
-      searchable: componentProps.searchable || true,
-      selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-      style: { width: column.actualWidth },
-  })
-})
+    setProps,
+    onKeyDown,
+    data: options_,
+    value: value || [],
+    clearable: componentProps.clearable || true,
+    searchable: componentProps.searchable || true,
+    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
+    style: { width: column.actualWidth },
+  });
+});
 
 dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
   const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
@@ -363,5 +395,42 @@ dagfuncs.PydfDateComparator = (filterDate, cellValue) => {
   }
   if (cellDate > filterDate) {
     return 1;
+  }
+};
+
+dagfuncs.tableKeyboardNavigation = (props) => {
+  if (!props.api.gos.gridOptions.context.rowsEditable) return;
+  if (
+    props.column.userProvidedColDef?.cellRenderer === "PydfDeleteButton" &&
+    ["Enter", "NumpadEnter", "Space"].includes(props.event.code)
+  ) {
+    props.api.applyTransactionAsync({ remove: [props.node.data] });
+    return
+  }
+  if (!props.api.gos.gridOptions.context.autoAddRows) return;
+  const displayedColumns = props.api.getAllDisplayedColumns();
+  if (
+    props.event.code === "Tab" &&
+    !props.event.shiftKey &&
+    ["INPUT", "TEXTAREA", "SELECT"].includes(props.event.target.tagName) &&
+    props.node.rowIndex === props.api.getDisplayedRowCount() - 1 &&
+    props.column.colId === displayedColumns[displayedColumns.length - 1].colId
+  ) {
+    const columnDefs = props.api.getColumnDefs();
+    const newRow = Object.fromEntries(
+      columnDefs
+        .filter((colDef) => !!colDef.field)
+        .map((colDef) => [colDef.field, colDef.default_value]),
+    );
+    props.api.applyTransactionAsync({ add: [newRow] }, (transaction) => {
+      const firstColumn = displayedColumns.find((col) => col.getColDef().editable !== false);
+      if (firstColumn) {
+        props.api.setFocusedCell(transaction.add[0].rowIndex, firstColumn.colId);
+        props.api.startEditingCell({
+          rowIndex: transaction.add[0].rowIndex,
+          colKey: firstColumn.colId,
+        });
+      }
+    });
   }
 };

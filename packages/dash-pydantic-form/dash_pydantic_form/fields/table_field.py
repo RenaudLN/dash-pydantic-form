@@ -63,6 +63,9 @@ class TableField(BaseField):
         " If not set, it has the same value as `with_upload` by default.",
     )
     rows_editable: bool = Field(default=True, description="Whether to allow adding/removing rows.")
+    auto_add_rows: bool = Field(
+        default=False, description="Whether to automatically add new rows when Tab-ing while editing the last cell."
+    )
     table_height: int = Field(default=300, description="Table rows height in pixels.")
     column_defs_overrides: dict[str, dict] = Field(default_factory=dict, description="Ag-grid column_defs overrides.")
     dynamic_options: dict[str, JSFunction] | None = Field(
@@ -346,6 +349,10 @@ class TableField(BaseField):
                         "singleClickEdit": True,
                         "rowSelection": "multiple",
                         "stopEditingWhenCellsLoseFocus": True,
+                        "context": {
+                            "rowsEditable": self.rows_editable,
+                            "autoAddRows": self.auto_add_rows,
+                        },
                     }
                     | grid_kwargs.pop("dashGridOptions", {})
                     | {
@@ -355,6 +362,9 @@ class TableField(BaseField):
                     className=grid_kwargs.pop("className", "")
                     + " ag-theme-alpine ag-themed overflowing-ag-grid"
                     + (" read-only" if self.read_only else ""),
+                    eventListeners={
+                        "cellKeyDown": ["tableKeyboardNavigation(params)"],
+                    },
                     **grid_kwargs,
                 ),
             ]
