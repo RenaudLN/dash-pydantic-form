@@ -85,7 +85,7 @@ dash_clientside.pydf = {
 
         if (dash_clientside.callback_context.triggered_id) {
             const {field, parent} = dash_clientside.callback_context.triggered_id
-            if (field) {
+            if (field && dash_clientside.callback_context.triggered.length === 1) {
                 _changesStore[getFullpath(parent, field)] = 1;
             }
         }
