@@ -6,6 +6,7 @@ from functools import partial
 from types import UnionType
 from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
+import dash
 import dash_mantine_components as dmc
 from dash import (
     ALL,
