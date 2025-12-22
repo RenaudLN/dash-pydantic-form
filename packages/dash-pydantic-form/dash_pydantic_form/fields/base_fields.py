@@ -201,7 +201,7 @@ class BaseField(BaseModel):
         if getattr(self, "clientside_data_getter", None) or parse_version(dash.__version__) < parse_version("3.1"):
             data_getter_store = dcc.Store(
                 id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
-                data=self.clientside_data_getter,
+                data=getattr(self, "clientside_data_getter", None),
             )
             # Compose the output as a Div containing both the Store and the field inputs
             inputs = [inputs, data_getter_store]
