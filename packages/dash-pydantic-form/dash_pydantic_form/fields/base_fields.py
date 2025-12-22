@@ -198,7 +198,7 @@ class BaseField(BaseModel):
         visible = self.visible
 
         # If a clientside data getter is specified, add a dcc.Store for the data getter field
-        if getattr(self, "clientside_data_getter", None) or parse_version(dash.__version__).major < 3:
+        if getattr(self, "clientside_data_getter", None) or parse_version(dash.__version__) < parse_version("3.1"):
             data_getter_store = dcc.Store(
                 id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
                 data=self.clientside_data_getter,

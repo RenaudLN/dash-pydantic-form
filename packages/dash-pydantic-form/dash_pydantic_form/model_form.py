@@ -536,7 +536,7 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
-if parse_version(dash.__version__).major < 3:
+if parse_version(dash.__version__) < parse_version("3.1"):
     clientside_callback(
         ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
