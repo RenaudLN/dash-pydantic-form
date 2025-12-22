@@ -14,7 +14,7 @@ dash_clientside.pydf = {
         restoreWrapperId,
         restoreBehavior,
         debounce,
-        _changesStore,
+        _changesStore={},
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
