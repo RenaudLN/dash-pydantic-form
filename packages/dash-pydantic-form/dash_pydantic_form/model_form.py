@@ -534,12 +534,20 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
-clientside_callback(
-    ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
-    Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
-    Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
-    Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data", allow_optional=True),
-)
+if dash.__version__.major < 3:
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
+        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    )
+else:
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
+        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data", allow_optional=True),
+    )
 
 
 @callback(
