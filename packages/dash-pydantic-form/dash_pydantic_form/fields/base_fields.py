@@ -198,9 +198,10 @@ class BaseField(BaseModel):
         # If a clientside data getter is specified, add a dcc.Store for the data getter field
         if getattr(self, "clientside_data_getter", None):
             from dash import dcc
+
             data_getter_store = dcc.Store(
                 id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
-                data=self.clientside_data_getter
+                data=self.clientside_data_getter,
             )
             # Compose the output as a Div containing both the Store and the field inputs
             inputs = [inputs, data_getter_store]
@@ -644,7 +645,7 @@ class SelectField(BaseField):
     clientside_data_getter: str | None = Field(
         default=None,
         description="Clientside function registered in window.pydf_usage "
-                    "to retrieve a list of options. This function takes no argument.",
+        "to retrieve a list of options. This function takes no argument.",
     )
     options_labels: dict | None = Field(
         default=None, description="Mapper from option to label. Especially useful for Literals and Enums."
