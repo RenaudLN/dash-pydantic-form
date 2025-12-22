@@ -13,6 +13,7 @@ from tests.utils import (
 
 from dash_pydantic_form import ModelForm, ids
 
+
 class E(Enum):
     """Test enum."""
 
@@ -25,9 +26,10 @@ class Basic(BaseModel):
 
     a: int = Field(title="Field A")
     b: str = Field(title="Field A")
-    c: str = Field(title="Field C", json_schema_extra={'repr_type': 'Select', 'repr_kwargs': {
-        'clientside_data_getter': 'get_field_c'
-    }})
+    c: str = Field(
+        title="Field C",
+        json_schema_extra={"repr_type": "Select", "repr_kwargs": {"clientside_data_getter": "get_field_c"}},
+    )
     d: bool = Field(title="Field D")
     e: E = Field(title="Field E")
     f: date = Field(title="Field F")
