@@ -14,6 +14,7 @@ import dash
 import dash_mantine_components as dmc
 from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 from dash.development.base_component import Component
+from packaging.version import parse as parse_version
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -197,7 +198,7 @@ class BaseField(BaseModel):
         visible = self.visible
 
         # If a clientside data getter is specified, add a dcc.Store for the data getter field
-        if getattr(self, "clientside_data_getter", None) or dash.__version__.major < 3:
+        if getattr(self, "clientside_data_getter", None) or parse_version(dash.__version__).major < 3:
             data_getter_store = dcc.Store(
                 id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
                 data=self.clientside_data_getter,

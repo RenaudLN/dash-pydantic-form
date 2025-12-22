@@ -23,6 +23,7 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
+from packaging.version import parse as parse_version
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
@@ -535,7 +536,7 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
-if dash.__version__.major < 3:
+if parse_version(dash.__version__).major < 3:
     clientside_callback(
         ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
         Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
