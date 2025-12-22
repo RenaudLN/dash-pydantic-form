@@ -643,7 +643,8 @@ class SelectField(BaseField):
     )
     clientside_data_getter: str | None = Field(
         default=None,
-        description="Clientside function registered in window.pydf_usage to retrieve a list of options. This function takes no argument.",
+        description="Clientside function registered in window.pydf_usage "
+                    "to retrieve a list of options. This function takes no argument.",
     )
     options_labels: dict | None = Field(
         default=None, description="Mapper from option to label. Especially useful for Literals and Enums."
