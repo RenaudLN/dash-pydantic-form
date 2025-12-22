@@ -10,8 +10,9 @@ from types import UnionType
 from typing import Annotated, Any, ClassVar, Literal, Union, get_args, get_origin
 
 import annotated_types
+import dash
 import dash_mantine_components as dmc
-from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
+from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 from dash.development.base_component import Component
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
