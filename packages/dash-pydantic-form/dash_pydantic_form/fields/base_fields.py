@@ -195,6 +195,16 @@ class BaseField(BaseModel):
         )
         visible = self.visible
 
+        # If a clientside data getter is specified, add a dcc.Store for the data getter field
+        if getattr(self, "clientside_data_getter", None):
+            from dash import dcc
+            data_getter_store = dcc.Store(
+                id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
+                data=self.clientside_data_getter
+            )
+            # Compose the output as a Div containing both the Store and the field inputs
+            inputs = [inputs, data_getter_store]
+
         if visible is None or visible is True:
             return html.Div(
                 inputs, className="pydantic-form-field", style={"--pydf-field-cols": self.n_cols_css}, title=title
@@ -631,6 +641,9 @@ class SelectField(BaseField):
     data_getter: str | None = Field(
         default=None, description="Function to retrieve a list of options. This function takes no argument."
     )
+    clientside_data_getter: str | None = Field(
+        default=None, description="Clientside function registered in window.pydf_usage to retrieve a list of options. This function takes no argument."
+    )
     options_labels: dict | None = Field(
         default=None, description="Mapper from option to label. Especially useful for Literals and Enums."
     )
@@ -725,6 +738,7 @@ class SelectField(BaseField):
     def _get_value_repr(self, value: Any, field_info: FieldInfo):
         value_repr = super()._get_value_repr(value, field_info)
         data = self._get_data(field_info)
+        common_ids.data_getter_field()
 
         def _get_label(value, data, value_repr):
             if isinstance(value, Enum):
