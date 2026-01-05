@@ -10,7 +10,7 @@ import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -404,6 +404,9 @@ class TableField(BaseField):
         column_def: dict[str, Any] = {
             "editable": editable,
             "field": field_name,
+            "field_aliases": field_info.validation_alias.choices
+            if isinstance(field_info.validation_alias, AliasChoices)
+            else None,
             "headerName": field_repr.get_title(field_info, field_name=field_name),
             "required": required_field,
             "cellClass": {
@@ -531,10 +534,21 @@ def csv_to_table(contents: str, column_defs: list[dict]):
         _unused, content_string = contents.split(",")
 
         decoded = base64.b64decode(content_string)
+        data_dtype = {}
+        data_alias_rename = {}
+        for f in column_defs:
+            if "field" in f and "dtype" in f:
+                if "field_aliases" in f and f["field_aliases"]:
+                    data_dtype = data_dtype | {f_alias: f["dtype"] for f_alias in f["field_aliases"]}
+                data_dtype = data_dtype | {f["field"]: f["dtype"]}
+            if "field" in f and "field_aliases" in f and f["field_aliases"]:
+                data_alias_rename = data_alias_rename | {f_alias: f["field"] for f_alias in f["field_aliases"]}
+
         data = pd.read_csv(
             io.StringIO(decoded.decode("utf-8")),
-            dtype={f["field"]: f["dtype"] for f in column_defs if "field" in f and "dtype" in f},
-        )
+            dtype=data_dtype,
+        ).rename(data_alias_rename, axis=1)
+
         required_columns = [col["field"] for col in column_defs if col.get("required")]
         if set(required_columns).issubset(data.columns):
             for col in column_defs:
