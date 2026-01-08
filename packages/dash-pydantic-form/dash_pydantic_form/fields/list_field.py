@@ -16,8 +16,8 @@ from dash import (
     dcc,
     html,
 )
-from dash.development.base_component import Component
 from dash.dependencies import stringify_id
+from dash.development.base_component import Component
 from dash_iconify import DashIconify
 from plotly.io.json import to_json_plotly
 from pydantic import BaseModel, Field, SerializeAsAny, field_validator
@@ -444,80 +444,87 @@ class ListField(BaseField):
         )
 
         return dmc.Paper(
-
-                dmc.Group(
-                    [
-                            html.Div(dmc.Text(
-                                value_str,
-                                style={
-                                    "flex": 1,
-                                    "overflow": "hidden",
-                                    "textOverflow": "ellipsis",
-                                    "whiteSpace": "nowrap",
-                                },
-                                id=cls.ids.modal_parent_text(aio_id, form_id, "", parent=new_parent),
+            dmc.Group(
+                [
+                    html.Div(
+                        dmc.Text(
+                            value_str,
+                            style={
+                                "flex": 1,
+                                "overflow": "hidden",
+                                "textOverflow": "ellipsis",
+                                "whiteSpace": "nowrap",
+                            },
+                            id=cls.ids.modal_parent_text(aio_id, form_id, "", parent=new_parent),
+                        ),
+                        style={"cursor": "pointer", "flex": 1},
+                        id=cls.ids.edit_holder(aio_id, form_id, "", parent=new_parent),
+                        title="view" if read_only else "edit",
+                    ),
+                    dmc.Group(
+                        [
+                            dmc.ActionIcon(
+                                DashIconify(icon="carbon:view" if read_only else "carbon:edit", height=16),
+                                variant="light",
+                                size="sm",
+                                id=cls.ids.edit(aio_id, form_id, "", parent=new_parent),
+                                className="pydf-model-list-modal-item-btn",
                             ),
-                            style={'cursor': 'pointer', 'flex': 1},
-                            id=cls.ids.edit_holder(aio_id, form_id, "", parent=new_parent),
-                            title="view" if read_only else "edit"
-                        ),
-                        dmc.Group(
-                            [
-                                dmc.ActionIcon(
-                                    DashIconify(icon="carbon:view" if read_only else "carbon:edit", height=16),
-                                    variant="light",
-                                    size="sm",
-                                    id=cls.ids.edit(aio_id, form_id, "", parent=new_parent),
-                                    className="pydf-model-list-modal-item-btn",
-                                ),
-                            ]
-                            + items_deletable
-                            * [
-                                dmc.ActionIcon(
-                                    DashIconify(icon="carbon:trash-can", height=16),
-                                    color="red",
-                                    variant="light",
-                                    size="sm",
-                                    id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
-                                    className="pydf-model-list-modal-item-btn",
-                                ),
-                            ],
-                            gap="0.5rem",
-                        ),
-                        dmc.Modal(
-                            [
-                                dcc.Store(id=cls.ids.modal_item_data(aio_id, form_id, "", parent=new_parent),
-                                          data=to_json_plotly(item_data)),
-                                dcc.Loading(
-                                    [
-                                        html.Div(id=cls.ids.modal_holder(aio_id, form_id, "", parent=new_parent),
-                                                 style={"minHeight": "200px"}),
-                                    ],
-                                    custom_spinner=dmc.Skeleton(h='100%', visible=True),
-                                    target_components={stringify_id(cls.ids.modal_holder(aio_id, form_id, "", parent=new_parent)): 'children'},
-                                ),
-                                dmc.Group(
-                                    dmc.Button(
-                                        _("Save"),
-                                        leftSection=DashIconify(icon="carbon:save"),
-                                        id=cls.ids.modal_save(aio_id, form_id, "", parent=new_parent),
-                                        size="compact-sm",
+                        ]
+                        + items_deletable
+                        * [
+                            dmc.ActionIcon(
+                                DashIconify(icon="carbon:trash-can", height=16),
+                                color="red",
+                                variant="light",
+                                size="sm",
+                                id=cls.ids.delete(aio_id, form_id, field, parent=parent, meta=index),
+                                className="pydf-model-list-modal-item-btn",
+                            ),
+                        ],
+                        gap="0.5rem",
+                    ),
+                    dmc.Modal(
+                        [
+                            dcc.Store(
+                                id=cls.ids.modal_item_data(aio_id, form_id, "", parent=new_parent),
+                                data=to_json_plotly(item_data),
+                            ),
+                            dcc.Loading(
+                                [
+                                    html.Div(
+                                        id=cls.ids.modal_holder(aio_id, form_id, "", parent=new_parent),
+                                        style={"minHeight": "200px"},
                                     ),
-                                    justify="right",
-                                    mt="sm",
+                                ],
+                                custom_spinner=dmc.Skeleton(h="100%", visible=True),
+                                target_components={
+                                    stringify_id(
+                                        cls.ids.modal_holder(aio_id, form_id, "", parent=new_parent)
+                                    ): "children"
+                                },
+                            ),
+                            dmc.Group(
+                                dmc.Button(
+                                    _("Save"),
+                                    leftSection=DashIconify(icon="carbon:save"),
+                                    id=cls.ids.modal_save(aio_id, form_id, "", parent=new_parent),
+                                    size="compact-sm",
                                 ),
-                            ],
-                            title=value_str,
-                            id=cls.ids.modal(aio_id, form_id, "", parent=new_parent),
-                            style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
-                            styles={"content": {"containerType": "inline-size"}},
-                            opened=opened,
-                        ),
-                    ],
-                    gap="sm",
-                    align="top",
-                ),
-
+                                justify="right",
+                                mt="sm",
+                            ),
+                        ],
+                        title=value_str,
+                        id=cls.ids.modal(aio_id, form_id, "", parent=new_parent),
+                        style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
+                        styles={"content": {"containerType": "inline-size"}},
+                        opened=opened,
+                    ),
+                ],
+                gap="sm",
+                align="top",
+            ),
             withBorder=True,
             radius="sm",
             p="xs",
