@@ -433,6 +433,9 @@ function waitForElem(id) {
 }
 
 const sortedJson = (obj) => {
+    if (window.dash_component_api && window.dash_component_api.stringifyId) {
+        return window.dash_component_api.stringifyId(obj);
+    }
     const allKeys = new Set();
     JSON.stringify(obj, (key, value) => (allKeys.add(key), value));
     return JSON.stringify(obj, Array.from(allKeys).sort());
