@@ -222,7 +222,7 @@ dash_clientside.pydf = {
         }
         const firstValueField = findFirstValueField(templateCopy);
         if (firstValueField) {
-            waitForElem(sortedJson(firstValueField)).then((el) => {
+            waitForElem(stringifyId(firstValueField)).then((el) => {
                 el.focus();
             });
         }
@@ -433,13 +433,20 @@ function waitForElem(id) {
 }
 
 const sortedJson = (obj) => {
-    if (window.dash_component_api && window.dash_component_api.stringifyId) {
-        return window.dash_component_api.stringifyId(obj);
-    }
     const allKeys = new Set();
     JSON.stringify(obj, (key, value) => (allKeys.add(key), value));
     return JSON.stringify(obj, Array.from(allKeys).sort());
 };
+
+const stringifyId = (id) => {
+    if (window.dash_component_api && window.dash_component_api.stringifyId) {
+        return window.dash_component_api.stringifyId(id);
+    }
+    if (typeof id === "object") {
+        return sortedJson(id);
+    }
+    return id;
+}
 
 // Return a : separated string of the args
 const getFullpath = (...args) => {
