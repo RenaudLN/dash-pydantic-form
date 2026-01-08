@@ -14,7 +14,7 @@ dash_clientside.pydf = {
         restoreWrapperId,
         restoreBehavior,
         debounce,
-        _changesStore,
+        _changesStore={},
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
@@ -35,7 +35,7 @@ dash_clientside.pydf = {
         const hiddenPaths = dash_clientside.callback_context.inputs_list[3]
             .filter((x) => x.value.display == "none")
             .map((x) => x.id.meta.split("|")[0]);
-        const formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys);
+        const formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData);
 
         // Handle the storing/retrieval of form data if requested
         if (
@@ -349,8 +349,9 @@ function valuesDebounce(func, timeout) {
     };
 }
 
-function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
-    if (inputs.length === 0) return {};
+function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
+    if (inputs.length === 0) return currentFormData || {};
+
     const firstKey = getFullpath(inputs[0].id.parent, inputs[0].id.field);
     const startsWithArray =
         firstKey.startsWith(`${PYDF_ROOTMODEL_ROOT}:`) &&
@@ -359,7 +360,7 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
         !Object.keys(dictItemKeys).includes(
             firstKey.split(":").slice(0, 2).join(":"),
         );
-    const formData = inputs.reduce(
+    let formData = inputs.reduce(
         (acc, val) => {
             let key = getFullpath(val.id.parent, val.id.field);
             if (hiddenPaths.some((p) => key.startsWith(`${p}:`) || key === p))
@@ -379,7 +380,6 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
                     .map(([k, v]) => [k.split(":").length, v]),
             );
             parts.forEach((part, i) => {
-                // Update the list key if it is a dict entry
                 const nextMatch = Number(
                     Object.keys(matchingDictKeys)
                         .sort()
@@ -408,8 +408,47 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
         },
         startsWithArray ? [] : {},
     );
+
+    // Recursively fill missing keys from currentFormData, preserving arrays/objects
+    function fillMissing(target, source) {
+        if (!source) return;
+        if (Array.isArray(source)) {
+            for (let i = 0; i < source.length; i++) {
+                if (typeof target[i] === "undefined" || target[i] === null) {
+                    target[i] = source[i];
+                } else if (
+                    typeof target[i] === "object" &&
+                    typeof source[i] === "object" &&
+                    target[i] !== null &&
+                    source[i] !== null
+                ) {
+                    fillMissing(target[i], source[i]);
+                }
+            }
+        } else {
+            for (const key in source) {
+                if (
+                    !(key in target) ||
+                    typeof target[key] === "undefined" ||
+                    target[key] === null
+                ) {
+                    target[key] = source[key];
+                } else if (
+                    typeof target[key] === "object" &&
+                    typeof source[key] === "object" &&
+                    target[key] !== null &&
+                    source[key] !== null
+                ) {
+                    fillMissing(target[key], source[key]);
+                }
+            }
+        }
+    }
+    fillMissing(formData, currentFormData);
+
     return formData;
 }
+
 
 function waitForElem(id) {
     return new Promise((resolve) => {
