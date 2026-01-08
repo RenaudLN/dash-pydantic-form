@@ -540,7 +540,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
             if "field" in f and "dtype" in f:
                 if "field_aliases" in f and f["field_aliases"]:
                     data_dtype = data_dtype | {f_alias: f["dtype"] for f_alias in f["field_aliases"]}
-                data_dtype = data_dtype | {f["field"]: f["dtype"]}
+                data_dtype[f["field"]] = f["dtype"]
             if "field" in f and "field_aliases" in f and f["field_aliases"]:
                 data_alias_rename = data_alias_rename | {f_alias: f["field"] for f_alias in f["field_aliases"]}
 
