@@ -51,7 +51,7 @@ dash_clientside.pydf = {
             // and update the form if it is different
             if (
                 // No data in the ids.main data
-                !currentFormData &&
+                !dash_clientside.callback_context.triggered_id &&
                 // And top-level form
                 dash_clientside.callback_context.outputs_list[0].id.parent == "" &&
                 // And not triggered by data-getvalue
@@ -410,6 +410,13 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
         startsWithArray ? [] : {},
     );
 
+    function isEmpty(value) {
+        if (value == null) return true; // null or undefined
+        if (Array.isArray(value)) return value.length === 0;
+        if (typeof value === "object") return Object.keys(value).length === 0;
+        return false;
+    }
+
     // Recursively fill missing keys from currentFormData, preserving arrays/objects
     function fillMissing(target, source, depth = 0) {
         if (!source) return;
@@ -417,7 +424,9 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
         let _key = getFullpath(id?.parent, id?.field);
         if (id?.component == '_pydf-list-field-delete') {
             if (_key.split(':').length - 1 == depth) {
-                source[_key.split(':')[depth]].splice(id.meta, 1);
+                if (source[_key.split(':')[depth]]) {
+                    source[_key.split(':')[depth]].splice(id.meta, 1);
+                }
             }
         }
         if (Array.isArray(source)) {
