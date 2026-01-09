@@ -410,7 +410,7 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
     );
 
     // Recursively fill missing keys from currentFormData, preserving arrays/objects
-    function fillMissing(target, source) {
+    function fillMissing(target, source, depth = 0) {
         if (!source) return;
         const id = dash_clientside.callback_context.triggered_id;
         let _key = getFullpath(id.parent, id.field);
@@ -424,12 +424,12 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
                     target[i] !== null &&
                     source[i] !== null
                 ) {
-                    fillMissing(target[i], source[i]);
+                    fillMissing(target[i], source[i], depth+1);
                 }
             }
         } else {
             for (const key in source) {
-                if (_key !== key) {
+                if (_key.split(':')[depth] !== key && depth === _key.split(':').length -1) {
                     if (
                         !(key in target) ||
                         typeof target[key] === "undefined" ||
@@ -442,7 +442,7 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
                         target[key] !== null &&
                         source[key] !== null
                     ) {
-                        fillMissing(target[key], source[key]);
+                        fillMissing(target[key], source[key], depth+1);
                     }
                 }
             }
