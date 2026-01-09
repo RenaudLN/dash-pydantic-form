@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-09 13:58+1100\n"
+"POT-Creation-Date: 2026-01-09 15:08+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -110,11 +110,16 @@ msgstr ""
 msgid "Add row"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:577
-msgid "Duplicate column names"
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:570
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:595
+msgid "includes: "
 msgstr ""
 
 #: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:579
+msgid "Duplicate column names"
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:581
 msgid "CSV upload failed, please remove duplicates for:"
 msgstr ""
 

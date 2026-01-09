@@ -563,7 +563,9 @@ def csv_to_table(contents: str, column_defs: list[dict]):
                     dmc.Text(
                         [
                             dmc.Text(col, fw="bold", span=True, inherit=True),
-                            f" ({_('includes: ')}{', '.join(column_aliases[col])})" if column_aliases.get(col) else "",
+                            " (" + _("includes: ") + f" {', '.join(column_aliases[col])})"
+                            if column_aliases.get(col)
+                            else "",
                         ],
                         inherit=True,
                     )
@@ -588,7 +590,9 @@ def csv_to_table(contents: str, column_defs: list[dict]):
                     dmc.Text(
                         [
                             dmc.Text(col, fw="bold", span=True, inherit=True),
-                            f" ({_('includes: ')}{', '.join(column_aliases[col])})" if column_aliases.get(col) else "",
+                            " (" + _("includes: ") + f"{', '.join(column_aliases[col])})"
+                            if column_aliases.get(col)
+                            else "",
                         ],
                         inherit=True,
                     )

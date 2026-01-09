@@ -7,7 +7,7 @@ import dash
 import dash_mantine_components as dmc
 from dash import MATCH, Dash, Input, Output, State, callback, clientside_callback
 from dash_iconify import DashIconify
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, Field, ValidationError
 
 from dash_pydantic_form import AccordionFormLayout, FormSection, ModelForm, fields, get_model_cls, ids
 from dash_pydantic_utils import SEP, Quantity
@@ -55,7 +55,12 @@ class Pet(BaseModel):
 
     name: str = Field(title="Name", description="Name of the pet")
     species: Species = Field(title="Species", description="Species of the pet")
-    dob: date | None = Field(title="Date of birth", description="Date of birth of the pet", default=None)
+    dob: date | None = Field(
+        title="Date of birth",
+        description="Date of birth of the pet",
+        validation_alias=AliasChoices("dob", "date_of_birth"),
+        default=None,
+    )
     alive: bool = Field(title="Alive", description="Is the pet alive", default=True)
 
     def __str__(self) -> str:
