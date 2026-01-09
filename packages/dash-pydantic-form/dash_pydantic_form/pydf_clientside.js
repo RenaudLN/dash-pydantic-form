@@ -8,6 +8,7 @@ dash_clientside.pydf = {
         _keys,
         _visibiilty_wrappers,
         _trigger,
+        _delete,
         formId,
         storeProgress,
         currentFormData,
@@ -414,6 +415,11 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
         if (!source) return;
         const id = dash_clientside.callback_context.triggered_id;
         let _key = getFullpath(id?.parent, id?.field);
+        if (id.component == '_pydf-list-field-delete') {
+            if (_key.split(':').length - 1 == depth) {
+                source[_key.split(':')[depth]].splice(id.meta, 1);
+            }
+        }
         if (Array.isArray(source)) {
             for (let i = 0; i < source.length; i++) {
                 if (_key.split(':')[depth] !== String(i) || depth !== _key.split(':').length -1) {
