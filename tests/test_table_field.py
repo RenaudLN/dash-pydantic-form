@@ -43,7 +43,6 @@ def test_csv_to_table_missing_required():
 
 def test_csv_to_table_duplicate_columns():
     """Test error notification when duplicate columns are present."""
-    # pd.read_csv normally renames duplicates, but csv_to_table checks for them manually
     csv_content = "col1,col1\nval1,val2"
     contents = "data:text/csv;base64," + base64.b64encode(csv_content.encode()).decode()
     column_defs = [
@@ -56,6 +55,21 @@ def test_csv_to_table_duplicate_columns():
     assert isinstance(notification, dmc.Notification)
     assert "Duplicate column names" in notification.title
     assert "col1" in str(notification.message)
+
+
+def test_csv_to_table_aliases():
+    """Test mapping of CSV column aliases to canonical field names."""
+    csv_content = "alias1,col2\nval1,1"
+    contents = "data:text/csv;base64," + base64.b64encode(csv_content.encode()).decode()
+    column_defs = [
+        {"field": "col1", "field_aliases": ["alias1", "alias2"]},
+        {"field": "col2"},
+    ]
+
+    row_data, notification = csv_to_table(contents, column_defs)
+
+    assert row_data == [{"col1": "val1", "col2": 1}]
+    assert notification is None
 
 
 def test_csv_to_table_duplicate_with_alias():
@@ -75,21 +89,6 @@ def test_csv_to_table_duplicate_with_alias():
     message_str = str(notification.message)
     assert "col1" in message_str
     assert "col2" in message_str
-
-
-def test_csv_to_table_aliases():
-    """Test mapping of CSV column aliases to canonical field names."""
-    csv_content = "alias1,col2\nval1,1"
-    contents = "data:text/csv;base64," + base64.b64encode(csv_content.encode()).decode()
-    column_defs = [
-        {"field": "col1", "field_aliases": ["alias1", "alias2"]},
-        {"field": "col2"},
-    ]
-
-    row_data, notification = csv_to_table(contents, column_defs)
-
-    assert row_data == [{"col1": "val1", "col2": 1}]
-    assert notification is None
 
 
 def test_csv_to_table_options_mapping():
