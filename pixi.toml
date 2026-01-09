@@ -1,6 +1,6 @@
 [workspace]
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 name = "dash-pydantic-form"
 
 [environments]
@@ -72,3 +72,4 @@ dash = {extras = ["testing"], version = ">=2.16,<3"}
 [feature.dev.tasks]
 lint = "pre-commit run --all-files"
 test = "pytest tests --headless"
+format = "pre-commit run --all-files --hook-stage manual"

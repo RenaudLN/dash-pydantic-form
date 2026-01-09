@@ -300,6 +300,12 @@ class TableField(BaseField):
             html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
         ] * self.is_required(field_info)
 
+        # Only add the event listener if auto_add_rows is enabled
+        if self.auto_add_rows:
+            event_listeners = grid_kwargs.setdefault("eventListeners", {})
+            cell_key_down = event_listeners.setdefault("cellKeyDown", [])
+            cell_key_down.append("tableKeyboardNavigation(params)")
+
         return html.Div(
             [
                 html.Div(
@@ -364,9 +370,6 @@ class TableField(BaseField):
                     className=grid_kwargs.pop("className", "")
                     + " ag-theme-alpine ag-themed overflowing-ag-grid"
                     + (" read-only" if self.read_only else ""),
-                    eventListeners={
-                        "cellKeyDown": ["tableKeyboardNavigation(params)"],
-                    },
                     **grid_kwargs,
                 ),
             ]
