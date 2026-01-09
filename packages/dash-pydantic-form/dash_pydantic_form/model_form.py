@@ -6,7 +6,6 @@ from functools import partial
 from types import UnionType
 from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
-import dash
 import dash_mantine_components as dmc
 from dash import (
     ALL,
@@ -23,7 +22,6 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
-from packaging.version import parse as parse_version
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
