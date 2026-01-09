@@ -914,7 +914,36 @@ clientside_callback(
 clientside_callback(
     """
         async (opened, data, currentForm, id) => {
-            if (opened || dash_clientside.callback_context.triggered_id === null) {
+            if (dash_clientside.callback_context.triggered_id === undefined) {
+                if (opened) {
+                    var elem = await waitForElem(dash_component_api.stringifyId(id));
+                    elem = elem.parentNode.nextElementSibling; // Get the loading spinner div
+                    await new Promise(resolve => {
+                        (async function poll() {
+                            while (true) {
+                                const rect = elem.getBoundingClientRect();
+                                const style = getComputedStyle(elem);
+                                await new Promise(r => setTimeout(r, 100));
+                                const isVisible =
+                                    rect.height > 0 &&
+                                    style.visibility !== 'hidden' &&
+                                    style.opacity !== '0';
+                                if (isVisible) break;
+                            }
+                            resolve();
+                        })();
+                    }); // Wait for element to be visible and have non-zero height
+                    return [
+                        JSON.parse(data),
+                        dash_clientside.no_update
+                    ];
+                }
+                return [
+                    [],
+                    dash_clientside.no_update
+                ];
+            }
+            if (opened) {
                 var elem = await waitForElem(dash_component_api.stringifyId(id));
                 elem = elem.parentNode.nextElementSibling; // Get the loading spinner div
                 await new Promise(resolve => {

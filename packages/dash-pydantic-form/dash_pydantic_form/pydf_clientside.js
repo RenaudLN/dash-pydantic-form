@@ -413,23 +413,25 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
     function fillMissing(target, source, depth = 0) {
         if (!source) return;
         const id = dash_clientside.callback_context.triggered_id;
-        let _key = getFullpath(id.parent, id.field);
+        let _key = getFullpath(id?.parent, id?.field);
         if (Array.isArray(source)) {
             for (let i = 0; i < source.length; i++) {
-                if (typeof target[i] === "undefined" || target[i] === null) {
-                    target[i] = source[i];
-                } else if (
-                    typeof target[i] === "object" &&
-                    typeof source[i] === "object" &&
-                    target[i] !== null &&
-                    source[i] !== null
-                ) {
-                    fillMissing(target[i], source[i], depth+1);
+                if (_key.split(':')[depth] !== String(i) || depth !== _key.split(':').length -1) {
+                    if (typeof target[i] === "undefined" || target[i] === null) {
+                        target[i] = source[i];
+                    } else if (
+                        typeof target[i] === "object" &&
+                        typeof source[i] === "object" &&
+                        target[i] !== null &&
+                        source[i] !== null
+                    ) {
+                        fillMissing(target[i], source[i], depth+1);
+                    }
                 }
             }
         } else {
             for (const key in source) {
-                if (_key.split(':')[depth] !== key && depth === _key.split(':').length -1) {
+                if (_key.split(':')[depth] !== key || depth !== _key.split(':').length -1) {
                     if (
                         !(key in target) ||
                         typeof target[key] === "undefined" ||

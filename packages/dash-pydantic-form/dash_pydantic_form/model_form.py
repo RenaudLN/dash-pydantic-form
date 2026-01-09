@@ -6,6 +6,7 @@ from functools import partial
 from types import UnionType
 from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
+import dash
 import dash_mantine_components as dmc
 from dash import (
     ALL,
@@ -22,6 +23,7 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
+from packaging.version import parse as parse_version
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
@@ -270,6 +272,7 @@ class ModelForm(html.Div):
 
             children.extend(
                 self._get_meta_children(
+                    item=item,
                     fields_repr=fields_repr,
                     form_layout=form_layout,
                     aio_id=aio_id,
@@ -393,6 +396,7 @@ class ModelForm(html.Div):
     def _get_meta_children(  # noqa: PLR0913
         cls,
         *,
+        item: type[BaseModel] | UnionType,
         fields_repr: dict[str, dict | BaseField],
         form_layout: FormLayout | None,
         aio_id: str,
@@ -413,7 +417,7 @@ class ModelForm(html.Div):
                     **{"data-behavior": restore_behavior},
                 )
             )
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {}))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
@@ -546,7 +550,8 @@ def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
     """Update contents with ids.form data-update."""
     if not form_data:
         return no_update
-    return update_form_wrapper_contents(form_data, None, model_name, form_specs)
+    resp = update_form_wrapper_contents(form_data, None, model_name, form_specs)
+    return resp
 
 
 @callback(
