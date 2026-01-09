@@ -95,3 +95,9 @@ msgstr "Les {max_items} premiers résultats sont affichés, affinez votre recher
 
 msgid "Copy table data"
 msgstr "Copier les données"
+
+msgid "Duplicate column names"
+msgstr "Noms de colonnes en double"
+
+msgid "CSV upload failed, please remove duplicates for:"
+msgstr "L'upload du CSV a échoué, veuillez supprimer les doublons pour :"
