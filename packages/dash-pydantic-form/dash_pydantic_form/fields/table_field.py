@@ -1,7 +1,9 @@
 import base64
+import csv
 import io
 import logging
 import uuid
+from collections import Counter
 from datetime import date, datetime, time
 from functools import partial
 from typing import Any, get_args
@@ -10,7 +12,7 @@ import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from dash import MATCH, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, no_update
 from dash.development.base_component import Component
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -298,6 +300,12 @@ class TableField(BaseField):
             html.Span(" *", style={"color": "var(--input-asterisk-color, var(--mantine-color-error))"})
         ] * self.is_required(field_info)
 
+        # Only add the event listener if auto_add_rows is enabled
+        if self.auto_add_rows:
+            event_listeners = grid_kwargs.setdefault("eventListeners", {})
+            cell_key_down = event_listeners.setdefault("cellKeyDown", [])
+            cell_key_down.append("tableKeyboardNavigation(params)")
+
         return html.Div(
             [
                 html.Div(
@@ -362,9 +370,6 @@ class TableField(BaseField):
                     className=grid_kwargs.pop("className", "")
                     + " ag-theme-alpine ag-themed overflowing-ag-grid"
                     + (" read-only" if self.read_only else ""),
-                    eventListeners={
-                        "cellKeyDown": ["tableKeyboardNavigation(params)"],
-                    },
                     **grid_kwargs,
                 ),
             ]
@@ -404,6 +409,9 @@ class TableField(BaseField):
         column_def: dict[str, Any] = {
             "editable": editable,
             "field": field_name,
+            "field_aliases": field_info.validation_alias.choices
+            if isinstance(field_info.validation_alias, AliasChoices)
+            else None,
             "headerName": field_repr.get_title(field_info, field_name=field_name),
             "required": required_field,
             "cellClass": {
@@ -531,30 +539,95 @@ def csv_to_table(contents: str, column_defs: list[dict]):
         _unused, content_string = contents.split(",")
 
         decoded = base64.b64decode(content_string)
+        data_dtype = {}
+        data_alias_rename = {}
+        column_aliases = {}
+        for f in column_defs:
+            if "field" in f and "dtype" in f:
+                if "field_aliases" in f and f["field_aliases"]:
+                    data_dtype |= dict.fromkeys(f["field_aliases"], f["dtype"])
+                data_dtype[f["field"]] = f["dtype"]
+            if "field" in f and "field_aliases" in f and f["field_aliases"]:
+                data_alias_rename |= dict.fromkeys(f["field_aliases"], f["field"])
+                column_aliases |= {f["field"]: f["field_aliases"]}
+
+        # Get raw column names. pd.read_csv auto-renames duplicate columns (e.g. col, col.1), which is unsuitable.
+        data_columns = [
+            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8"))))
+        ]
+        optional_columns = [col["field"] for col in column_defs if "field" in col and not col.get("required")]
+        required_columns = [col["field"] for col in column_defs if col.get("required")]
+
+        # Error notification for duplicate columns
+        data_column_counts = Counter(data_columns)
+        if duplicated_columns := [col for col in required_columns + optional_columns if data_column_counts[col] > 1]:
+            duplicate_column_items = [
+                dmc.ListItem(
+                    dmc.Text(
+                        [
+                            dmc.Text(col, fw="bold", span=True, inherit=True),
+                            " (" + _("includes: ") + f" {', '.join(column_aliases[col])})"
+                            if column_aliases.get(col)
+                            else "",
+                        ],
+                        inherit=True,
+                    )
+                )
+                for col in duplicated_columns
+            ]
+            return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
+                color="red",
+                title=_("Duplicate column names"),
+                message=[
+                    dmc.Text(_("CSV upload failed, please remove duplicates for:"), inherit=True),
+                    dmc.List(duplicate_column_items, fz="inherit"),
+                ],
+                id=uuid.uuid4().hex,
+                action="show",
+            )
+
+        # Error notification for missing required columns
+        if not set(required_columns).issubset(data_columns):
+            required_column_items = [
+                dmc.ListItem(
+                    dmc.Text(
+                        [
+                            dmc.Text(col, fw="bold", span=True, inherit=True),
+                            " (" + _("includes: ") + f"{', '.join(column_aliases[col])})"
+                            if column_aliases.get(col)
+                            else "",
+                        ],
+                        inherit=True,
+                    )
+                )
+                for col in required_columns
+            ]
+            return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
+                color="red",
+                title=_("Wrong column names"),
+                message=[
+                    dmc.Text(_("CSV upload failed, the file should contain the following columns: "), inherit=True),
+                    dmc.List(required_column_items, fz="inherit"),
+                ],
+                id=uuid.uuid4().hex,
+                action="show",
+            )
+
+        # Succesful upload
         data = pd.read_csv(
             io.StringIO(decoded.decode("utf-8")),
-            dtype={f["field"]: f["dtype"] for f in column_defs if "field" in f and "dtype" in f},
-        )
-        required_columns = [col["field"] for col in column_defs if col.get("required")]
-        if set(required_columns).issubset(data.columns):
-            for col in column_defs:
-                if not (field := col.get("field")):
-                    continue
-                if options := col.get("cellEditorParams", {}).get("options"):
-                    values = [x["value"] for x in options]
-                    options_dict = {x["label"]: x["value"] for x in options}
-                    data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
+            dtype=data_dtype,
+        ).rename(data_alias_rename, axis=1)
+        for col in column_defs:
+            if not (field := col.get("field")):
+                continue
+            if options := col.get("cellEditorParams", {}).get("options"):
+                values = [x["value"] for x in options]
+                options_dict = {x["label"]: x["value"] for x in options}
+                data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
 
-            return data.to_dict("records"), None
+        return data.to_dict("records"), None
 
-        return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
-            color="red",
-            title=_("Wrong column names"),
-            message=_("CSV upload failed, the file should contain the following columns: ")
-            + f"{', '.join(required_columns)}",
-            id=uuid.uuid4().hex,
-            action="show",
-        )
     return no_update, None
 
 
