@@ -34,16 +34,10 @@ from dash_pydantic_form.fields.base_fields import (
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id
+from dash_pydantic_form.utils import JSFunction
 from dash_pydantic_utils import deep_merge, get_fullpath, get_non_null_annotation
 
 logger = logging.getLogger(__name__)
-
-
-class JSFunction(BaseModel):
-    """JS function."""
-
-    namespace: str
-    function_name: str
 
 
 class TableField(BaseField):
@@ -451,10 +445,7 @@ class TableField(BaseField):
             ]
             params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
             if self.dynamic_options and field_name in self.dynamic_options:
-                params["dynamicOptions"] = {
-                    "namespace": self.dynamic_options[field_name].namespace,
-                    "function_name": self.dynamic_options[field_name].function_name,
-                }
+                params["dynamicOptions"] = self.dynamic_options[field_name]
             editor = "PydfMultiSelect" if isinstance(field_repr, MultiSelectField | ChecklistField) else "PydfDropdown"
             column_def.update(
                 {
