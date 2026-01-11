@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-17 21:21+1100\n"
+"POT-Creation-Date: 2026-01-09 15:08+1100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,24 +17,24 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:452
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:455
 msgid "Found previous form data. Do you want to restore it?"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:456
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:459
 msgid "Restore"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:461
+#: packages/dash-pydantic-form/dash_pydantic_form/model_form.py:464
 msgid "Cancel"
 msgstr ""
 
 #: packages/dash-pydantic-form/dash_pydantic_form/fields/dict_field.py:319
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:816
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:815
 msgid "Add"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:482
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/list_field.py:481
 #: packages/dash-pydantic-form/dash_pydantic_form/fields/model_field.py:167
 msgid "Save"
 msgstr ""
@@ -74,47 +74,60 @@ msgstr ""
 msgid "No match"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:144
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:149
 msgid "Drag & drop a csv file or "
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:145
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:150
 msgid "select it"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:150
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:155
 msgid "CSV columns"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:153
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:158
 msgid "REQUIRED"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:180
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:185
 msgid "OPTIONAL"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:223
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:228
 msgid "Upload CSV"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:236
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:241
 msgid "Download CSV"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:251
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:256
 msgid "Copy table data"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:259
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:264
 msgid "Add row"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:542
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:570
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:595
+msgid "includes: "
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:579
+msgid "Duplicate column names"
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:581
+msgid "CSV upload failed, please remove duplicates for:"
+msgstr ""
+
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:604
 msgid "Wrong column names"
 msgstr ""
 
-#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:543
+#: packages/dash-pydantic-form/dash_pydantic_form/fields/table_field.py:606
 msgid "CSV upload failed, the file should contain the following columns: "
 msgstr ""
 

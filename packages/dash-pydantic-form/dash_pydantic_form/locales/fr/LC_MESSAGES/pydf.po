@@ -82,7 +82,7 @@ msgid "Wrong column names"
 msgstr "Noms de colonnes incorrects"
 
 msgid "CSV upload failed, the file should contain the following columns: "
-msgstr "L'upload du CSV a échoué, le fichier doit contenir les colonnes suivantes : "
+msgstr "Le téléchargement du CSV a échoué, le fichier doit contenir les colonnes suivantes : "
 
 msgid "Transfer all"
 msgstr "Tout transférer"
@@ -95,3 +95,12 @@ msgstr "Les {max_items} premiers résultats sont affichés, affinez votre recher
 
 msgid "Copy table data"
 msgstr "Copier les données"
+
+msgid "Duplicate column names"
+msgstr "Noms de colonnes dupliqués"
+
+msgid "CSV upload failed, please remove duplicates for:"
+msgstr "Le téléchargement du CSV a échoué, veuillez supprimer les doublons pour :"
+
+msgid "includes: "
+msgstr "contient: "

@@ -14,7 +14,7 @@ dash_clientside.pydf = {
         restoreWrapperId,
         restoreBehavior,
         debounce,
-        _changesStore,
+        _changesStore={},
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
@@ -85,7 +85,7 @@ dash_clientside.pydf = {
 
         if (dash_clientside.callback_context.triggered_id) {
             const {field, parent} = dash_clientside.callback_context.triggered_id
-            if (field) {
+            if (field && dash_clientside.callback_context.triggered.length === 1) {
                 _changesStore[getFullpath(parent, field)] = 1;
             }
         }
@@ -222,7 +222,7 @@ dash_clientside.pydf = {
         }
         const firstValueField = findFirstValueField(templateCopy);
         if (firstValueField) {
-            waitForElem(sortedJson(firstValueField)).then((el) => {
+            waitForElem(stringifyId(firstValueField)).then((el) => {
                 el.focus();
             });
         }
@@ -447,6 +447,16 @@ const sortedJson = (obj) => {
     JSON.stringify(obj, (key, value) => (allKeys.add(key), value));
     return JSON.stringify(obj, Array.from(allKeys).sort());
 };
+
+const stringifyId = (id) => {
+    if (window.dash_component_api && window.dash_component_api.stringifyId) {
+        return window.dash_component_api.stringifyId(id);
+    }
+    if (typeof id === "object") {
+        return sortedJson(id);
+    }
+    return id;
+}
 
 // Return a : separated string of the args
 const getFullpath = (...args) => {
