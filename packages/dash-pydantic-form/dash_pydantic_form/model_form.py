@@ -6,6 +6,7 @@ from functools import partial
 from types import UnionType
 from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
+import dash
 import dash_mantine_components as dmc
 from dash import (
     ALL,
@@ -22,6 +23,7 @@ from dash import (
     no_update,
 )
 from dash.development.base_component import Component, rd
+from packaging.version import parse as parse_version
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
@@ -533,6 +535,21 @@ clientside_callback(
     State(common_ids.value_field(MATCH, MATCH, ALL, ALL, ALL), "id"),
     prevent_initial_call=True,
 )
+
+if parse_version(dash.__version__) < parse_version("3.1"):
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
+        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    )
+else:
+    clientside_callback(
+        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
+        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data", allow_optional=True),
+    )
 
 
 @callback(

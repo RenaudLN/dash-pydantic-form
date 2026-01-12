@@ -33,4 +33,5 @@ def field_dependent_id(  # noqa: PLR0913
 
 
 value_field = partial(field_dependent_id, "_pydf-value-field")
+data_getter_field = partial(field_dependent_id, "_pydf-data-getter-field")
 checked_field = partial(field_dependent_id, "_pydf-checked-field")
