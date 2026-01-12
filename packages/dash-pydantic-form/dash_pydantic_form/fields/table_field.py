@@ -544,7 +544,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
 
         # Get raw column names. pd.read_csv auto-renames duplicate columns (e.g. col, col.1), which is unsuitable.
         data_columns = [
-            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8"))))
+            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8-sig"))))
         ]
         optional_columns = [col["field"] for col in column_defs if "field" in col and not col.get("required")]
         required_columns = [col["field"] for col in column_defs if col.get("required")]
@@ -578,7 +578,8 @@ def csv_to_table(contents: str, column_defs: list[dict]):
             )
 
         # Error notification for missing required columns
-        if not set(required_columns).issubset(data_columns):
+        if missing_required_columns := list(set(required_columns) - set(data_columns)):
+            
             required_column_items = [
                 dmc.ListItem(
                     dmc.Text(
@@ -591,7 +592,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
                         inherit=True,
                     )
                 )
-                for col in required_columns
+                for col in missing_required_columns
             ]
             return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
                 color="red",
