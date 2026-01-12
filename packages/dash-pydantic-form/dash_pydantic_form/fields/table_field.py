@@ -579,7 +579,6 @@ def csv_to_table(contents: str, column_defs: list[dict]):
 
         # Error notification for missing required columns
         if missing_required_columns := list(set(required_columns) - set(data_columns)):
-            
             required_column_items = [
                 dmc.ListItem(
                     dmc.Text(

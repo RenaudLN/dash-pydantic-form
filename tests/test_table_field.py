@@ -23,9 +23,10 @@ def test_csv_to_table_success():
     ]
     assert notification is None
 
+
 def test_csv_to_table_success_BOM():
     """Test successful CSV parsing into row data when it has a Byte Order Mark (BOM)."""
-    csv_content = "\ufeffcol1,col2\nval1,1\nval2,2" # \ufeff is microsoft BOM, checking it reads fine
+    csv_content = "\ufeffcol1,col2\nval1,1\nval2,2"  # \ufeff is microsoft BOM, checking it reads fine
     contents = "data:text/csv;base64," + base64.b64encode(csv_content.encode()).decode()
     column_defs = [
         {"field": "col1", "dtype": "str"},
