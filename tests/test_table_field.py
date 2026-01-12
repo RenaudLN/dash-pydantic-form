@@ -24,6 +24,24 @@ def test_csv_to_table_success():
     assert notification is None
 
 
+def test_csv_to_table_success_BOM():
+    """Test successful CSV parsing into row data when it has a Byte Order Mark (BOM)."""
+    csv_content = "\ufeffcol1,col2\nval1,1\nval2,2"  # \ufeff is microsoft BOM, checking it reads fine
+    contents = "data:text/csv;base64," + base64.b64encode(csv_content.encode()).decode()
+    column_defs = [
+        {"field": "col1", "dtype": "str"},
+        {"field": "col2", "dtype": "int"},
+    ]
+
+    row_data, notification = csv_to_table(contents, column_defs)
+
+    assert row_data == [
+        {"col1": "val1", "col2": 1},
+        {"col1": "val2", "col2": 2},
+    ]
+    assert notification is None
+
+
 def test_csv_to_table_missing_required():
     """Test error notification when mandatory columns are missing."""
     csv_content = "col1\nval1"
