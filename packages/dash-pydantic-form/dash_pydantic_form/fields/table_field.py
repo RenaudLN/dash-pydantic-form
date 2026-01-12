@@ -129,8 +129,16 @@ class TableField(BaseField):
         if not issubclass(template, BaseModel):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 
-        required_fields = [f for f, f_info in template.model_fields.items() if f_info.is_required()]
-        optional_fields = [f for f in template.model_fields if f not in required_fields]
+        required_fields = {
+            f: getattr(f_info, "serialization_alias", f)
+            for f, f_info in template.model_fields.items()
+            if f_info.is_required()
+        }
+        optional_fields = {
+            f: getattr(f_info, "serialization_alias", f)
+            for f, f_info in template.model_fields.items()
+            if f not in required_fields
+        }
 
         upload = []
         if self.with_upload:
@@ -162,7 +170,7 @@ class TableField(BaseField):
                                                     },
                                                     radius="sm",
                                                 )
-                                                for f in required_fields
+                                                for f in required_fields.values()
                                             ],
                                             gap="0.25rem",
                                         ),
@@ -189,7 +197,7 @@ class TableField(BaseField):
                                                     },
                                                     radius="sm",
                                                 )
-                                                for f in optional_fields
+                                                for f in optional_fields.values()
                                             ],
                                             gap="0.25rem",
                                         ),
