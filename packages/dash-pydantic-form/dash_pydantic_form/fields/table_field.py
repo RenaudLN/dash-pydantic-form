@@ -34,16 +34,10 @@ from dash_pydantic_form.fields.base_fields import (
 from dash_pydantic_form.fields.markdown_field import MarkdownField
 from dash_pydantic_form.i18n import _
 from dash_pydantic_form.ids import field_dependent_id
+from dash_pydantic_form.utils import JSFunction
 from dash_pydantic_utils import deep_merge, get_fullpath, get_non_null_annotation
 
 logger = logging.getLogger(__name__)
-
-
-class JSFunction(BaseModel):
-    """JS function."""
-
-    namespace: str
-    function_name: str
 
 
 class TableField(BaseField):
@@ -451,10 +445,7 @@ class TableField(BaseField):
             ]
             params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
             if self.dynamic_options and field_name in self.dynamic_options:
-                params["dynamicOptions"] = {
-                    "namespace": self.dynamic_options[field_name].namespace,
-                    "function_name": self.dynamic_options[field_name].function_name,
-                }
+                params["dynamicOptions"] = self.dynamic_options[field_name]
             editor = "PydfMultiSelect" if isinstance(field_repr, MultiSelectField | ChecklistField) else "PydfDropdown"
             column_def.update(
                 {
@@ -553,7 +544,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
 
         # Get raw column names. pd.read_csv auto-renames duplicate columns (e.g. col, col.1), which is unsuitable.
         data_columns = [
-            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8"))))
+            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8-sig"))))
         ]
         optional_columns = [col["field"] for col in column_defs if "field" in col and not col.get("required")]
         required_columns = [col["field"] for col in column_defs if col.get("required")]
@@ -587,7 +578,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
             )
 
         # Error notification for missing required columns
-        if not set(required_columns).issubset(data_columns):
+        if missing_required_columns := list(set(required_columns) - set(data_columns)):
             required_column_items = [
                 dmc.ListItem(
                     dmc.Text(
@@ -600,7 +591,7 @@ def csv_to_table(contents: str, column_defs: list[dict]):
                         inherit=True,
                     )
                 )
-                for col in required_columns
+                for col in missing_required_columns
             ]
             return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
                 color="red",
