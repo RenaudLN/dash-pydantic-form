@@ -427,11 +427,12 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
             if (_key.split(':').length - 1 == depth) {
                 if (dash_clientside.callback_context.triggered[0]?.value == 1) {
                     if (source[_key.split(':')[depth]]) {
-                        console.log('deleting index', id.meta, 'from', source[_key.split(':')[depth]]);
                         source[_key.split(':')[depth]].splice(id.meta, 1);
                     }
                 } else {
-                    target[_key.split(':')[depth]] = source[_key.split(':')[depth]];
+                    if (!(_key.split(':')[depth] in source) || isEmpty(source[_key.split(':')[depth]])) {
+                        target[_key.split(':')[depth]] = source[_key.split(':')[depth]];
+                    }
                     return;
                 }
             }
@@ -461,7 +462,9 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
             for (const key in source) {
                 if (_key.split(':')[depth] === key && depth === _key.split(':').length -1) {
                     if (id?.component == '_pydf-list-field-add') {
-                        target[key] = source[key];
+                        if (!(key in source) || isEmpty(source[key])) {
+                            target[key] = source[key];
+                        }
                         continue;
                     }
                 }
