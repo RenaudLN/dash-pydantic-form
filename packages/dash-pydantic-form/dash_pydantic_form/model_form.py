@@ -415,7 +415,9 @@ class ModelForm(html.Div):
                     **{"data-behavior": restore_behavior},
                 )
             )
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {}))
+            children.append(
+                dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {})
+            )
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
