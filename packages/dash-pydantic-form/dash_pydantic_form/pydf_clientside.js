@@ -9,6 +9,7 @@ dash_clientside.pydf = {
         _visibiilty_wrappers,
         _trigger,
         _delete,
+        _add,
         formId,
         storeProgress,
         currentFormData,
@@ -424,13 +425,25 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
         let _key = getFullpath(id?.parent, id?.field);
         if (id?.component == '_pydf-list-field-delete') {
             if (_key.split(':').length - 1 == depth) {
-                if (source[_key.split(':')[depth]]) {
-                    source[_key.split(':')[depth]].splice(id.meta, 1);
+                if (dash_clientside.callback_context.triggered[0]?.value == 1) {
+                    if (source[_key.split(':')[depth]]) {
+                        console.log('deleting index', id.meta, 'from', source[_key.split(':')[depth]]);
+                        source[_key.split(':')[depth]].splice(id.meta, 1);
+                    }
+                } else {
+                    target[_key.split(':')[depth]] = source[_key.split(':')[depth]];
+                    return;
                 }
             }
         }
         if (Array.isArray(source)) {
             for (let i = 0; i < source.length; i++) {
+                if (_key.split(':')[depth] === String(i) && depth === _key.split(':').length -1) {
+                    if (id?.component == '_pydf-list-field-add') {
+                        target[i] = source[i];
+                        continue;
+                    }
+                }
                 if (_key.split(':')[depth] !== String(i) || depth !== _key.split(':').length -1) {
                     if (typeof target[i] === "undefined" || target[i] === null) {
                         target[i] = source[i];
@@ -446,6 +459,12 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
             }
         } else {
             for (const key in source) {
+                if (_key.split(':')[depth] === key && depth === _key.split(':').length -1) {
+                    if (id?.component == '_pydf-list-field-add') {
+                        target[key] = source[key];
+                        continue;
+                    }
+                }
                 if (_key.split(':')[depth] !== key || depth !== _key.split(':').length -1) {
                     if (
                         !(key in target) ||

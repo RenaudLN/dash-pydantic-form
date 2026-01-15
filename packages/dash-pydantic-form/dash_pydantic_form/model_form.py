@@ -415,9 +415,7 @@ class ModelForm(html.Div):
                     **{"data-behavior": restore_behavior},
                 )
             )
-            children.append(
-                dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {})
-            )
+            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {}))
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
             if is_subclass(data_model, BaseModel):
@@ -495,6 +493,7 @@ clientside_callback(
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
     Input(ModelForm.ids.form(MATCH, MATCH), "data-getvalues"),
     Input(fields.List.ids.delete(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
+    Input(fields.List.ids.add(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
     State(ModelForm.ids.form(MATCH, MATCH), "id"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
