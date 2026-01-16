@@ -37,7 +37,14 @@ dash_clientside.pydf = {
         const hiddenPaths = dash_clientside.callback_context.inputs_list[3]
             .filter((x) => x.value.display == "none")
             .map((x) => x.id.meta.split("|")[0]);
-        const formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData);
+        const strId = sortedJson(
+            dash_clientside.callback_context.outputs_list[0].id,
+        );
+        let formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, formState[strId] || currentFormData);
+        if (formData === undefined) {
+            return [dash_clientside.no_update, dash_clientside.no_update];
+        }
+        formState[strId] = formData;
 
         // Handle the storing/retrieval of form data if requested
         if (
@@ -339,6 +346,7 @@ dash_clientside.pydf = {
 };
 
 let valuesTimer = {};
+let formState = {};
 function valuesDebounce(func, timeout) {
     return (...args) => {
         const strId = sortedJson(args[0]);
@@ -347,12 +355,29 @@ function valuesDebounce(func, timeout) {
         }
         valuesTimer[strId] = setTimeout(() => {
             func.apply(this, args);
+            delete formState[strId];
         }, timeout);
     };
 }
 
+// Make sure lodash is available as _
 function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
-    if (inputs.length === 0) return currentFormData || {};
+    const id = dash_clientside.callback_context.triggered_id;
+    if (inputs.length === 0) {
+        return _.omitBy(currentFormData, _.isEmpty) || {}
+    }
+
+    function fixPathKeys(parts) {
+        for (let i = 0; i < parts.length; i++) {
+            const dictKey = parts.slice(0, i + 1).join(":");
+            if (dictItemKeys.hasOwnProperty(dictKey)) {
+                parts[i] = dictItemKeys[dictKey];
+            } else {
+                parts[i] = /^\d+$/.test(parts[i]) ? Number(parts[i]) : parts[i]
+            }
+        }
+        return parts;
+    }
 
     const firstKey = getFullpath(inputs[0].id.parent, inputs[0].id.field);
     const startsWithArray =
@@ -362,133 +387,61 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
         !Object.keys(dictItemKeys).includes(
             firstKey.split(":").slice(0, 2).join(":"),
         );
-    let formData = inputs.reduce(
-        (acc, val) => {
-            let key = getFullpath(val.id.parent, val.id.field);
-            if (hiddenPaths.some((p) => key.startsWith(`${p}:`) || key === p))
-                return acc;
-            const parts = key
-                .split(":")
-                .filter((p) => p !== PYDF_ROOTMODEL_ROOT);
-            key = parts.join(":");
-            let pointer = acc;
-            const matchingDictKeys = Object.fromEntries(
-                Object.entries(dictItemKeys)
-                    .map((entry) => [
-                        entry[0].replaceAll(`${PYDF_ROOTMODEL_ROOT}:`, ""),
-                        entry[1],
-                    ])
-                    .filter((entry) => key.startsWith(entry[0]))
-                    .map(([k, v]) => [k.split(":").length, v]),
-            );
-            parts.forEach((part, i) => {
-                const nextMatch = Number(
-                    Object.keys(matchingDictKeys)
-                        .sort()
-                        .filter((x) => x >= i + 1)[0] || -1,
-                );
-                if (i + 1 == nextMatch) {
-                    part = matchingDictKeys[i + 1] || part;
-                }
-                if (i === parts.length - 1) {
-                    pointer[part] = val.value;
-                } else {
-                    const prt =
-                        i + 1 !== nextMatch && /^\d+$/.test(part)
-                            ? Number(part)
-                            : part;
-                    if (!pointer[prt]) {
-                        pointer[prt] =
-                            i + 2 !== nextMatch && /^\d+$/.test(parts[i + 1])
-                                ? []
-                                : {};
-                    }
-                    pointer = pointer[prt];
-                }
-            });
-            return acc;
-        },
-        startsWithArray ? [] : {},
-    );
 
-    function isEmpty(value) {
-        if (value == null) return true; // null or undefined
-        if (Array.isArray(value)) return value.length === 0;
-        if (typeof value === "object") return Object.keys(value).length === 0;
-        return false;
+    let formData = currentFormData ? _.cloneDeep(currentFormData) : (startsWithArray ? [] : {});
+    if (_.isEmpty(formData)) {
+        formData = startsWithArray ? [] : {};
     }
 
-    // Recursively fill missing keys from currentFormData, preserving arrays/objects
-    function fillMissing(target, source, depth = 0) {
-        if (!source) return;
-        const id = dash_clientside.callback_context.triggered_id;
-        let _key = getFullpath(id?.parent, id?.field);
-        if (id?.component == '_pydf-list-field-delete') {
-            if (_key.split(':').length - 1 == depth) {
-                if (dash_clientside.callback_context.triggered[0]?.value == 1) {
-                    if (source[_key.split(':')[depth]]) {
-                        source[_key.split(':')[depth]].splice(id.meta, 1);
+    if (id) {
+        var path = getFullpath(id.parent, id.field).split(':').filter((p) => p !== PYDF_ROOTMODEL_ROOT);
+        if (id.meta && id.meta != 'discriminator') {
+            path.push(id.meta)
+        }
+        path = fixPathKeys(path)
+        if (id.component === "_pydf-list-field-delete") {
+            if (dash_clientside.callback_context.triggered[0].value === 1) {
+                if (typeof path[path.length - 1] === "number") {
+                    path = path.slice(0, -1);
+                }
+                if (path.length === 0) {
+                    oldList = formData;
+                } else {
+                    oldList = _.get(formData, path, []);
+                }
+                if (Array.isArray(oldList)) {
+                    const newList = oldList.slice(0, id.meta).concat(oldList.slice(id.meta + 1));
+                    if (newList.length > 0) {
+                        _.set(formData, path, newList);
+                    } else {
+                        _.unset(formData, path);
                     }
                 } else {
-                    if (!(_key.split(':')[depth] in source) || isEmpty(source[_key.split(':')[depth]])) {
-                        target[_key.split(':')[depth]] = source[_key.split(':')[depth]];
-                    }
-                    return;
+                    _.unset(formData, path);
                 }
+                return formData;
             }
         }
-        if (Array.isArray(source)) {
-            for (let i = 0; i < source.length; i++) {
-                if (_key.split(':')[depth] === String(i) && depth === _key.split(':').length -1) {
-                    if (id?.component == '_pydf-list-field-add') {
-                        target[i] = source[i];
-                        continue;
-                    }
-                }
-                if (_key.split(':')[depth] !== String(i) || depth !== _key.split(':').length -1) {
-                    if (typeof target[i] === "undefined" || target[i] === null) {
-                        target[i] = source[i];
-                    } else if (
-                        typeof target[i] === "object" &&
-                        typeof source[i] === "object" &&
-                        target[i] !== null &&
-                        source[i] !== null
-                    ) {
-                        fillMissing(target[i], source[i], depth+1);
-                    }
-                }
-            }
-        } else {
-            for (const key in source) {
-                if (_key.split(':')[depth] === key && depth === _key.split(':').length -1) {
-                    if (id?.component == '_pydf-list-field-add') {
-                        if (!(key in source) || isEmpty(source[key])) {
-                            target[key] = source[key];
-                        }
-                        continue;
-                    }
-                }
-                if (_key.split(':')[depth] !== key || depth !== _key.split(':').length -1) {
-                    if (
-                        !(key in target) ||
-                        typeof target[key] === "undefined" ||
-                        target[key] === null
-                    ) {
-                        target[key] = source[key];
-                    } else if (
-                        typeof target[key] === "object" &&
-                        typeof source[key] === "object" &&
-                        target[key] !== null &&
-                        source[key] !== null
-                    ) {
-                        fillMissing(target[key], source[key], depth+1);
-                    }
-                }
-            }
+        if (id && dictItemKeys.hasOwnProperty(`${getFullpath(id.parent, id.field)}:${id.meta}`)) {
+            _.unset(formData, path.slice(0, -1));
         }
     }
-    fillMissing(formData, currentFormData);
-
+    for (const val of inputs) {
+        let key = getFullpath(val.id.parent, val.id.field);
+        if (hiddenPaths.some((p) => key.startsWith(`${p}:`) || key === p)) {
+            continue;
+        }
+        var parts = key.split(":").filter((p) => p !== PYDF_ROOTMODEL_ROOT);
+        // Handle dictItemKeys replacement
+        if (val.id.meta && val.id.meta != 'discriminator') {
+            parts.push(val.id.meta)
+        }
+        parts = fixPathKeys(parts);
+        if (dictItemKeys.hasOwnProperty(key)) {
+            parts = parts.slice(0, -1).concat([dictItemKeys[key]]);
+        }
+        _.set(formData, parts, val.value);
+    }
     return formData;
 }
 

@@ -28,6 +28,10 @@ _js_dist = [
         "relative_package_path": "pydf_aggrid.js",
         "namespace": "dash_pydantic_form",
     },
+    {
+        "relative_package_path": "pydf_lodash.js",
+        "namespace": "dash_pydantic_form",
+    },
 ]
 
 __version__ = version(__package__)
