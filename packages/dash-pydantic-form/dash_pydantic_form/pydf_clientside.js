@@ -17,6 +17,7 @@ dash_clientside.pydf = {
         restoreBehavior,
         debounce,
         _changesStore={},
+        _manageState=false
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
@@ -40,11 +41,13 @@ dash_clientside.pydf = {
         const strId = sortedJson(
             dash_clientside.callback_context.outputs_list[0].id,
         );
-        let formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, formState[strId] || currentFormData);
+        let formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, _manageState ? formState[strId] || currentFormData : {});
         if (formData === undefined) {
             return [dash_clientside.no_update, dash_clientside.no_update];
         }
-        formState[strId] = formData;
+        if (_manageState) {
+            formState[strId] = formData;
+        }
 
         // Handle the storing/retrieval of form data if requested
         if (
