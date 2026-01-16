@@ -282,7 +282,7 @@ class ModelForm(html.Div):
                     form_cols=form_cols,
                     data_model=data_model,
                     restore_behavior=restore_behavior,
-                    manage_state=manage_state
+                    manage_state=manage_state,
                 )
             )
 
