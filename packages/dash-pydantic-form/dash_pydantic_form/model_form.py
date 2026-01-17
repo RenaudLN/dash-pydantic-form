@@ -64,6 +64,7 @@ class ModelFormIdsFactory:
     model_store = partial(form_base_id, "_pydf-model-store")
     form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
     change_store = partial(form_base_id, "_pydf-changes-store")
+    manage_state = partial(form_base_id, "_pydf-manage-state")
 
 
 @dc.dataclass(frozen=True)
@@ -79,6 +80,7 @@ class ModelFormIds:
     model_store: dict[str, str]
     form_specs_store: dict[str, str]
     change_store: dict[str, str]
+    manage_state: dict[str, str]
 
     @classmethod
     def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
@@ -195,6 +197,7 @@ class ModelForm(html.Div):
         fields_order: list[str] | None = None,
         store_progress: bool | Literal["local", "session"] = False,
         restore_behavior: Literal["auto", "notify"] = "notify",
+        manage_state: bool = False,
     ) -> None:
         if isinstance(item, type) and issubclass(item, RootModel):
             item = convert_root_to_base_model(item)
@@ -270,6 +273,7 @@ class ModelForm(html.Div):
 
             children.extend(
                 self._get_meta_children(
+                    item=item,
                     fields_repr=fields_repr,
                     form_layout=form_layout,
                     aio_id=aio_id,
@@ -278,6 +282,7 @@ class ModelForm(html.Div):
                     form_cols=form_cols,
                     data_model=data_model,
                     restore_behavior=restore_behavior,
+                    manage_state=manage_state,
                 )
             )
 
@@ -393,6 +398,7 @@ class ModelForm(html.Div):
     def _get_meta_children(  # noqa: PLR0913
         cls,
         *,
+        item: type[BaseModel] | UnionType,
         fields_repr: dict[str, dict | BaseField],
         form_layout: FormLayout | None,
         aio_id: str,
@@ -401,6 +407,7 @@ class ModelForm(html.Div):
         form_cols: int,
         data_model: type[BaseModel] | UnionType,
         restore_behavior: Literal["auto", "notify"],
+        manage_state: bool = False,
     ):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
@@ -413,9 +420,12 @@ class ModelForm(html.Div):
                     **{"data-behavior": restore_behavior},
                 )
             )
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(
+                dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {})
+            )
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.manage_state(aio_id, form_id), data=manage_state))
             if is_subclass(data_model, BaseModel):
                 model_name = str(data_model)
             elif get_origin(data_model) in [Union, UnionType]:
@@ -490,6 +500,8 @@ clientside_callback(
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
     Input(ModelForm.ids.form(MATCH, MATCH), "data-getvalues"),
+    Input(fields.List.ids.delete(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
+    Input(fields.List.ids.add(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
     State(ModelForm.ids.form(MATCH, MATCH), "id"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
@@ -497,6 +509,7 @@ clientside_callback(
     State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "data-behavior"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-debounce"),
     State(ModelForm.ids.change_store(MATCH, MATCH), "data"),
+    State(ModelForm.ids.manage_state(MATCH, MATCH), "data"),
 )
 
 clientside_callback(
@@ -546,7 +559,8 @@ def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
     """Update contents with ids.form data-update."""
     if not form_data:
         return no_update
-    return update_form_wrapper_contents(form_data, None, model_name, form_specs)
+    resp = update_form_wrapper_contents(form_data, None, model_name, form_specs)
+    return resp
 
 
 @callback(
