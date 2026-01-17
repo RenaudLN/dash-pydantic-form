@@ -427,7 +427,7 @@ class ListField(BaseField):
         """Create an item with bare forms for the model list field."""
         from dash_pydantic_form import ModelForm
 
-        unmount = _kwargs.get('input_kwargs').get('unmount', False)
+        unmount = _kwargs.get("input_kwargs").get("unmount", False)
 
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
@@ -493,10 +493,7 @@ class ListField(BaseField):
                                 id=cls.ids.modal_item_data(aio_id, form_id, "", parent=new_parent),
                                 data=to_json_plotly(item_data),
                             ),
-                            dcc.Store(
-                                id=cls.ids.modal_unmount(aio_id, form_id, "", parent=new_parent),
-                                data=unmount
-                            ),
+                            dcc.Store(id=cls.ids.modal_unmount(aio_id, form_id, "", parent=new_parent), data=unmount),
                             dcc.Loading(
                                 [
                                     html.Div(
@@ -988,5 +985,5 @@ clientside_callback(
     State(ListField.ids.modal_item_data(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
     State(ListField.ids.modal_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
     State(ListField.ids.modal_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
-    State(ListField.ids.modal_unmount(MATCH, MATCH, MATCH, MATCH, MATCH), "data")
+    State(ListField.ids.modal_unmount(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
 )
