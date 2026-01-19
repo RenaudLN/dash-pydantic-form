@@ -178,7 +178,7 @@ class ListField(BaseField):
             fields_order=fields_order,
         )
 
-        unmount = _kwargs.get("input_kwargs").get("unmount", False)
+        unmount = _kwargs.get("input_kwargs", {}).get("unmount", False)
 
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
@@ -453,7 +453,7 @@ class ListField(BaseField):
         """Create an item with bare forms for the model list field."""
         from dash_pydantic_form import ModelForm
 
-        unmount = _kwargs.get("input_kwargs").get("unmount", False)
+        unmount = _kwargs.get("input_kwargs", {}).get("unmount", False)
 
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
