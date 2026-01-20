@@ -342,7 +342,7 @@ dash_clientside.pydf = {
             console.warn(`Getter ${getterName} not found in pydf_usage`);
             return dash_clientside.no_update;
         }
-        return window.pydf_usage[getterName]();
+        return window.pydf_usage[getterName](id);
     }
 };
 
