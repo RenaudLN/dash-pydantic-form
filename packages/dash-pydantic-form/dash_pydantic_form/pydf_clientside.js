@@ -334,7 +334,7 @@ dash_clientside.pydf = {
             ],
         };
     },
-    getClientsideData: (id, getterName) => {
+    getClientsideData: (__, id, getterName) => {
         if (!getterName) {
             return dash_clientside.no_update;
         }

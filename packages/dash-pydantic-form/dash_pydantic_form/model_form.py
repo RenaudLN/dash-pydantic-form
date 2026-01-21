@@ -536,20 +536,13 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
-if parse_version(dash.__version__) < parse_version("3.1"):
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
-        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
-        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
-        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
-    )
-else:
-    clientside_callback(
-        ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
-        Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
-        Input(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
-        Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data", allow_optional=True),
-    )
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="getClientsideData"),
+    Output(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+    Input(common_ids.data_getter_field(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+)
 
 
 @callback(
