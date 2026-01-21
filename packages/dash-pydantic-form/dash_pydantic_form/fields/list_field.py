@@ -210,25 +210,33 @@ class ListField(BaseField):
                 ),
                 dmc.AccordionPanel(
                     [
-                        dcc.Store(
-                            id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
-                            data=to_json_plotly(item_data),
-                        ),
-                        dcc.Store(id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount),
-                        dcc.Loading(
+                        *(
                             [
-                                DashIntersectionObserver(
-                                    item_data if not unmount else "",
-                                    id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
-                                    style={"minHeight": "200px"},
+                                dcc.Store(
+                                    id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
+                                    data=to_json_plotly(item_data),
                                 ),
-                            ],
-                            custom_spinner=dmc.Skeleton(h="100%", visible=True),
-                            target_components={
-                                stringify_id(
-                                    cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
-                                ): "children"
-                            },
+                                dcc.Store(
+                                    id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount
+                                ),
+                                dcc.Loading(
+                                    [
+                                        DashIntersectionObserver(
+                                            "",
+                                            id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
+                                            style={"minHeight": "200px"},
+                                        ),
+                                    ],
+                                    custom_spinner=dmc.Skeleton(h="100%", visible=True),
+                                    target_components={
+                                        stringify_id(
+                                            cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
+                                        ): "children"
+                                    },
+                                ),
+                            ]
+                            if unmount
+                            else [item_data]
                         ),
                     ]
                 ),
@@ -515,27 +523,33 @@ class ListField(BaseField):
                     ),
                     dmc.Modal(
                         [
-                            dcc.Store(
-                                id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
-                                data=to_json_plotly(item_data),
-                            ),
-                            dcc.Store(
-                                id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount
-                            ),
-                            dcc.Loading(
+                            *(
                                 [
-                                    DashIntersectionObserver(
-                                        item_data if not unmount else "",
-                                        id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
-                                        style={"minHeight": "200px"},
+                                    dcc.Store(
+                                        id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
+                                        data=to_json_plotly(item_data),
                                     ),
-                                ],
-                                custom_spinner=dmc.Skeleton(h="100%", visible=True),
-                                target_components={
-                                    stringify_id(
-                                        cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
-                                    ): "children"
-                                },
+                                    dcc.Store(
+                                        id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount
+                                    ),
+                                    dcc.Loading(
+                                        [
+                                            DashIntersectionObserver(
+                                                "",
+                                                id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
+                                                style={"minHeight": "200px"},
+                                            ),
+                                        ],
+                                        custom_spinner=dmc.Skeleton(h="100%", visible=True),
+                                        target_components={
+                                            stringify_id(
+                                                cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
+                                            ): "children"
+                                        },
+                                    ),
+                                ]
+                                if unmount
+                                else [item_data]
                             ),
                             dmc.Group(
                                 dmc.Button(
