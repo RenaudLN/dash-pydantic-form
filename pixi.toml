@@ -73,3 +73,5 @@ dash = {extras = ["testing"], version = ">=2.16,<3"}
 lint = "pre-commit run --all-files"
 test = "pytest tests --headless"
 format = "pre-commit run --all-files --hook-stage manual"
+clean-dists = "python -c \"import shutil, pathlib; [shutil.rmtree(p, ignore_errors=True) for p in map(str, pathlib.Path('.').glob('packages/**/dist'))]\""
+build = "pixi run clean-dists && python -m build packages/dash-pydantic-form && python -m build packages/dash-pydantic-utils"
