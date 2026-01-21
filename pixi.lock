@@ -260,10 +260,11 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py310ha75aee5_2.conda
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e6/8e/1343024f59ceb6adb346fb643fb23c460f645d509533b0524f490f46febf/dash_intersection_observer-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
+      - pypi: ./packages/dash-pydantic-form
       - pypi: ./packages/dash-pydantic-utils
-      - pypi: packages/dash-pydantic-form
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -505,10 +506,11 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.23.0-py310h078409c_2.conda
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e6/8e/1343024f59ceb6adb346fb643fb23c460f645d509533b0524f490f46febf/dash_intersection_observer-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
+      - pypi: ./packages/dash-pydantic-form
       - pypi: ./packages/dash-pydantic-utils
-      - pypi: packages/dash-pydantic-form
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -761,10 +763,11 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: https://files.pythonhosted.org/packages/cb/8c/2b30c12155ad8de0cf641d76a8b396a16d2c36bc6d50b621a62b7c4567c1/build-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/e6/8e/1343024f59ceb6adb346fb643fb23c460f645d509533b0524f490f46febf/dash_intersection_observer-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
+      - pypi: ./packages/dash-pydantic-form
       - pypi: ./packages/dash-pydantic-utils
-      - pypi: packages/dash-pydantic-form
   default:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -2685,28 +2688,12 @@ packages:
   timestamp: 1766257087079
 - pypi: ./packages/dash-pydantic-form
   name: dash-pydantic-form
-  version: 0.16.0.post1.dev8+g1f09237.d20250805
-  sha256: 1f3137629759d30d36e100ead4b4db519ddbb1f68a355e5d62e1673987631b43
+  version: 0.16.0.post1.dev64+ge33822013
+  sha256: 286a2473fe9d7bd902b409520ab921a5141a6f33833c5d9cc8a9ce2dfa4bf648
   requires_dist:
   - dash-ag-grid>=31
   - dash-iconify
-  - dash-mantine-components>=0.15,<3
-  - dash-pydantic-utils
-  - dash>=2.16,<4
-  - fsspec
-  - pydantic==2.*
-  - dash[testing] ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  requires_python: '>=3.10,<3.14'
-  editable: true
-- pypi: packages/dash-pydantic-form
-  name: dash-pydantic-form
-  version: 0.17.4.post1.dev20+g869f14f
-  sha256: 1f3137629759d30d36e100ead4b4db519ddbb1f68a355e5d62e1673987631b43
-  requires_dist:
-  - dash-ag-grid>=31
-  - dash-iconify
+  - dash-intersection-observer
   - dash-mantine-components>=0.15,<3
   - dash-pydantic-utils
   - dash>=2.16,<4
