@@ -530,7 +530,8 @@ class ListField(BaseField):
                                         data=to_json_plotly(item_data),
                                     ),
                                     dcc.Store(
-                                        id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount
+                                        id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent),
+                                        data=unmount,
                                     ),
                                     dcc.Loading(
                                         [
