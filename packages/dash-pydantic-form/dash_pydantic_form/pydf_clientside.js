@@ -503,7 +503,16 @@ const uuid4 = () => {
 const updateModelListIds = (child, path, newIdx) => {
     if (typeof child !== "object" || child === null) return child;
     Object.entries(child).forEach(([key, val]) => {
-        if (key === "id" && typeof val === "object" && val.parent != null) {
+        if (typeof val === "string" && key === 'data') {
+            var oldVal = val;
+            val = val.replace(
+                new RegExp(`${path}:(\\d+)`),
+                `${path}:${newIdx}`,
+            );
+            if (oldVal !== val) {
+                child[key] = val;
+            }
+        } else if (key === "id" && typeof val === "object" && val.parent != null) {
             val.parent = val.parent.replace(
                 new RegExp(`${path}:(\\d+)`),
                 `${path}:${newIdx}`,
