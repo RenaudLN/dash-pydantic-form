@@ -1,11 +1,7 @@
 import dataclasses as dc
 from functools import partial
-from typing import TYPE_CHECKING, Optional, overload
 
 from dash.dependencies import _Wildcard
-
-if TYPE_CHECKING:
-    from dash_pydantic_form.model_form import ModelForm
 
 
 def form_dependent_id(component: str, aio_id: str | _Wildcard, form_id: str | _Wildcard) -> dict:
@@ -74,31 +70,3 @@ class ModelFormIds:
     def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
         """Instanciation from aio_id and form_id."""
         return cls(*(getattr(ModelFormIdsFactory, id_field.name)(aio_id, form_id) for id_field in dc.fields(cls)))
-
-
-class IdAccessor:
-    """Descriptor for handling access to either instances or the factory of model form ids via ``ModelForm`` class."""
-
-    @overload
-    def __get__(self, obj: "ModelForm", objtype=None) -> ModelFormIds: ...
-    @overload
-    def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
-    def __get__(self, obj: Optional["ModelForm"], objtype=None):
-        """Returns the ``ModelFormIdsFactory`` class if accessed via the ``ModelForm`` class directly (ModelForm.ids)
-        or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
-        """
-        if obj is None:
-            # access via class
-            return ModelFormIdsFactory
-
-        if isinstance(obj, ModelForm):
-            # access via instance
-            return obj._ids
-
-        raise RuntimeError("IdAccessor should only be defined on ModelForm or an instance of ModelForm")
-
-    def __set__(self, obj: "ModelForm", base: ModelFormIds | tuple[str, str]):
-        """Sets another set of model form ids to a ``ModelForm`` object."""
-        value = ModelFormIds.from_basic_ids(base[0], base[1]) if isinstance(base, tuple) else base
-
-        obj._ids = value

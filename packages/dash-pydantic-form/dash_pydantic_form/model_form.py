@@ -2,7 +2,7 @@ import uuid
 import warnings
 from copy import deepcopy
 from types import UnionType
-from typing import Annotated, Any, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
 
 import dash_mantine_components as dmc
 from dash import (
@@ -23,7 +23,7 @@ from dash.development.base_component import Component, rd
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
-from dash_pydantic_form.ids import IdAccessor, ModelFormIds, ModelFormIdsFactory
+from dash_pydantic_form.ids import ModelFormIds, ModelFormIdsFactory
 from dash_pydantic_utils import (
     SEP,
     Type,
@@ -47,6 +47,34 @@ Children_ = Component | str | int | float
 Children = Children_ | list[Children_]
 SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
+
+
+class IdAccessor:
+    """Descriptor for handling access to either instances or the factory of model form ids via ``ModelForm`` class."""
+
+    @overload
+    def __get__(self, obj: "ModelForm", objtype=None) -> ModelFormIds: ...
+    @overload
+    def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
+    def __get__(self, obj: Optional["ModelForm"], objtype=None):
+        """Returns the ``ModelFormIdsFactory`` class if accessed via the ``ModelForm`` class directly (ModelForm.ids)
+        or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
+        """
+        if obj is None:
+            # access via class
+            return ModelFormIdsFactory
+
+        if isinstance(obj, ModelForm):
+            # access via instance
+            return obj._ids
+
+        raise RuntimeError("IdAccessor should only be defined on ModelForm or an instance of ModelForm")
+
+    def __set__(self, obj: "ModelForm", base: ModelFormIds | tuple[str, str]):
+        """Sets another set of model form ids to a ``ModelForm`` object."""
+        value = ModelFormIds.from_basic_ids(base[0], base[1]) if isinstance(base, tuple) else base
+
+        obj._ids = value
 
 
 class ModelForm(html.Div):
