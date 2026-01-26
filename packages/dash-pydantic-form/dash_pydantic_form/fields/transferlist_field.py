@@ -24,7 +24,7 @@ from pydantic.fields import FieldInfo
 
 from dash_pydantic_form import ids as common_ids
 from dash_pydantic_form.fields.base_fields import BaseField
-from dash_pydantic_form.i18n import _
+from dash_pydantic_form.i18n import _, language_context
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class TransferListField(BaseField):
         cls.getters[name] = data_getter
 
     @classmethod
-    def get_data(cls, data_getter: str, value: list, search: str | None = None, max_items: int | None = None) -> dict:
+    def get_data(cls, data_getter: str, value: list, search: str | None = None, max_items: int | None = None) -> list:
         """Retrieve data from Literal annotation if data is not present in input_kwargs."""
         try:
             getter = cls.getters[data_getter]
@@ -350,6 +350,7 @@ class TransferListField(BaseField):
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
     State(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "value"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def filter_checklist(  # noqa: PLR0913
@@ -360,25 +361,27 @@ def filter_checklist(  # noqa: PLR0913
     data_getter: str,
     max_items: int,
     selection: list[str],
+    locale: str | None,
 ):
     """Filter the list on search."""
     if not ctx.triggered_id:
         return no_update, no_update
 
-    if ctx.triggered_id["side"] == "left":
-        filtered = TransferListField.get_data(data_getter, value, search=search, max_items=max_items)
-    else:
-        filtered = [x for x in value if not search or search.lower() in x.lower()]
-    children = None
-    updated_selection = [s for s in (selection or []) if s in filtered]
-    if filtered:
-        children = [TransferListField.checkbox(val) for val in filtered]
-        children += TransferListField.more_text(max_items, len(filtered))
-    elif search and nothing_found:
-        children = dmc.Text(json.loads(nothing_found), p="0.5rem", c="dimmed")
-    elif not search and placeholder:
-        children = dmc.Text(json.loads(placeholder), p="0.5rem", c="dimmed")
-    return children, updated_selection
+    with language_context(locale):
+        if ctx.triggered_id["side"] == "left":
+            filtered = TransferListField.get_data(data_getter, value, search=search, max_items=max_items)
+        else:
+            filtered = [x for x in value if not search or search.lower() in x.lower()]
+        children = None
+        updated_selection = [s for s in (selection or []) if s in filtered]
+        if filtered:
+            children = [TransferListField.checkbox(val) for val in filtered]
+            children += TransferListField.more_text(max_items, len(filtered))
+        elif search and nothing_found:
+            children = dmc.Text(json.loads(nothing_found), p="0.5rem", c="dimmed")
+        elif not search and placeholder:
+            children = dmc.Text(json.loads(placeholder), p="0.5rem", c="dimmed")
+        return children, updated_selection
 
 
 @callback(
@@ -395,6 +398,7 @@ def filter_checklist(  # noqa: PLR0913
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-transferallmatchingfilters"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def transfer_values(  # noqa: PLR0913
@@ -407,50 +411,57 @@ def transfer_values(  # noqa: PLR0913
     transfer_matching: str,
     data_getter: str,
     max_items: int,
+    locale: str | None,
 ):
     """Transfer items from one list to the other."""
     if not (ctx.triggered_id and (any(trigger1) or any(trigger2))):
         return no_update
 
-    side = ctx.triggered_id["side"]
-    search_ = search[0] if side == "left" else search[1]
-    # Transfer selected items when clicking the transfer button
-    if ctx.triggered_id["component"] == TransferListField.ids.transfer("", "", "", "", "", "")["component"]:
-        transferred = selection[0] if side == "left" else selection[1]
-    # Transfer all items when clicking the transfer all button
-    elif search_ and json.loads(transfer_matching):
-        # Filter out items that don't match the search if transfer_matching is set
-        if side == "left":
-            transferred = TransferListField.get_data(data_getter, current_value, search=search_, max_items=0)
+    with language_context(locale):
+        side = ctx.triggered_id["side"]
+        search_ = search[0] if side == "left" else search[1]
+        # Transfer selected items when clicking the transfer button
+        if ctx.triggered_id["component"] == TransferListField.ids.transfer("", "", "", "", "", "")["component"]:
+            transferred = selection[0] if side == "left" else selection[1]
+        # Transfer all items when clicking the transfer all button
+        elif search_ and json.loads(transfer_matching):
+            # Filter out items that don't match the search if transfer_matching is set
+            if side == "left":
+                transferred = TransferListField.get_data(data_getter, current_value, search=search_, max_items=0)
+            else:
+                transferred = [x for x in current_value if search_.lower() in x.lower()]
         else:
-            transferred = [x for x in current_value if search_.lower() in x.lower()]
-    else:
-        transferred = (
-            current_value
-            if side == "right"
-            else TransferListField.get_data(data_getter, current_value, search=None, max_items=max_items)
+            transferred = (
+                current_value
+                if side == "right"
+                else TransferListField.get_data(data_getter, current_value, search=None, max_items=max_items)
+            )
+
+        if not transferred:
+            return no_update
+
+        # Update the value
+        new_value = (
+            current_value + transferred if side == "left" else [v for v in current_value if v not in transferred]
         )
 
-    if not transferred:
-        return no_update
+        data_left = TransferListField.get_data(data_getter, new_value, search=search[0], max_items=max_items)
 
-    # Update the value
-    new_value = current_value + transferred if side == "left" else [v for v in current_value if v not in transferred]
+        # Create the new checkboxes or placeholder texts
+        placeholder = json.loads(placeholder)
+        new_children = [
+            (
+                [TransferListField.checkbox(v) for v in data_left]
+                + TransferListField.more_text(max_items, len(data_left))
+            )
+            if data_left
+            else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
+            [TransferListField.checkbox(v) for v in new_value if not search[1] or search[1].lower() in v.lower()]
+            if new_value
+            else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
+        ]
 
-    data_left = TransferListField.get_data(data_getter, new_value, search=search[0], max_items=max_items)
-
-    # Create the new checkboxes or placeholder texts
-    placeholder = json.loads(placeholder)
-    new_children = [
-        ([TransferListField.checkbox(v) for v in data_left] + TransferListField.more_text(max_items, len(data_left)))
-        if data_left
-        else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
-        [TransferListField.checkbox(v) for v in new_value if not search[1] or search[1].lower() in v.lower()]
-        if new_value
-        else dmc.Text(placeholder, p="0.5rem", c="dimmed"),
-    ]
-
-    return new_value, new_children, [[]] * 2, [no_update] * 2
+        return new_value, new_children, [[]] * 2, [no_update] * 2
 
 
 # Gray out the transfer button when nothing is selected

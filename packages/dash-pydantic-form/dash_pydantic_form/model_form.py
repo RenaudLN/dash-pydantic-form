@@ -1,10 +1,8 @@
-import dataclasses as dc
 import uuid
 import warnings
 from copy import deepcopy
-from functools import partial
 from types import UnionType
-from typing import Annotated, Any, Literal, Optional, Union, get_args, get_origin, overload
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import dash_mantine_components as dmc
 from dash import (
@@ -25,6 +23,7 @@ from dash.development.base_component import Component, rd
 from pydantic import BaseModel, RootModel
 from pydantic.fields import FieldInfo
 
+from dash_pydantic_form.ids import IdAccessor, ModelFormIds, ModelFormIdsFactory
 from dash_pydantic_utils import (
     SEP,
     Type,
@@ -43,76 +42,11 @@ from . import ids as common_ids
 from .fields import BaseField, fields
 from .form_layouts import FormLayout
 from .i18n import _, language_context
-from .ids import form_base_id
 
 Children_ = Component | str | int | float
 Children = Children_ | list[Children_]
 SectionRender = Literal["accordion", "tabs", "steps"]
 Position = Literal["top", "bottom", "none"]
-
-
-class ModelFormIdsFactory:
-    """Factory functions for model form ids."""
-
-    form = partial(form_base_id, "_pydf-form")
-    main = partial(form_base_id, "_pydf-main")
-    restore_wrapper = partial(form_base_id, "_pydf-restore-wrapper")
-    restore_btn = partial(form_base_id, "_pydf-restore-btn")
-    cancel_restore_btn = partial(form_base_id, "_pydf-cancel-restore-btn")
-    wrapper = partial(common_ids.field_dependent_id, "_pydf-wrapper")
-    errors = partial(form_base_id, "_pydf-errors")
-    model_store = partial(form_base_id, "_pydf-model-store")
-    form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
-    change_store = partial(form_base_id, "_pydf-changes-store")
-
-
-@dc.dataclass(frozen=True)
-class ModelFormIds:
-    """Model form ids."""
-
-    form: dict[str, str]
-    main: dict[str, str]
-    restore_wrapper: dict[str, str]
-    restore_btn: dict[str, str]
-    cancel_restore_btn: dict[str, str]
-    errors: dict[str, str]
-    model_store: dict[str, str]
-    form_specs_store: dict[str, str]
-    change_store: dict[str, str]
-
-    @classmethod
-    def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
-        """Instanciation from aio_id and form_id."""
-        return cls(*(getattr(ModelFormIdsFactory, id_field.name)(aio_id, form_id) for id_field in dc.fields(cls)))
-
-
-class IdAccessor:
-    """Descriptor for handling access to either instances or the factory of model form ids via ``ModelForm`` class."""
-
-    @overload
-    def __get__(self, obj: "ModelForm", objtype=None) -> ModelFormIds: ...
-    @overload
-    def __get__(self, obj: None, objtype=None) -> type[ModelFormIdsFactory]: ...
-    def __get__(self, obj: Optional["ModelForm"], objtype=None):
-        """Returns the ``ModelFormIdsFactory`` class if accessed via the ``ModelForm`` class directly (ModelForm.ids)
-        or an instance of ``ModelFormIds`` if accessed via an instance of ``ModelForm`` (ModelForm(my_model).ids).
-        """
-        if obj is None:
-            # access via class
-            return ModelFormIdsFactory
-
-        if isinstance(obj, ModelForm):
-            # access via instance
-            return obj._ids
-
-        raise RuntimeError("IdAccessor should only be defined on ModelForm or an instance of ModelForm")
-
-    def __set__(self, obj: "ModelForm", value: ModelFormIds | tuple[str, str]):
-        """Sets another set of model form ids to a ``ModelForm`` object."""
-        if isinstance(value, tuple):
-            value = ModelFormIds.from_basic_ids(*value)
-
-        obj._ids = value
 
 
 class ModelForm(html.Div):
@@ -299,6 +233,7 @@ class ModelForm(html.Div):
                     "data-update": None,
                     "data-submit": None,
                     "data-debounce": debounce,
+                    "data-locale": locale,
                 }
                 if not path
                 else {}
@@ -540,13 +475,15 @@ clientside_callback(
     Input(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-update"),
     State(ModelForm.ids.model_store(MATCH, MATCH, MATCH), "data"),
     State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
+    State(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
+def update_data(form_data: dict, model_name: str | list[str], form_specs: dict, locale: str | None):
     """Update contents with ids.form data-update."""
     if not form_data:
         return no_update
-    return update_form_wrapper_contents(form_data, None, model_name, form_specs)
+    with language_context(locale):
+        return update_form_wrapper_contents(form_data, None, model_name, form_specs)
 
 
 @callback(
@@ -555,9 +492,10 @@ def update_data(form_data: dict, model_name: str | list[str], form_specs: dict):
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
     State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
     State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
+    State(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict):
+def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict, locale: str | None):
     """Update contents when discriminator input changes."""
     if not isinstance(ctx.triggered_id, dict):
         return no_update
@@ -573,7 +511,8 @@ def update_discriminated(val, form_data: dict, model_name: str | list[str], form
             pointer = list(pointer.values())[int(part)] if isinstance(pointer, dict) else pointer[int(part)]
         else:
             pointer = pointer[part]
-    return update_form_wrapper_contents(form_data, discriminator, model_name, form_specs)
+    with language_context(locale):
+        return update_form_wrapper_contents(form_data, discriminator, model_name, form_specs)
 
 
 def update_form_wrapper_contents(
