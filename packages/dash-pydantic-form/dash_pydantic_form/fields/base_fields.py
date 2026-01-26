@@ -741,7 +741,6 @@ class SelectField(BaseField):
     def _get_value_repr(self, value: Any, field_info: FieldInfo):
         value_repr = super()._get_value_repr(value, field_info)
         data = self._get_data(field_info)
-        common_ids.data_getter_field()
 
         def _get_label(value, data, value_repr):
             if isinstance(value, Enum):
