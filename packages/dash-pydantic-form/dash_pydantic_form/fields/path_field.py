@@ -392,7 +392,7 @@ clientside_callback(
     State(value_field(MATCH, MATCH, MATCH, MATCH), "value"),
     State(PathField.ids.config(MATCH, MATCH, MATCH, MATCH), "data"),
     State(PathField.ids.pagination_store(MATCH, MATCH, MATCH, MATCH, ALL), "data"),
-    State(ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
 )
 def update_filetree(  # noqa: PLR0913
     id_: dict,

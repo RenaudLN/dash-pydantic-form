@@ -503,7 +503,7 @@ clientside_callback(
     Input(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-update"),
     State(ModelForm.ids.model_store(MATCH, MATCH, MATCH), "data"),
     State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
-    State(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def update_data(form_data: dict, model_name: str | list[str], form_specs: dict, locale: str | None):
@@ -520,7 +520,7 @@ def update_data(form_data: dict, model_name: str | list[str], form_specs: dict, 
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
     State(ModelForm.ids.model_store(MATCH, MATCH), "data"),
     State(ModelForm.ids.form_specs_store(MATCH, MATCH, MATCH), "data"),
-    State(ModelForm.ids.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(ModelForm.ids.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def update_discriminated(val, form_data: dict, model_name: str | list[str], form_specs: dict, locale: str | None):

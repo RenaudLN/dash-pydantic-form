@@ -528,7 +528,7 @@ clientside_callback(
     Output(TableField.ids.notification_wrapper(MATCH, MATCH, MATCH, parent=MATCH), "children", allow_duplicate=True),
     Input(TableField.ids.upload_csv(MATCH, MATCH, MATCH, parent=MATCH), "contents"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
-    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def csv_to_table(contents: str, column_defs: list[dict], locale: str | None = None):
@@ -647,7 +647,7 @@ clientside_callback(
     Output(TableField.ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
     Input(TableField.ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def table_to_csv(n_clicks: int | None, table_data: list[dict], locale: str | None):
@@ -666,7 +666,7 @@ def table_to_csv(n_clicks: int | None, table_data: list[dict], locale: str | Non
     Output(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "content"),
     Input(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
-    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def table_to_clipboard(n_clicks: int | None, table_data: list[dict], locale: str | None):

@@ -350,7 +350,7 @@ class TransferListField(BaseField):
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
     State(TransferListField.ids.checklist(MATCH, MATCH, MATCH, MATCH, "", MATCH), "value"),
-    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def filter_checklist(  # noqa: PLR0913
@@ -398,7 +398,7 @@ def filter_checklist(  # noqa: PLR0913
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-transferallmatchingfilters"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-getter"),
     State(common_ids.value_field(MATCH, MATCH, MATCH, MATCH, "transferlist"), "data-maxitems"),
-    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
 def transfer_values(  # noqa: PLR0913
