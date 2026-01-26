@@ -50,6 +50,7 @@ class ModelFormIdsFactory:
     model_store = partial(form_base_id, "_pydf-model-store")
     form_specs_store = partial(form_base_id, "_pydf-form-specs-store")
     change_store = partial(form_base_id, "_pydf-changes-store")
+    manage_state = partial(form_base_id, "_pydf-manage-state")
 
 
 @dc.dataclass(frozen=True)
@@ -65,6 +66,7 @@ class ModelFormIds:
     model_store: dict[str, str]
     form_specs_store: dict[str, str]
     change_store: dict[str, str]
+    manage_state: dict[str, str]
 
     @classmethod
     def from_basic_ids(cls, aio_id: str, form_id: str) -> "ModelFormIds":
