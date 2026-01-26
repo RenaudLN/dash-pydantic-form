@@ -32,7 +32,7 @@ from dash_pydantic_form.fields.base_fields import (
     YearField,
 )
 from dash_pydantic_form.fields.markdown_field import MarkdownField
-from dash_pydantic_form.i18n import _
+from dash_pydantic_form.i18n import _, language_context
 from dash_pydantic_form.ids import field_dependent_id
 from dash_pydantic_form.utils import JSFunction
 from dash_pydantic_utils import deep_merge, get_fullpath, get_non_null_annotation
@@ -130,12 +130,12 @@ class TableField(BaseField):
             raise TypeError(f"Wrong type annotation for field {get_fullpath(parent, field)} to use Table.")
 
         required_fields = {
-            f: getattr(f_info, "serialization_alias", f)
+            f: getattr(f_info, "serialization_alias", f) or f
             for f, f_info in template.model_fields.items()
             if f_info.is_required()
         }
         optional_fields = {
-            f: getattr(f_info, "serialization_alias", f)
+            f: getattr(f_info, "serialization_alias", f) or f
             for f, f_info in template.model_fields.items()
             if f not in required_fields
         }
@@ -528,104 +528,108 @@ clientside_callback(
     Output(TableField.ids.notification_wrapper(MATCH, MATCH, MATCH, parent=MATCH), "children", allow_duplicate=True),
     Input(TableField.ids.upload_csv(MATCH, MATCH, MATCH, parent=MATCH), "contents"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "columnDefs"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def csv_to_table(contents: str, column_defs: list[dict]):
+def csv_to_table(contents: str, column_defs: list[dict], locale: str | None = None):
     """Output uploaded csv file to the editable table."""
     import pandas as pd
 
     if contents is not None:
-        _unused, content_string = contents.split(",")
+        with language_context(locale):
+            _unused, content_string = contents.split(",")
 
-        decoded = base64.b64decode(content_string)
-        data_dtype = {}
-        data_alias_rename = {}
-        column_aliases = {}
-        for f in column_defs:
-            if "field" in f and "dtype" in f:
-                if "field_aliases" in f and f["field_aliases"]:
-                    data_dtype |= dict.fromkeys(f["field_aliases"], f["dtype"])
-                data_dtype[f["field"]] = f["dtype"]
-            if "field" in f and "field_aliases" in f and f["field_aliases"]:
-                data_alias_rename |= dict.fromkeys(f["field_aliases"], f["field"])
-                column_aliases |= {f["field"]: f["field_aliases"]}
+            decoded = base64.b64decode(content_string)
+            data_dtype = {}
+            data_alias_rename = {}
+            column_aliases = {}
+            for f in column_defs:
+                if "field" in f and "dtype" in f:
+                    if "field_aliases" in f and f["field_aliases"]:
+                        data_dtype |= dict.fromkeys(f["field_aliases"], f["dtype"])
+                    data_dtype[f["field"]] = f["dtype"]
+                if "field" in f and "field_aliases" in f and f["field_aliases"]:
+                    data_alias_rename |= dict.fromkeys(f["field_aliases"], f["field"])
+                    column_aliases |= {f["field"]: f["field_aliases"]}
 
-        # Get raw column names. pd.read_csv auto-renames duplicate columns (e.g. col, col.1), which is unsuitable.
-        data_columns = [
-            data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8-sig"))))
-        ]
-        optional_columns = [col["field"] for col in column_defs if "field" in col and not col.get("required")]
-        required_columns = [col["field"] for col in column_defs if col.get("required")]
-
-        # Error notification for duplicate columns
-        data_column_counts = Counter(data_columns)
-        if duplicated_columns := [col for col in required_columns + optional_columns if data_column_counts[col] > 1]:
-            duplicate_column_items = [
-                dmc.ListItem(
-                    dmc.Text(
-                        [
-                            dmc.Text(col, fw="bold", span=True, inherit=True),
-                            " (" + _("includes: ") + f" {', '.join(column_aliases[col])})"
-                            if column_aliases.get(col)
-                            else "",
-                        ],
-                        inherit=True,
-                    )
-                )
-                for col in duplicated_columns
+            # Get raw column names. pd.read_csv auto-renames duplicate columns (e.g. col, col.1), which is unsuitable.
+            data_columns = [
+                data_alias_rename.get(col, col) for col in next(csv.reader(io.StringIO(decoded.decode("utf-8-sig"))))
             ]
-            return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
-                color="red",
-                title=_("Duplicate column names"),
-                message=[
-                    dmc.Text(_("CSV upload failed, please remove duplicates for:"), inherit=True),
-                    dmc.List(duplicate_column_items, fz="inherit"),
-                ],
-                id=uuid.uuid4().hex,
-                action="show",
-            )
+            optional_columns = [col["field"] for col in column_defs if "field" in col and not col.get("required")]
+            required_columns = [col["field"] for col in column_defs if col.get("required")]
 
-        # Error notification for missing required columns
-        if missing_required_columns := list(set(required_columns) - set(data_columns)):
-            required_column_items = [
-                dmc.ListItem(
-                    dmc.Text(
-                        [
-                            dmc.Text(col, fw="bold", span=True, inherit=True),
-                            " (" + _("includes: ") + f"{', '.join(column_aliases[col])})"
-                            if column_aliases.get(col)
-                            else "",
-                        ],
-                        inherit=True,
+            # Error notification for duplicate columns
+            data_column_counts = Counter(data_columns)
+            if duplicated_columns := [
+                col for col in required_columns + optional_columns if data_column_counts[col] > 1
+            ]:
+                duplicate_column_items = [
+                    dmc.ListItem(
+                        dmc.Text(
+                            [
+                                dmc.Text(col, fw="bold", span=True, inherit=True),
+                                " (" + _("includes: ") + f" {', '.join(column_aliases[col])})"
+                                if column_aliases.get(col)
+                                else "",
+                            ],
+                            inherit=True,
+                        )
                     )
+                    for col in duplicated_columns
+                ]
+                return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
+                    color="red",
+                    title=_("Duplicate column names"),
+                    message=[
+                        dmc.Text(_("CSV upload failed, please remove duplicates for:"), inherit=True),
+                        dmc.List(duplicate_column_items, fz="inherit"),
+                    ],
+                    id=uuid.uuid4().hex,
+                    action="show",
                 )
-                for col in missing_required_columns
-            ]
-            return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
-                color="red",
-                title=_("Wrong column names"),
-                message=[
-                    dmc.Text(_("CSV upload failed, the file should contain the following columns: "), inherit=True),
-                    dmc.List(required_column_items, fz="inherit"),
-                ],
-                id=uuid.uuid4().hex,
-                action="show",
-            )
 
-        # Succesful upload
-        data = pd.read_csv(
-            io.StringIO(decoded.decode("utf-8")),
-            dtype=data_dtype,
-        ).rename(data_alias_rename, axis=1)
-        for col in column_defs:
-            if not (field := col.get("field")):
-                continue
-            if options := col.get("cellEditorParams", {}).get("options"):
-                values = [x["value"] for x in options]
-                options_dict = {x["label"]: x["value"] for x in options}
-                data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
+            # Error notification for missing required columns
+            if missing_required_columns := list(set(required_columns) - set(data_columns)):
+                required_column_items = [
+                    dmc.ListItem(
+                        dmc.Text(
+                            [
+                                dmc.Text(col, fw="bold", span=True, inherit=True),
+                                " (" + _("includes: ") + f"{', '.join(column_aliases[col])})"
+                                if column_aliases.get(col)
+                                else "",
+                            ],
+                            inherit=True,
+                        )
+                    )
+                    for col in missing_required_columns
+                ]
+                return no_update, dmc.Notification(  # TODO: Handle DMC 2 NotificationContainer
+                    color="red",
+                    title=_("Wrong column names"),
+                    message=[
+                        dmc.Text(_("CSV upload failed, the file should contain the following columns: "), inherit=True),
+                        dmc.List(required_column_items, fz="inherit"),
+                    ],
+                    id=uuid.uuid4().hex,
+                    action="show",
+                )
 
-        return data.to_dict("records"), None
+            # Succesful upload
+            data = pd.read_csv(
+                io.StringIO(decoded.decode("utf-8")),
+                dtype=data_dtype,
+            ).rename(data_alias_rename, axis=1)
+            for col in column_defs:
+                if not (field := col.get("field")):
+                    continue
+                if options := col.get("cellEditorParams", {}).get("options"):
+                    values = [x["value"] for x in options]
+                    options_dict = {x["label"]: x["value"] for x in options}
+                    data[field] = data[field].where(data[field].isin(values), data[field].map(options_dict))
+
+            return data.to_dict("records"), None
 
     return no_update, None
 
@@ -643,42 +647,46 @@ clientside_callback(
     Output(TableField.ids.download_csv(MATCH, MATCH, MATCH, parent=MATCH), "data"),
     Input(TableField.ids.download_csv_btn(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def table_to_csv(n_clicks, table_data):
+def table_to_csv(n_clicks: int | None, table_data: list[dict], locale: str | None):
     """Send the table data to the user as a CSV file."""
     if not (n_clicks and table_data):
         return no_update
 
     import pandas as pd
 
-    data_df = pd.DataFrame(table_data)
-    return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
+    with language_context(locale):
+        data_df = pd.DataFrame(table_data)
+        return dcc.send_data_frame(data_df.to_csv, "table_data.csv", index=False, encoding="utf-8")
 
 
 @callback(
     Output(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "content"),
     Input(TableField.ids.clipboard(MATCH, MATCH, MATCH, parent=MATCH), "n_clicks"),
     State(TableField.ids.editable_table(MATCH, MATCH, MATCH, parent=MATCH), "rowData"),
+    State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def table_to_clipboard(n_clicks, table_data):
+def table_to_clipboard(n_clicks: int | None, table_data: list[dict], locale: str | None):
     """Copy the table data to the clipboard, in tab-separated format."""
     if not (n_clicks and table_data):
         return no_update
 
     import csv
 
-    output = io.StringIO()
-    writer = csv.writer(output, delimiter="\t")
+    with language_context(locale):
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter="\t")
 
-    headers = list(table_data[0].keys())
-    writer.writerow(headers)
+        headers = list(table_data[0].keys())
+        writer.writerow(headers)
 
-    for row in table_data:
-        writer.writerow([row.get(header, "") for header in headers])
+        for row in table_data:
+            writer.writerow([row.get(header, "") for header in headers])
 
-    return output.getvalue()
+        return output.getvalue()
 
 
 clientside_callback(

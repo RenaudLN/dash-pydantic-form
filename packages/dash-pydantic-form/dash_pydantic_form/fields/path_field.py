@@ -12,8 +12,8 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from dash_pydantic_form.fields.base_fields import BaseField
-from dash_pydantic_form.i18n import _
-from dash_pydantic_form.ids import field_dependent_id, value_field
+from dash_pydantic_form.i18n import _, language_context
+from dash_pydantic_form.ids import ModelFormIdsFactory, field_dependent_id, value_field
 
 PathType = Literal["file", "directory", "glob"]
 
@@ -392,78 +392,87 @@ clientside_callback(
     State(value_field(MATCH, MATCH, MATCH, MATCH), "value"),
     State(PathField.ids.config(MATCH, MATCH, MATCH, MATCH), "data"),
     State(PathField.ids.pagination_store(MATCH, MATCH, MATCH, MATCH, ALL), "data"),
+    State(ModelFormIdsFactory.form(MATCH, MATCH), "data-locale"),
 )
 def update_filetree(  # noqa: PLR0913
-    id_, _navs, page, filter_str, value, config, pagination_value
+    id_: dict,
+    _navs: list[int | None],
+    page_: list[int | None],
+    filter_str: list[str | None],
+    value: str | None,
+    config: dict,
+    pagination_value: list[int | None],
+    locale: str | None,
 ):
     """Update the file tree."""
-    fs = fsspec.filesystem(config["backend"])
-    path_type = config["path_type"]
-    prefix = config["prefix"]
-    id_parts: list[str] = [id_["aio_id"], id_["form_id"], id_["field"], id_["parent"], id_["meta"]]
-    value = (value or "").removeprefix(prefix)
-    page = page[0] if page else 1
-    pagination_value = pagination_value[0] if pagination_value else value
+    with language_context(locale):
+        fs = fsspec.filesystem(config["backend"])
+        path_type = config["path_type"]
+        prefix = config["prefix"]
+        id_parts: list[str] = [id_["aio_id"], id_["form_id"], id_["field"], id_["parent"], id_["meta"]]
+        value = (value or "").removeprefix(prefix)
+        page = page_[0] if page_ else 1
+        pagination_value = pagination_value[0] if pagination_value else value
 
-    from_filter = False
-    if ctx.triggered_id and isinstance(ctx.triggered_id, dict):
-        if "nav" in ctx.triggered_id["component"]:
-            value = ctx.triggered_id["path"].replace("||", ".")
-            page = 1
-        elif "filter" in ctx.triggered_id["component"]:
-            value = next(
-                inp["id"]["path"].replace("||", ".")
-                for inp in ctx.inputs_list[1][::-1]
-                if inp["id"]["meta"] == "breadcrumbs"
-            )
-            from_filter = True
-            page = 1
-        else:
-            value = pagination_value
-    elif path_type == "glob":
-        base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
-        value = value if not base_path_match else base_path_match[0]
+        from_filter = False
+        if ctx.triggered_id and isinstance(ctx.triggered_id, dict):
+            if "nav" in ctx.triggered_id["component"]:
+                value = ctx.triggered_id["path"].replace("||", ".")
+                page = 1
+            elif "filter" in ctx.triggered_id["component"]:
+                value = next(
+                    inp["id"]["path"].replace("||", ".")
+                    for inp in ctx.inputs_list[1][::-1]
+                    if inp["id"]["meta"] == "breadcrumbs"
+                )
+                from_filter = True
+                page = 1
+            else:
+                value = pagination_value
+        elif path_type == "glob":
+            base_path_match = re.findall(r"^([^*]*)\/.*\*", value)
+            value = value if not base_path_match else base_path_match[0]
 
-    # This happens when the modal first opens after clicking on the button
-    # in this case, we want to show the content one level up.
-    if not ctx.triggered_id:
-        val_split = value.rsplit("/", maxsplit=1)
-        value = val_split[0]
-        if len(val_split) > 1:
-            from_filter = True
-            filter_str = [val_split[1]]
+        # This happens when the modal first opens after clicking on the button
+        # in this case, we want to show the content one level up.
+        if not ctx.triggered_id:
+            val_split = value.rsplit("/", maxsplit=1)
+            value = val_split[0]
+            if len(val_split) > 1:
+                from_filter = True
+                filter_str = [val_split[1]]
 
-    if path_type == "glob":
-        path_type = "directory"
+        if path_type == "glob":
+            path_type = "directory"
 
-    refresh_ls = isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("component") == "_pydf-path-field-nav"
-    vals: list[dict] = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True, refresh=refresh_ls)
+        refresh_ls = isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("component") == "_pydf-path-field-nav"
+        vals: list[dict] = fs.ls(f"{prefix.rstrip('/')}/{(value or '').lstrip('/')}", detail=True, refresh=refresh_ls)
 
-    filtered_vals = []
-    for val in vals:
-        subpath = PathField._get_subpath(prefix, value, val["name"])
-        subpath2 = PathField._get_subpath(prefix, value, val["name"], rm_value=True)
-        if (
-            ((path_type == "file") or (val["type"] != "file"))
-            and subpath != value
-            and (not from_filter or not filter_str or not filter_str[0] or subpath2.startswith(filter_str[0]))
-        ):
-            filtered_vals.append(val)
+        filtered_vals = []
+        for val in vals:
+            subpath = PathField._get_subpath(prefix, value, val["name"])
+            subpath2 = PathField._get_subpath(prefix, value, val["name"], rm_value=True)
+            if (
+                ((path_type == "file") or (val["type"] != "file"))
+                and subpath != value
+                and (not from_filter or not filter_str or not filter_str[0] or subpath2.startswith(filter_str[0]))
+            ):
+                filtered_vals.append(val)
 
-    parts = value.split("/")
-    page_size = config.get("page_size", 20)
+        parts = value.split("/")
+        page_size = config.get("page_size", 20)
 
-    return PathField.filetree(
-        prefix=prefix,
-        value=value,
-        id_parts=id_parts,
-        parts=parts,
-        path_type=path_type,
-        filtered_vals=filtered_vals,
-        page_size=page_size,
-        page=page,
-        current_filter=(filter_str or [""])[0] if from_filter else "",
-    )
+        return PathField.filetree(
+            prefix=prefix,
+            value=value,
+            id_parts=id_parts,
+            parts=parts,
+            path_type=path_type,
+            filtered_vals=filtered_vals,
+            page_size=page_size,
+            page=page,
+            current_filter=(filter_str or [""])[0] if from_filter else "",
+        )
 
 
 clientside_callback(
