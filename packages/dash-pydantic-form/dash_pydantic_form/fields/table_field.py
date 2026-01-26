@@ -531,7 +531,7 @@ clientside_callback(
     State(common_ids.ModelFormIdsFactory.form(MATCH, MATCH, MATCH), "data-locale"),
     prevent_initial_call=True,
 )
-def csv_to_table(contents: str, column_defs: list[dict], locale: str | None):
+def csv_to_table(contents: str, column_defs: list[dict], locale: str | None = None):
     """Output uploaded csv file to the editable table."""
     import pandas as pd
 
