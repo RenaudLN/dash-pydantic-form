@@ -225,6 +225,7 @@ class ListField(BaseField):
                                             "",
                                             id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
                                             style={"minHeight": "200px"},
+                                            triggerOnce=False
                                         ),
                                     ],
                                     custom_spinner=dmc.Skeleton(h="100%", visible=True),
@@ -539,6 +540,7 @@ class ListField(BaseField):
                                                 "",
                                                 id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
                                                 style={"minHeight": "200px"},
+                                                triggerOnce=False
                                             ),
                                         ],
                                         custom_spinner=dmc.Skeleton(h="100%", visible=True),
@@ -568,6 +570,7 @@ class ListField(BaseField):
                         style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
                         styles={"content": {"containerType": "inline-size"}},
                         opened=opened,
+                        keepMounted=True
                     ),
                 ],
                 gap="sm",
@@ -966,6 +969,9 @@ clientside_callback(
                 return [dash_clientside.no_update, dash_clientside.no_update];
             }
             if (dash_clientside.callback_context.triggered_id === undefined) {
+                if (!_.isEmpty(currentForm)) {
+                    return [dash_clientside.no_update, JSON.stringify(currentForm)];
+                }
                 if (opened) {
                     return [
                         JSON.parse(data),
