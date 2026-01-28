@@ -64,6 +64,7 @@ dash_testing_stub = ">=0.0.2"
 [feature.form.pypi-dependencies]
 # Dash testing
 dash = {extras = ["testing"], version = ">=3,<4"}
+dash-intersection-observer = "*"
 
 [feature.form2.pypi-dependencies]
 # Dash testing
