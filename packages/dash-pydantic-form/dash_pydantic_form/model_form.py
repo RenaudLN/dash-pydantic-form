@@ -410,6 +410,7 @@ class ModelForm(html.Div):
                     "form_layout": form_layout.model_dump(mode="json") if form_layout else None,
                     "fields_repr": fields_repr_dicts,
                     "form_cols": form_cols,
+                    "manage_state": manage_state,
                 },
                 id=cls.ids.form_specs_store(aio_id, form_id, path),
             )
@@ -597,6 +598,7 @@ def update_form_wrapper_contents(
         fields_repr=fields_repr,
         form_cols=form_specs["form_cols"],
         data_model=None if isinstance(model_name, str) else Union[tuple(model_union)],  # noqa: UP007
+        manage_state=form_specs["manage_state"],
     )
 
     return form.children.children
