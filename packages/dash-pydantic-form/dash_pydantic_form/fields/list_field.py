@@ -16,8 +16,10 @@ from dash import (
     dcc,
     html,
 )
+from dash.dependencies import stringify_id
 from dash.development.base_component import Component
 from dash_iconify import DashIconify
+from dash_intersection_observer import DashIntersectionObserver
 from plotly.io.json import to_json_plotly
 from pydantic import BaseModel, Field, SerializeAsAny, field_validator
 from pydantic.fields import FieldInfo
@@ -111,10 +113,14 @@ class ListField(BaseField):
         wrapper = partial(common_ids.field_dependent_id, "_pydf-list-field-wrapper")
         delete = partial(common_ids.field_dependent_id, "_pydf-list-field-delete")
         edit = partial(common_ids.field_dependent_id, "_pydf-list-field-edit")
+        edit_holder = partial(common_ids.field_dependent_id, "_pydf-list-field-edit-holder")
         modal = partial(common_ids.field_dependent_id, "_pydf-list-field-modal")
         accordion_parent_text = partial(common_ids.field_dependent_id, "_pydf-list-field-accordion-text")
         modal_parent_text = partial(common_ids.field_dependent_id, "_pydf-list-field-modal-text")
         modal_save = partial(common_ids.field_dependent_id, "_pydf-list-field-modal-save")
+        children_holder = partial(common_ids.field_dependent_id, "_pydf-list-field-children")
+        children_item_data = partial(common_ids.field_dependent_id, "_pydf-list-field-children-item-data")
+        children_unmount = partial(common_ids.field_dependent_id, "_pydf-list-field-children-unmount")
         add = partial(common_ids.field_dependent_id, "_pydf-list-field-add")
         template_store = partial(common_ids.field_dependent_id, "_pydf-list-field-template-store")
 
@@ -158,6 +164,22 @@ class ListField(BaseField):
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
 
+        item_data = ModelForm(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            path=new_parent,
+            fields_repr=fields_repr,
+            form_layout=form_layout,
+            read_only=read_only,
+            discriminator=discriminator,
+            form_cols=form_cols,
+            excluded_fields=excluded_fields,
+            fields_order=fields_order,
+        )
+
+        unmount = _kwargs.get("input_kwargs", {}).get("unmount", False)
+
         return dmc.AccordionItem(
             # Give a random unique value to the item, prepended by uuid: so that the callback
             # to add new items works
@@ -187,19 +209,37 @@ class ListField(BaseField):
                     pos="relative",
                 ),
                 dmc.AccordionPanel(
-                    ModelForm(
-                        item=item,
-                        aio_id=aio_id,
-                        form_id=form_id,
-                        path=new_parent,
-                        fields_repr=fields_repr,
-                        form_layout=form_layout,
-                        read_only=read_only,
-                        discriminator=discriminator,
-                        form_cols=form_cols,
-                        excluded_fields=excluded_fields,
-                        fields_order=fields_order,
-                    ),
+                    [
+                        *(
+                            [
+                                dcc.Store(
+                                    id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
+                                    data=to_json_plotly(item_data),
+                                ),
+                                dcc.Store(
+                                    id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent), data=unmount
+                                ),
+                                dcc.Loading(
+                                    [
+                                        DashIntersectionObserver(
+                                            "",
+                                            id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
+                                            style={"minHeight": "200px"},
+                                            triggerOnce=False,
+                                        ),
+                                    ],
+                                    custom_spinner=dmc.Skeleton(h="100%", visible=True),
+                                    target_components={
+                                        stringify_id(
+                                            cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
+                                        ): "children"
+                                    },
+                                ),
+                            ]
+                            if unmount
+                            else [item_data]
+                        ),
+                    ]
                 ),
             ],
         )
@@ -422,21 +462,42 @@ class ListField(BaseField):
         """Create an item with bare forms for the model list field."""
         from dash_pydantic_form import ModelForm
 
+        unmount = _kwargs.get("input_kwargs", {}).get("unmount", False)
+
         new_parent = get_fullpath(parent, field, index)
         value_str = cls.get_value_str(value)
+
+        item_data = ModelForm(
+            item=item,
+            aio_id=aio_id,
+            form_id=form_id,
+            path=new_parent,
+            fields_repr=fields_repr,
+            form_layout=form_layout,
+            read_only=read_only,
+            discriminator=discriminator,
+            form_cols=form_cols,
+            excluded_fields=excluded_fields,
+            fields_order=fields_order,
+        )
 
         return dmc.Paper(
             dmc.Group(
                 [
-                    dmc.Text(
-                        value_str,
-                        style={
-                            "flex": 1,
-                            "overflow": "hidden",
-                            "textOverflow": "ellipsis",
-                            "whiteSpace": "nowrap",
-                        },
-                        id=cls.ids.modal_parent_text(aio_id, form_id, "", parent=new_parent),
+                    html.Div(
+                        dmc.Text(
+                            value_str,
+                            style={
+                                "flex": 1,
+                                "overflow": "hidden",
+                                "textOverflow": "ellipsis",
+                                "whiteSpace": "nowrap",
+                            },
+                            id=cls.ids.modal_parent_text(aio_id, form_id, "", parent=new_parent),
+                        ),
+                        style={"cursor": "pointer", "flex": 1},
+                        id=cls.ids.edit_holder(aio_id, form_id, "", parent=new_parent),
+                        title="view" if read_only else "edit",
                     ),
                     dmc.Group(
                         [
@@ -463,18 +524,35 @@ class ListField(BaseField):
                     ),
                     dmc.Modal(
                         [
-                            ModelForm(
-                                item=item,
-                                aio_id=aio_id,
-                                form_id=form_id,
-                                path=new_parent,
-                                fields_repr=fields_repr,
-                                form_layout=form_layout,
-                                read_only=read_only,
-                                discriminator=discriminator,
-                                form_cols=form_cols,
-                                excluded_fields=excluded_fields,
-                                fields_order=fields_order,
+                            *(
+                                [
+                                    dcc.Store(
+                                        id=cls.ids.children_item_data(aio_id, form_id, "", parent=new_parent),
+                                        data=to_json_plotly(item_data),
+                                    ),
+                                    dcc.Store(
+                                        id=cls.ids.children_unmount(aio_id, form_id, "", parent=new_parent),
+                                        data=unmount,
+                                    ),
+                                    dcc.Loading(
+                                        [
+                                            DashIntersectionObserver(
+                                                "",
+                                                id=cls.ids.children_holder(aio_id, form_id, "", parent=new_parent),
+                                                style={"minHeight": "200px"},
+                                                triggerOnce=False,
+                                            ),
+                                        ],
+                                        custom_spinner=dmc.Skeleton(h="100%", visible=True),
+                                        target_components={
+                                            stringify_id(
+                                                cls.ids.children_holder(aio_id, form_id, "", parent=new_parent)
+                                            ): "children"
+                                        },
+                                    ),
+                                ]
+                                if unmount
+                                else [item_data]
                             ),
                             dmc.Group(
                                 dmc.Button(
@@ -492,6 +570,7 @@ class ListField(BaseField):
                         style={"--modal-size": "min(calc(100vw - 4rem), 1150px)"},
                         styles={"content": {"containerType": "inline-size"}},
                         opened=opened,
+                        keepMounted=True,
                     ),
                 ],
                 gap="sm",
@@ -851,6 +930,13 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
+clientside_callback(
+    ClientsideFunction(namespace="pydf", function_name="syncTrue"),
+    Output(ListField.ids.modal(MATCH, MATCH, MATCH, MATCH, MATCH), "opened", allow_duplicate=True),
+    Input(ListField.ids.edit_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "n_clicks"),
+    prevent_initial_call=True,
+)
+
 # Close a model list modal when saving an item
 clientside_callback(
     ClientsideFunction(namespace="pydf", function_name="syncFalse"),
@@ -874,4 +960,45 @@ clientside_callback(
     Output(ListField.ids.accordion_parent_text(MATCH, MATCH, "", MATCH, MATCH), "children"),
     Input(common_ids.value_field(MATCH, MATCH, "name", MATCH, MATCH), "value"),
     prevent_initial_call=True,
+)
+
+clientside_callback(
+    """
+        async (opened, data, currentForm, id, manage_state) => {
+            if (manage_state === false) {
+                return [dash_clientside.no_update, dash_clientside.no_update];
+            }
+            if (dash_clientside.callback_context.triggered_id === undefined) {
+                if (!_.isEmpty(currentForm)) {
+                    return [dash_clientside.no_update, JSON.stringify(currentForm)];
+                }
+                if (opened) {
+                    return [
+                        JSON.parse(data),
+                        dash_clientside.no_update
+                    ];
+                }
+                return [
+                    [],
+                    dash_clientside.no_update
+                ];
+            }
+            if (opened) {
+                return [
+                    JSON.parse(data),
+                    dash_clientside.no_update
+                ];
+            } else if (!_.isEmpty(currentForm)) {
+                return [[], JSON.stringify(currentForm)];
+            }
+            return [[], dash_clientside.no_update];
+        }
+    """,
+    Output(ListField.ids.children_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
+    Output(ListField.ids.children_item_data(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    Input(ListField.ids.children_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "inView"),
+    State(ListField.ids.children_item_data(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
+    State(ListField.ids.children_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "children"),
+    State(ListField.ids.children_holder(MATCH, MATCH, MATCH, MATCH, MATCH), "id"),
+    State(ListField.ids.children_unmount(MATCH, MATCH, MATCH, MATCH, MATCH), "data"),
 )

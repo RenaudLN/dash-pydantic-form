@@ -16,6 +16,7 @@ dependencies = [
     "pydantic==2.*",
     "fsspec",
     "dash-pydantic-utils",
+    "dash-intersection-observer"
 ]
 
 [project.optional-dependencies]
