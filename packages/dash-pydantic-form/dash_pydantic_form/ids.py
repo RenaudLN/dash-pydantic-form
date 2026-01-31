@@ -1,26 +1,32 @@
 import dataclasses as dc
 from functools import partial
 
-from dash.dependencies import _Wildcard
+import dash
+from packaging import version
+
+if version.parse(dash.__version__) < version.parse("3.4"):
+    from dash.dependencies import _Wildcard as Wildcard
+else:
+    from dash.dependencies import Wildcard
 
 
-def form_dependent_id(component: str, aio_id: str | _Wildcard, form_id: str | _Wildcard) -> dict:
+def form_dependent_id(component: str, aio_id: str | Wildcard, form_id: str | Wildcard) -> dict:
     """A component id to do callbacks at the document level (e.g. edit/delete)."""
     return {"component": component, "aio_id": aio_id, "form_id": form_id}
 
 
-def form_base_id(part: str, aio_id: str | _Wildcard, form_id: str | _Wildcard, parent: str | _Wildcard = ""):
+def form_base_id(part: str, aio_id: str | Wildcard, form_id: str | Wildcard, parent: str | Wildcard = ""):
     """Form parts id."""
     return {"part": part, "aio_id": aio_id, "form_id": form_id, "parent": parent}
 
 
 def field_dependent_id(  # noqa: PLR0913
     component: str,
-    aio_id: str | _Wildcard,
-    form_id: str | _Wildcard,
-    field: str | _Wildcard,
-    parent: str | _Wildcard = "",
-    meta: str | _Wildcard = "",
+    aio_id: str | Wildcard,
+    form_id: str | Wildcard,
+    field: str | Wildcard,
+    parent: str | Wildcard = "",
+    meta: str | Wildcard = "",
 ) -> dict:
     """A component id to do callbacks at the field level (e.g. in the form)."""
     return {
