@@ -1,6 +1,7 @@
 import dataclasses as dc
 from functools import partial
 
+import dash
 from packaging import version
 
 if version.parse(dash.__version__) < version.parse("3.4"):
