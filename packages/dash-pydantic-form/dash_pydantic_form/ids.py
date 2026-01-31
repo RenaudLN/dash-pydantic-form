@@ -1,6 +1,11 @@
 from functools import partial
 
-from dash.dependencies import WildCard
+from packaging import version
+
+if version.parse(dash.__version__) < version.parse("3.4"):
+    from dash.dependencies import _WildCard as WildCard
+else:
+    from dash.dependencies import WildCard
 
 
 def form_dependent_id(component: str, aio_id: str | WildCard, form_id: str | WildCard) -> dict:
