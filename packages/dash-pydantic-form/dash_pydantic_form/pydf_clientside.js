@@ -8,6 +8,8 @@ dash_clientside.pydf = {
         _keys,
         _visibiilty_wrappers,
         _trigger,
+        _delete,
+        _add,
         formId,
         storeProgress,
         currentFormData,
@@ -15,6 +17,7 @@ dash_clientside.pydf = {
         restoreBehavior,
         debounce,
         _changesStore={},
+        _manageState=false
     ) => {
         const inputs = dash_clientside.callback_context.inputs_list[0].concat(
             dash_clientside.callback_context.inputs_list[1],
@@ -35,7 +38,16 @@ dash_clientside.pydf = {
         const hiddenPaths = dash_clientside.callback_context.inputs_list[3]
             .filter((x) => x.value.display == "none")
             .map((x) => x.id.meta.split("|")[0]);
-        const formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys);
+        const strId = sortedJson(
+            dash_clientside.callback_context.outputs_list[0].id,
+        );
+        let formData = dataFromInputs(inputs, hiddenPaths, dictItemKeys, _manageState ? formState[strId] || currentFormData : {});
+        if (formData === undefined) {
+            return [dash_clientside.no_update, dash_clientside.no_update];
+        }
+        if (_manageState) {
+            formState[strId] = formData;
+        }
 
         // Handle the storing/retrieval of form data if requested
         if (
@@ -50,7 +62,7 @@ dash_clientside.pydf = {
             // and update the form if it is different
             if (
                 // No data in the ids.main data
-                !currentFormData &&
+                !dash_clientside.callback_context.triggered_id &&
                 // And top-level form
                 dash_clientside.callback_context.outputs_list[0].id.parent == "" &&
                 // And not triggered by data-getvalue
@@ -337,6 +349,7 @@ dash_clientside.pydf = {
 };
 
 let valuesTimer = {};
+let formState = {};
 function valuesDebounce(func, timeout) {
     return (...args) => {
         const strId = sortedJson(args[0]);
@@ -345,12 +358,30 @@ function valuesDebounce(func, timeout) {
         }
         valuesTimer[strId] = setTimeout(() => {
             func.apply(this, args);
+            delete formState[strId];
         }, timeout);
     };
 }
 
-function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
-    if (inputs.length === 0) return {};
+// Make sure lodash is available as _
+function dataFromInputs(inputs, hiddenPaths, dictItemKeys, currentFormData) {
+    const id = dash_clientside.callback_context.triggered_id;
+    if (inputs.length === 0) {
+        return _.omitBy(currentFormData, _.isEmpty) || {}
+    }
+
+    function fixPathKeys(parts) {
+        for (let i = 0; i < parts.length; i++) {
+            const dictKey = parts.slice(0, i + 1).join(":");
+            if (dictItemKeys.hasOwnProperty(dictKey)) {
+                parts[i] = dictItemKeys[dictKey];
+            } else {
+                parts[i] = /^\d+$/.test(parts[i]) ? Number(parts[i]) : parts[i]
+            }
+        }
+        return parts;
+    }
+
     const firstKey = getFullpath(inputs[0].id.parent, inputs[0].id.field);
     const startsWithArray =
         firstKey.startsWith(`${PYDF_ROOTMODEL_ROOT}:`) &&
@@ -359,57 +390,64 @@ function dataFromInputs(inputs, hiddenPaths, dictItemKeys) {
         !Object.keys(dictItemKeys).includes(
             firstKey.split(":").slice(0, 2).join(":"),
         );
-    const formData = inputs.reduce(
-        (acc, val) => {
-            let key = getFullpath(val.id.parent, val.id.field);
-            if (hiddenPaths.some((p) => key.startsWith(`${p}:`) || key === p))
-                return acc;
-            const parts = key
-                .split(":")
-                .filter((p) => p !== PYDF_ROOTMODEL_ROOT);
-            key = parts.join(":");
-            let pointer = acc;
-            const matchingDictKeys = Object.fromEntries(
-                Object.entries(dictItemKeys)
-                    .map((entry) => [
-                        entry[0].replaceAll(`${PYDF_ROOTMODEL_ROOT}:`, ""),
-                        entry[1],
-                    ])
-                    .filter((entry) => key.startsWith(entry[0]))
-                    .map(([k, v]) => [k.split(":").length, v]),
-            );
-            parts.forEach((part, i) => {
-                // Update the list key if it is a dict entry
-                const nextMatch = Number(
-                    Object.keys(matchingDictKeys)
-                        .sort()
-                        .filter((x) => x >= i + 1)[0] || -1,
-                );
-                if (i + 1 == nextMatch) {
-                    part = matchingDictKeys[i + 1] || part;
+
+    let formData = currentFormData ? _.cloneDeep(currentFormData) : (startsWithArray ? [] : {});
+    if (_.isEmpty(formData)) {
+        formData = startsWithArray ? [] : {};
+    }
+
+    if (id) {
+        var path = getFullpath(id.parent, id.field).split(':').filter((p) => p !== PYDF_ROOTMODEL_ROOT);
+        if (id.meta && id.meta != 'discriminator') {
+            path.push(id.meta)
+        }
+        path = fixPathKeys(path)
+        if (id.component === "_pydf-list-field-delete") {
+            if (dash_clientside.callback_context.triggered[0].value === 1) {
+                if (typeof path[path.length - 1] === "number") {
+                    path = path.slice(0, -1);
                 }
-                if (i === parts.length - 1) {
-                    pointer[part] = val.value;
+                if (path.length === 0) {
+                    oldList = formData;
                 } else {
-                    const prt =
-                        i + 1 !== nextMatch && /^\d+$/.test(part)
-                            ? Number(part)
-                            : part;
-                    if (!pointer[prt]) {
-                        pointer[prt] =
-                            i + 2 !== nextMatch && /^\d+$/.test(parts[i + 1])
-                                ? []
-                                : {};
-                    }
-                    pointer = pointer[prt];
+                    oldList = _.get(formData, path, []);
                 }
-            });
-            return acc;
-        },
-        startsWithArray ? [] : {},
-    );
+                if (Array.isArray(oldList)) {
+                    const newList = oldList.slice(0, id.meta).concat(oldList.slice(id.meta + 1));
+                    if (newList.length > 0) {
+                        _.set(formData, path, newList);
+                    } else {
+                        _.unset(formData, path);
+                    }
+                } else {
+                    _.unset(formData, path);
+                }
+                return formData;
+            }
+        }
+        if (id && dictItemKeys.hasOwnProperty(`${getFullpath(id.parent, id.field)}:${id.meta}`)) {
+            _.unset(formData, path.slice(0, -1));
+        }
+    }
+    for (const val of inputs) {
+        let key = getFullpath(val.id.parent, val.id.field);
+        if (hiddenPaths.some((p) => key.startsWith(`${p}:`) || key === p)) {
+            continue;
+        }
+        var parts = key.split(":").filter((p) => p !== PYDF_ROOTMODEL_ROOT);
+        // Handle dictItemKeys replacement
+        if (val.id.meta && val.id.meta != 'discriminator') {
+            parts.push(val.id.meta)
+        }
+        parts = fixPathKeys(parts);
+        if (dictItemKeys.hasOwnProperty(key)) {
+            parts = parts.slice(0, -1).concat([dictItemKeys[key]]);
+        }
+        _.set(formData, parts, val.value);
+    }
     return formData;
 }
+
 
 function waitForElem(id) {
     return new Promise((resolve) => {
@@ -465,7 +503,16 @@ const uuid4 = () => {
 const updateModelListIds = (child, path, newIdx) => {
     if (typeof child !== "object" || child === null) return child;
     Object.entries(child).forEach(([key, val]) => {
-        if (key === "id" && typeof val === "object" && val.parent != null) {
+        if (typeof val === "string" && key === 'data') {
+            var oldVal = val;
+            val = val.replace(
+                new RegExp(`${path}:(\\d+)`),
+                `${path}:${newIdx}`,
+            );
+            if (oldVal !== val) {
+                child[key] = val;
+            }
+        } else if (key === "id" && typeof val === "object" && val.parent != null) {
             val.parent = val.parent.replace(
                 new RegExp(`${path}:(\\d+)`),
                 `${path}:${newIdx}`,

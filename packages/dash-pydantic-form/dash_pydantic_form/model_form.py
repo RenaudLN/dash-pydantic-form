@@ -157,6 +157,7 @@ class ModelForm(html.Div):
         fields_order: list[str] | None = None,
         store_progress: bool | Literal["local", "session"] = False,
         restore_behavior: Literal["auto", "notify"] = "notify",
+        manage_state: bool = False,
     ) -> None:
         if isinstance(item, type) and issubclass(item, RootModel):
             item = convert_root_to_base_model(item)
@@ -232,6 +233,7 @@ class ModelForm(html.Div):
 
             children.extend(
                 self._get_meta_children(
+                    item=item,
                     fields_repr=fields_repr,
                     form_layout=form_layout,
                     aio_id=aio_id,
@@ -240,6 +242,7 @@ class ModelForm(html.Div):
                     form_cols=form_cols,
                     data_model=data_model,
                     restore_behavior=restore_behavior,
+                    manage_state=manage_state,
                 )
             )
 
@@ -356,6 +359,7 @@ class ModelForm(html.Div):
     def _get_meta_children(  # noqa: PLR0913
         cls,
         *,
+        item: type[BaseModel] | UnionType,
         fields_repr: dict[str, dict | BaseField],
         form_layout: FormLayout | None,
         aio_id: str,
@@ -364,6 +368,7 @@ class ModelForm(html.Div):
         form_cols: int,
         data_model: type[BaseModel] | UnionType,
         restore_behavior: Literal["auto", "notify"],
+        manage_state: bool = False,
     ):
         """Get 'meta' form children used for passing data to callbacks."""
         children = []
@@ -376,9 +381,12 @@ class ModelForm(html.Div):
                     **{"data-behavior": restore_behavior},
                 )
             )
-            children.append(dcc.Store(id=cls.ids.main(aio_id, form_id)))
+            children.append(
+                dcc.Store(id=cls.ids.main(aio_id, form_id), data=item.model_dump() if item is not None else {})
+            )
             children.append(dcc.Store(id=cls.ids.errors(aio_id, form_id)))
             children.append(dcc.Store(id=cls.ids.change_store(aio_id, form_id)))
+            children.append(dcc.Store(id=cls.ids.manage_state(aio_id, form_id), data=manage_state))
             if is_subclass(data_model, BaseModel):
                 model_name = str(data_model)
             elif get_origin(data_model) in [Union, UnionType]:
@@ -402,6 +410,7 @@ class ModelForm(html.Div):
                     "form_layout": form_layout.model_dump(mode="json") if form_layout else None,
                     "fields_repr": fields_repr_dicts,
                     "form_cols": form_cols,
+                    "manage_state": manage_state,
                 },
                 id=cls.ids.form_specs_store(aio_id, form_id, path),
             )
@@ -453,6 +462,8 @@ clientside_callback(
     Input(fields.Dict.ids.item_key(MATCH, MATCH, ALL, ALL, ALL), "value"),
     Input(BaseField.ids.visibility_wrapper(MATCH, MATCH, ALL, ALL, ALL), "style"),
     Input(ModelForm.ids.form(MATCH, MATCH), "data-getvalues"),
+    Input(fields.List.ids.delete(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
+    Input(fields.List.ids.add(MATCH, MATCH, ALL, ALL, ALL), "n_clicks"),
     State(ModelForm.ids.form(MATCH, MATCH), "id"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-storeprogress"),
     State(ModelForm.ids.main(MATCH, MATCH), "data"),
@@ -460,6 +471,7 @@ clientside_callback(
     State(ModelForm.ids.restore_wrapper(MATCH, MATCH), "data-behavior"),
     State(ModelForm.ids.form(MATCH, MATCH), "data-debounce"),
     State(ModelForm.ids.change_store(MATCH, MATCH), "data"),
+    State(ModelForm.ids.manage_state(MATCH, MATCH), "data"),
 )
 
 clientside_callback(
@@ -586,6 +598,7 @@ def update_form_wrapper_contents(
         fields_repr=fields_repr,
         form_cols=form_specs["form_cols"],
         data_model=None if isinstance(model_name, str) else Union[tuple(model_union)],  # noqa: UP007
+        manage_state=form_specs["manage_state"],
     )
 
     return form.children.children
