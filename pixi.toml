@@ -16,7 +16,7 @@ dash-pydantic-form = { path = "packages/dash-pydantic-form", editable = true }
 dash-pydantic-utils = { path = "packages/dash-pydantic-utils", editable = true }
 
 [feature.form.dependencies]
-dash = ">=3.0.3,<4"
+dash = ">=4.0.0,<5"
 dash-mantine-components = ">=1.1,<3"
 dash-iconify = "*"
 dash-ag-grid = ">=31.3.1"
@@ -63,7 +63,7 @@ dash_testing_stub = ">=0.0.2"
 
 [feature.form.pypi-dependencies]
 # Dash testing
-dash = {extras = ["testing"], version = ">=3,<4"}
+dash = { version = "*", extras = ["testing"] }
 
 [feature.form2.pypi-dependencies]
 # Dash testing
