@@ -5,6 +5,8 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -262,8 +264,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
-      - pypi: packages/dash-pydantic-form
-      - pypi: packages/dash-pydantic-utils
+      - pypi: ./packages/dash-pydantic-form
+      - pypi: ./packages/dash-pydantic-utils
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -507,8 +509,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
-      - pypi: packages/dash-pydantic-form
-      - pypi: packages/dash-pydantic-utils
+      - pypi: ./packages/dash-pydantic-form
+      - pypi: ./packages/dash-pydantic-utils
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -770,6 +772,8 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -809,7 +813,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/comm-0.2.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.18-py310hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cryptography-45.0.4-py310h6c63255_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.0.0-pyhd8ed1ab_0.conda
@@ -1027,8 +1031,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
-      - pypi: packages/dash-pydantic-form
-      - pypi: packages/dash-pydantic-utils
+      - pypi: ./packages/dash-pydantic-form
+      - pypi: ./packages/dash-pydantic-utils
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -1066,7 +1070,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/comm-0.2.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.18-py310hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/cryptography-45.0.4-py310h69cbf43_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.0.0-pyhd8ed1ab_0.conda
@@ -1272,8 +1276,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
-      - pypi: packages/dash-pydantic-form
-      - pypi: packages/dash-pydantic-utils
+      - pypi: ./packages/dash-pydantic-form
+      - pypi: ./packages/dash-pydantic-utils
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
@@ -1311,7 +1315,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/comm-0.2.3-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.19-py310hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cryptography-46.0.3-py310hff68572_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.3.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-32.3.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.4.1-pyhd8ed1ab_0.conda
@@ -2544,33 +2548,9 @@ packages:
   - pkg:pypi/dash?source=hash-mapping
   size: 5444549
   timestamp: 1737726641971
-- conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.0.4-pyhd8ed1ab_0.conda
-  sha256: b01218bf61bf02ea0fb06e33e3e3b5138a73010a65d4bbef390490b64fdad0a1
-  md5: 4ce1a2bc141ebd8007b3febb15f74bf3
-  depends:
-  - flask >=1.0.4
-  - importlib-metadata
-  - nest-asyncio
-  - plotly >=5.0.0
-  - python >=3.9
-  - requests
-  - retrying
-  - setuptools
-  - typing_extensions >=4.1.1
-  - werkzeug
-  constrains:
-  - dash-core-components >=2.0.0
-  - dash-html-components >=2.0.0
-  - dash_table >=5.0.0
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/dash?source=hash-mapping
-  size: 5591399
-  timestamp: 1745761105772
-- conda: https://conda.anaconda.org/conda-forge/noarch/dash-3.3.0-pyhd8ed1ab_0.conda
-  sha256: a8e6b531b5fb9582ce2087be74ebd57b095e9db4b1d25d03106b3259fe3259c5
-  md5: 1e4dab5c51cef84cf867108cddb09835
+- conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
+  sha256: 33561c1dff52be9da5c8e0ee7e9c0774e0203b82e0fd9e765c2dccd55ab16ef4
+  md5: d35c68d022b2520994f7e02b4f3db133
   depends:
   - flask >=1.0.4
   - importlib-metadata
@@ -2583,15 +2563,15 @@ packages:
   - typing_extensions >=4.1.1
   - werkzeug
   constrains:
-  - dash-html-components >=2.0.0
   - dash-core-components >=2.0.0
+  - dash-html-components >=2.0.0
   - dash_table >=5.0.0
   license: MIT
   license_family: MIT
   purls:
   - pkg:pypi/dash?source=hash-mapping
-  size: 5787240
-  timestamp: 1763190015818
+  size: 5235402
+  timestamp: 1770220645911
 - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
   sha256: f5ef5c01c93365929fddd4cdf981fcedb604a12940e75391f88acc3309c23c87
   md5: 8eca43325acc263f2d9bace6b92e8bd7
@@ -2678,53 +2658,23 @@ packages:
   timestamp: 1766257087079
 - pypi: ./packages/dash-pydantic-form
   name: dash-pydantic-form
-  version: 0.16.0.post1.dev8+g1f09237.d20250805
-  sha256: 1f3137629759d30d36e100ead4b4db519ddbb1f68a355e5d62e1673987631b43
+  version: 0.18.3.post1.dev0+g48a287c83.d20260225
+  sha256: d7045656f90e0a1822c507c25250a015c8fc897572cb5049b3888bc8f9507383
   requires_dist:
   - dash-ag-grid>=31
   - dash-iconify
   - dash-mantine-components>=0.15,<3
   - dash-pydantic-utils
-  - dash>=2.16,<4
+  - dash>=2.16,<5
   - fsspec
   - pydantic==2.*
   - dash[testing] ; extra == 'dev'
   - pre-commit ; extra == 'dev'
   - pytest ; extra == 'dev'
   requires_python: '>=3.10,<3.14'
-  editable: true
-- pypi: packages/dash-pydantic-form
-  name: dash-pydantic-form
-  version: 0.17.4.post1.dev20+g869f14f
-  sha256: 1f3137629759d30d36e100ead4b4db519ddbb1f68a355e5d62e1673987631b43
-  requires_dist:
-  - dash-ag-grid>=31
-  - dash-iconify
-  - dash-mantine-components>=0.15,<3
-  - dash-pydantic-utils
-  - dash>=2.16,<4
-  - fsspec
-  - pydantic==2.*
-  - dash[testing] ; extra == 'dev'
-  - pre-commit ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  requires_python: '>=3.10,<3.14'
-  editable: true
-- pypi: packages/dash-pydantic-utils
-  name: dash-pydantic-utils
-  version: 0.15.2.post1.dev1+g1fd96b2.d20250423
-  sha256: ecd2a6f644153955ff9e91f2b8631bfd957338d843028bf956f4e3ba5c6769e4
-  requires_dist:
-  - pydantic==2.*
-  - pre-commit ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - numpy ; extra == 'pandas'
-  - pandas ; extra == 'pandas'
-  requires_python: '>=3.10,<3.14'
-  editable: true
 - pypi: ./packages/dash-pydantic-utils
   name: dash-pydantic-utils
-  version: 0.16.0.post1.dev8+g1f09237.d20250805
+  version: 0.18.3.post1.dev0+g48a287c83.d20260225
   sha256: ecd2a6f644153955ff9e91f2b8631bfd957338d843028bf956f4e3ba5c6769e4
   requires_dist:
   - pydantic==2.*
@@ -2733,7 +2683,6 @@ packages:
   - numpy ; extra == 'pandas'
   - pandas ; extra == 'pandas'
   requires_python: '>=3.10,<3.14'
-  editable: true
 - pypi: https://files.pythonhosted.org/packages/42/67/56de4c8eab3932150fb046250dc25f7c5d772958352e78c0192bb2b328e8/dash_testing_stub-0.0.2-py3-none-any.whl
   name: dash-testing-stub
   version: 0.0.2
