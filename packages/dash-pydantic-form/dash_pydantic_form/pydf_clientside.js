@@ -334,6 +334,16 @@ dash_clientside.pydf = {
             ],
         };
     },
+    getClientsideData: async (__, getterName, id) => {
+        if (!getterName) {
+            return dash_clientside.no_update;
+        }
+        if (!window.pydf_usage || !window.pydf_usage[getterName]) {
+            console.warn(`Getter ${getterName} not found in pydf_usage`);
+            return dash_clientside.no_update;
+        }
+        return window.pydf_usage[getterName](id);
+    }
 };
 
 let valuesTimer = {};
