@@ -463,7 +463,7 @@ class TableField(BaseField):
                     "cellEditorParams": {
                         "component": component_cls(data=options, **select_params),
                         "options": options,
-                        "dynamicOptions": dynamic_options.get(field_name)
+                        "dynamicOptions": dynamic_options.get(field_name),
                     },
                     "cellRenderer": "PydfOptionsRenderer",
                     "cellClass": {"function": "selectRequiredCell(params)"} if required_field else None,
@@ -503,7 +503,7 @@ class TableField(BaseField):
             elif isinstance(field_repr, MonthField):
                 picker_cls = dmc.MonthPickerInput
                 kwargs["valueFormat"] = "YYYY-MM"
-            
+
             is_picker = picker_cls in (dmc.DateTimePicker, dmc.YearPickerInput, dmc.MonthPickerInput)
             if is_picker:
                 kwargs["popoverProps"] = {"withinPortal": False}
