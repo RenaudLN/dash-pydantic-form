@@ -10,9 +10,11 @@ from types import UnionType
 from typing import Annotated, Any, ClassVar, Literal, Union, get_args, get_origin
 
 import annotated_types
+import dash
 import dash_mantine_components as dmc
-from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, html
+from dash import ALL, MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 from dash.development.base_component import Component
+from packaging.version import parse as parse_version
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_serializer
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -194,6 +196,15 @@ class BaseField(BaseModel):
             item=item, aio_id=aio_id, form_id=form_id, field=field, parent=parent, field_info=field_info
         )
         visible = self.visible
+
+        # If a clientside data getter is specified, add a dcc.Store for the data getter field
+        if getattr(self, "clientside_data_getter", None) or parse_version(dash.__version__) < parse_version("3.1"):
+            data_getter_store = dcc.Store(
+                id=common_ids.data_getter_field(aio_id=aio_id, form_id=form_id, field=field, parent=parent),
+                data=getattr(self, "clientside_data_getter", None),
+            )
+            # Compose the output as a Div containing both the Store and the field inputs
+            inputs = [inputs, data_getter_store]
 
         if visible is None or visible is True:
             return html.Div(
@@ -630,6 +641,11 @@ class SelectField(BaseField):
 
     data_getter: str | None = Field(
         default=None, description="Function to retrieve a list of options. This function takes no argument."
+    )
+    clientside_data_getter: str | None = Field(
+        default=None,
+        description="Clientside function registered in window.pydf_usage "
+        "to retrieve a list of options. This function takes no argument.",
     )
     options_labels: dict | None = Field(
         default=None, description="Mapper from option to label. Especially useful for Literals and Enums."
