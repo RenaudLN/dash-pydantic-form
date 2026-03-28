@@ -3,6 +3,8 @@ var dag = (window.dashAgGridComponentFunctions =
 
 var dagfuncs = (window.dashAgGridFunctions = window.dashAgGridFunctions || {});
 
+const {useRef, createElement, useEffect, useCallback, forwardRef, useMemo} = React
+
 dag.PydfDeleteButton = (props) => {
   const onClick = () => {
     props.api.applyTransactionAsync({ remove: [props.node.data] });
@@ -90,295 +92,6 @@ dag.PydfOptionsRenderer = (props) => {
   return React.createElement("span", {}, label);
 };
 
-dagfuncs.PydfDropdown = React.forwardRef((props, ref) => {
-  const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = (colDef.cellEditorParams || {});
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-Select-input')
-    : eGridCell.querySelector('.mantine-Select-input');
-    inp.tabIndex = "1";
-    inp.focus();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
-  }, [])
-
-  const setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(value)
-    setTimeout(() => stopEditing(), 1);
-  }
-
-  let options_ = options
-  if (componentProps.dynamicOptions) {
-    try {
-      const { namespace, function_name } = componentProps.dynamicOptions
-      const optionsFunc = window.dash_clientside[namespace][function_name]
-      options_ = optionsFunc(options, node.data, colDef.cellEditorParams)
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const onKeyDown = (event) => {
-    if (event.key === "Escape") {
-      stopEditing();
-    }
-    if (event.key === "Tab") {
-      let success;
-      if (event.shiftKey) {
-        success = props.api.tabToPreviousCell();
-      } else {
-        success = props.api.tabToNextCell();
-      }
-      event.preventDefault();
-    }
-  };
-
-  return React.createElement(window.dash_mantine_components.Select, {
-    setProps,
-    onKeyDown,
-    data: options_,
-    value: value,
-    clearable: componentProps.clearable || true,
-    searchable: componentProps.searchable || true,
-    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-    allowDeselect: componentProps.allowDeselect || true,
-    style: { width: column.actualWidth },
-  });
-});
-
-dagfuncs.PydfMultiSelect = React.forwardRef((props, ref) => {
-  const { value: initialValue, options, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = (colDef.cellEditorParams || {});
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-MultiSelect-input')
-    : eGridCell.querySelector('.mantine-MultiSelect-input');
-    inp.tabIndex = "1";
-    inp.click();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
-  }, [])
-
-  const setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(value)
-    setTimeout(() => stopEditing(), 1);
-  }
-
-  let options_ = options
-  if (componentProps.dynamicOptions) {
-    try {
-      const { namespace, function_name } = componentProps.dynamicOptions
-      const optionsFunc = window.dash_clientside[namespace][function_name]
-      options_ = optionsFunc(options, node.data, colDef.cellEditorParams)
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const onKeyDown = (event) => {
-    if (event.key === "Escape") {
-      stopEditing();
-    }
-    if (event.key === "Tab") {
-      let success;
-      if (event.shiftKey) {
-        success = props.api.tabToPreviousCell();
-      } else {
-        success = props.api.tabToNextCell();
-      }
-      event.preventDefault();
-    }
-  };
-
-  return React.createElement(window.dash_mantine_components.MultiSelect, {
-    setProps,
-    onKeyDown,
-    data: options_,
-    value: value || [],
-    clearable: componentProps.clearable || true,
-    searchable: componentProps.searchable || true,
-    selectFirstOptionOnChange: componentProps.selectFirstOptionOnChange || true,
-    style: { width: column.actualWidth },
-  });
-});
-
-dagfuncs.PydfDatePicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-DateInput-input')
-    : eGridCell.querySelector('.mantine-DateInput-input');
-    inp.focus()
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.DateInput,
-    {
-      ...componentProps,
-      value,
-      returnFocus: true,
-    }
-  );
-});
-
-dagfuncs.PydfDatetimePicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-DateTimePicker-input')
-    : eGridCell.querySelector('.mantine-DateTimePicker-input');
-    inp.click();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.DateTimePicker,
-    {
-      ...componentProps,
-      value,
-      popoverProps: {withinPortal: false},
-      style: { width: column.actualWidth },
-    }
-  );
-});
-
-dagfuncs.PydfTimePicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-TimeInput-input')
-    : eGridCell.querySelector('.mantine-TimeInput-input');
-    inp.focus();
-    colDef.suppressKeyboardEvent = (p) => {
-      return p.editing;
-    };
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.TimeInput,
-    {
-      ...componentProps,
-      value,
-    }
-  );
-});
-
-dagfuncs.PydfYearPicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-YearPickerInput-input')
-    : eGridCell.querySelector('.mantine-YearPickerInput-input');
-    inp.click();
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
-    setTimeout(() => stopEditing(), 1);
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.YearPickerInput,
-    {
-      ...componentProps,
-      value,
-      returnFocus:true,
-      popoverProps: {withinPortal: false},
-      style: { width: column.actualWidth },
-      valueFormat: "YYYY"
-    }
-  );
-});
-
-dagfuncs.PydfMonthPicker = React.forwardRef((props, ref) => {
-  const { value: initialValue, colDef, eGridCell, node, column, stopEditing } = props;
-  const [value, setValue] = React.useState(initialValue);
-  const componentProps = {...colDef.cellEditorParams};
-
-  React.useEffect(() => {
-    const inp = colDef.cellEditorPopup
-    ? eGridCell.closest('div.ag-theme-alpine').querySelector('.ag-popup-editor .mantine-MonthPickerInput-input')
-    : eGridCell.querySelector('.mantine-MonthPickerInput-input');
-    inp.click();
-  }, []);
-
-  componentProps.setProps = (newProps) => {
-    if (typeof newProps.value === 'undefined') return
-    delete colDef.suppressKeyboardEvent;
-    node.setDataValue(column.colId, newProps.value);
-    setValue(newProps.value)
-    setTimeout(() => stopEditing(), 1);
-  };
-
-
-  return React.createElement(
-    window.dash_mantine_components.MonthPickerInput,
-    {
-      ...componentProps,
-      value,
-      returnFocus:true,
-      popoverProps: {withinPortal: false},
-      style: { width: column.actualWidth },
-      valueFormat: "YYYY-MM"
-    }
-  );
-});
-
 
 dagfuncs.selectRequiredCell = (params) => (
   params.colDef.cellEditorParams?.options || []
@@ -399,7 +112,8 @@ dagfuncs.PydfDateComparator = (filterDate, cellValue) => {
 };
 
 dagfuncs.tableKeyboardNavigation = (props) => {
-  if (!props.api.gos.gridOptions.context.rowsEditable) return;
+  const context = props.api.gos ? props.api.gos.gridOptions.context : props.context
+  if (!context.rowsEditable) return;
   if (
     props.column.userProvidedColDef?.cellRenderer === "PydfDeleteButton" &&
     ["Enter", "NumpadEnter", "Space"].includes(props.event.code)
@@ -407,7 +121,7 @@ dagfuncs.tableKeyboardNavigation = (props) => {
     props.api.applyTransactionAsync({ remove: [props.node.data] });
     return
   }
-  if (!props.api.gos.gridOptions.context.autoAddRows) return;
+  if (!context.autoAddRows) return;
   const displayedColumns = props.api.getAllDisplayedColumns();
   if (
     props.event.code === "Tab" &&
@@ -434,3 +148,83 @@ dagfuncs.tableKeyboardNavigation = (props) => {
     });
   }
 };
+
+dagfuncs.AllFunctionalComponentEditors = forwardRef(({ value, ...params }, ref) => {
+    let comp = params.colDef.cellEditorParams.component;
+    const node = useRef(params.api.getRowNode(params.node.id));
+    const newValue = useRef(value);
+    const escaped = useRef(null);
+    const editorRef = useRef(null);
+    const unsuppressedKeys = comp.type == 'Select' ? ['Tab'] : ['Enter', 'Tab']
+
+    if (params.colDef.cellEditorParams.dynamicOptions) {
+      try {
+        const { namespace, function_name } = params.colDef.cellEditorParams.dynamicOptions
+        const optionsFunc = window.dash_clientside[namespace][function_name]
+        comp = {
+          ...comp, props: {
+            ...comp.props, data: optionsFunc(params.colDef.cellEditorParams.options, node.current.data, params.colDef.cellEditorParams)
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    const handleStop = ({ event, ...params }) => {
+        setTimeout(() => {
+            if (!escaped.current) {
+                node.current.setDataValue(params.column.colId, newValue.current);
+            }
+        }, 1);
+    };
+
+    if (params.colDef.cellEditorPopup) {
+        comp['props']['style'] = { ...comp.props?.style, width: params.column.actualWidth - 2 };
+    }
+
+    const setProps = (propsToSet) => {
+        if ('value' in propsToSet) {
+            newValue.current = propsToSet.value;
+        }
+    };
+
+    const handleKeyDown = ({ key, ...event }) => {
+        if (key == "Escape") {
+            escaped.current = true;
+        }
+    };
+
+    useEffect(() => {
+        params.api.addEventListener('cellEditingStopped', handleStop);
+        document.addEventListener('keydown', handleKeyDown);
+        params.colDef.suppressKeyboardEvent = (params) => params.editing && !unsuppressedKeys.includes(params.event.key);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            delete params.colDef.suppressKeyboardEvent;
+            params.api.removeEventListener('cellEditingStopped', handleStop);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (editorRef.current) {
+            if (editorRef.current.querySelector('button.mantine-Input-input')) {
+                editorRef.current.querySelector('button.mantine-Input-input').click()
+            } else if (editorRef.current.querySelector('input')) {
+                editorRef.current.querySelector('input').focus();
+            } else {
+                editorRef.current.focus()
+            }
+        }
+    }, [editorRef.current]);
+
+    const el = useMemo(() =>
+        createElement(
+            'div',
+            { ref: editorRef, tabIndex: 0 },
+            createElement(window[comp.namespace][comp.type], { ...comp.props, setProps, value })
+        ),
+    [comp]);
+
+    return el;
+});

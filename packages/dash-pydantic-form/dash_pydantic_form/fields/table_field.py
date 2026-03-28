@@ -451,15 +451,20 @@ class TableField(BaseField):
                 }
                 for x in data
             ]
-            params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
-            if self.dynamic_options and field_name in self.dynamic_options:
-                params["dynamicOptions"] = self.dynamic_options[field_name]
-            editor = "PydfMultiSelect" if isinstance(field_repr, MultiSelectField | ChecklistField) else "PydfDropdown"
+            select_params = {k: v for k, v in field_repr.input_kwargs.items() if k not in ["data"]}
+            select_params["searchable"] = True
+            select_params["selectFirstOptionOnChange"] = True
+            dynamic_options = self.dynamic_options or {}
+            component_cls = dmc.MultiSelect if isinstance(field_repr, MultiSelectField | ChecklistField) else dmc.Select
             column_def.update(
                 {
-                    "cellEditor": {"function": editor},
+                    "cellEditor": {"function": "AllFunctionalComponentEditors"},
                     "cellEditorPopup": False,
-                    "cellEditorParams": {"options": options, **params},
+                    "cellEditorParams": {
+                        "component": component_cls(data=options, **select_params),
+                        "options": options,
+                        "dynamicOptions": dynamic_options.get(field_name)
+                    },
                     "cellRenderer": "PydfOptionsRenderer",
                     "cellClass": {"function": "selectRequiredCell(params)"} if required_field else None,
                 }
@@ -484,23 +489,30 @@ class TableField(BaseField):
         if annotation in [int, float]:
             column_def.update({"filter": "agNumberColumnFilter"})
 
-        if annotation in [date, datetime, time] or isinstance(field_repr, YearField | MonthField):
-            picker_function = {
-                date: "PydfDatePicker",
-                datetime: "PydfDatetimePicker",
-                time: "PydfTimePicker",
+        if annotation in [date, datetime, time]:
+            picker_cls = {
+                date: dmc.DateInput,
+                datetime: dmc.DateTimePicker,
+                time: dmc.TimeInput,
             }[annotation]
 
+            kwargs = {**field_repr.input_kwargs}
             if isinstance(field_repr, YearField):
-                picker_function = "PydfYearPicker"
+                picker_cls = dmc.YearPickerInput
+                kwargs["valueFormat"] = "YYYY"
             elif isinstance(field_repr, MonthField):
-                picker_function = "PydfMonthPicker"
+                picker_cls = dmc.MonthPickerInput
+                kwargs["valueFormat"] = "YYYY-MM"
+            
+            is_picker = picker_cls in (dmc.DateTimePicker, dmc.YearPickerInput, dmc.MonthPickerInput)
+            if is_picker:
+                kwargs["popoverProps"] = {"withinPortal": False}
 
             column_def.update(
                 {
-                    "cellEditor": {"function": picker_function},
-                    "cellEditorPopup": annotation is datetime or isinstance(field_repr, YearField | MonthField),
-                    "cellEditorParams": field_repr.input_kwargs,
+                    "cellEditor": {"function": "AllFunctionalComponentEditors"},
+                    "cellEditorPopup": is_picker,
+                    "cellEditorParams": {"component": picker_cls(**kwargs)},
                     "filter": "agDateColumnFilter",
                     "filterParams": {"comparator": {"function": "PydfDateComparator"}},
                 },

@@ -814,7 +814,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.18-py310hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cryptography-45.0.4-py310h6c63255_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-33.3.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h3c4dab8_0.conda
@@ -1071,7 +1071,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.18-py310hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/cryptography-45.0.4-py310h69cbf43_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-31.3.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-33.3.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/debugpy-1.8.14-py310h853098b_0.conda
@@ -1316,7 +1316,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.10.19-py310hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cryptography-46.0.3-py310hff68572_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-4.0.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-32.3.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-33.3.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dash-mantine-components-2.4.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/debugpy-1.8.19-py310h699e580_0.conda
@@ -2596,6 +2596,18 @@ packages:
   - pkg:pypi/dash-ag-grid?source=hash-mapping
   size: 3020685
   timestamp: 1766178167532
+- conda: https://conda.anaconda.org/conda-forge/noarch/dash-ag-grid-33.3.3-pyhd8ed1ab_0.conda
+  sha256: b0c6dd8ea883eab1bc44589f2154e8afe0ec4ef4bef190259a255a9ed4f5b7ea
+  md5: 6580a180003f063b24c84c1c0d478499
+  depends:
+  - dash >=2
+  - python >=3.10
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/dash-ag-grid?source=hash-mapping
+  size: 3665166
+  timestamp: 1769050528947
 - conda: https://conda.anaconda.org/conda-forge/noarch/dash-iconify-0.1.2-pyhd8ed1ab_0.conda
   sha256: dce872be400e6ee72505c30c60e6c215ee6c3e4038449aa3eb8122c392d9d175
   md5: 462fd3653b5ca7fd07072c632d0361d6
@@ -2658,7 +2670,7 @@ packages:
   timestamp: 1766257087079
 - pypi: ./packages/dash-pydantic-form
   name: dash-pydantic-form
-  version: 0.18.3.post1.dev0+g48a287c83.d20260225
+  version: 0.18.3.post1.dev1+g3e2119369
   sha256: d7045656f90e0a1822c507c25250a015c8fc897572cb5049b3888bc8f9507383
   requires_dist:
   - dash-ag-grid>=31
@@ -2674,7 +2686,7 @@ packages:
   requires_python: '>=3.10,<3.14'
 - pypi: ./packages/dash-pydantic-utils
   name: dash-pydantic-utils
-  version: 0.18.3.post1.dev0+g48a287c83.d20260225
+  version: 0.18.3.post1.dev1+g3e2119369
   sha256: ecd2a6f644153955ff9e91f2b8631bfd957338d843028bf956f4e3ba5c6769e4
   requires_dist:
   - pydantic==2.*
