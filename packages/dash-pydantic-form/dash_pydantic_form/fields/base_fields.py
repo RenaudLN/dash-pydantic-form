@@ -164,7 +164,7 @@ class BaseField(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_with_cls_name(self, base_serializer, info):
         """Add class name in model_dump."""
-        return {"__class__": str(self.__class__)} | base_serializer(self, info)
+        return {"__class__": str(self.__class__)} | base_serializer(self)
 
     @classmethod
     def load(cls, data):
