@@ -162,7 +162,7 @@ class BaseField(BaseModel):
         visibility_wrapper = partial(common_ids.field_dependent_id, "_pydf-field-visibility-wrapper")
 
     @model_serializer(mode="wrap")
-    def serialize_with_cls_name(self, base_serializer, info):
+    def serialize_with_cls_name(self, base_serializer):
         """Add class name in model_dump."""
         return {"__class__": str(self.__class__)} | base_serializer(self)
 
