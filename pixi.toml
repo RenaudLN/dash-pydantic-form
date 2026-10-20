@@ -42,7 +42,7 @@ ipykernel = "*"
 pixi-kernel = "*"
 gcsfs = "*"  # For Path field in usage.py
 # Build
-twine = "*"
+twine = ">=7"
 importlib_metadata = "<8"
 # Dash testing
 beautifulsoup4 = ">=4.8.2"
