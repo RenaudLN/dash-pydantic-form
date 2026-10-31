@@ -343,7 +343,7 @@ def test_du0009_deselect_discriminator(dash_duo):
     dash_duo.start_server(app)
     discriminator_id = ids.value_field(aio_id, form_id, "species", parent="pet", meta="discriminator")
     set_select(dash_duo, discriminator_id, "cat")
-    dash_duo.wait_for_element(f"#{stringify_id(ids.checked_field(aio_id, form_id, 'meows', parent='pet'))}")
+    dash_duo.wait_for_element_by_id(stringify_id(ids.checked_field(aio_id, form_id, "meows", parent="pet")))
     time.sleep(0.5)
     n_before = n_updates
     # Clicking the selected option again deselects it
