@@ -3,11 +3,13 @@ from typing import Annotated, Literal
 
 import dash_mantine_components as dmc
 from dash import Dash
+from flask import request
 from pydantic import BaseModel, Field
 from selenium.webdriver.common.by import By
 from tests.utils import (
     check_ids_absent,
     check_ids_exist,
+    find_ids,
     set_checkbox,
     set_input,
     set_select,
@@ -303,3 +305,51 @@ def test_du0008_list_union_in_list_union(dash_duo):
     time.sleep(0.5)
     set_select(dash_duo, ids.value_field(aio_id, form_id, "kind", parent="bases:1", meta="discriminator"), "base2")
     set_input(dash_duo, ids.value_field(aio_id, form_id, "name", parent="bases:1"), "yay")
+
+
+def test_du0009_deselect_discriminator(dash_duo):
+    """Test that deselecting a discriminator does not trigger an infinite callback loop."""
+
+    class Cat(BaseModel):
+        species: Literal["cat"]
+        meows: bool = True
+
+    class Dog(BaseModel):
+        species: Literal["dog"]
+        barks: bool = True
+
+    class Basic(BaseModel):
+        pet: Cat | Dog | None = Field(title="Pet", discriminator="species", default=None)
+
+    app = Dash(__name__)
+    aio_id = "basic"
+    form_id = "form"
+    app.layout = dmc.MantineProvider(ModelForm(Basic, aio_id=aio_id, form_id=form_id))
+
+    n_updates = 0
+
+    @app.server.before_request
+    def count_updates():
+        nonlocal n_updates
+        if request.path.endswith("_dash-update-component"):
+            n_updates += 1
+
+    # The discriminator value should be explicitly set even when None
+    (select,), _ = find_ids(
+        app.layout, [ids.value_field(aio_id, form_id, "species", parent="pet", meta="discriminator")], True
+    )
+    assert "value" in select.to_plotly_json()["props"]
+
+    dash_duo.start_server(app)
+    discriminator_id = ids.value_field(aio_id, form_id, "species", parent="pet", meta="discriminator")
+    set_select(dash_duo, discriminator_id, "cat")
+    dash_duo.wait_for_element(f"#{stringify_id(ids.checked_field(aio_id, form_id, 'meows', parent='pet'))}")
+    time.sleep(0.5)
+    n_before = n_updates
+    # Clicking the selected option again deselects it
+    set_select(dash_duo, discriminator_id, "cat")
+    time.sleep(2)
+    assert n_updates - n_before < 5
+    assert not dash_duo.driver.find_elements(
+        By.ID, stringify_id(ids.checked_field(aio_id, form_id, "meows", parent="pet"))
+    )

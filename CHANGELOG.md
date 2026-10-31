@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Allow pydantic's `RootModel` in the `ModelForm`
 
+### Fixed
+- Infinite callback loop when deselecting a discriminated union field with Dash >= 4.5
+
 ## [0.15.3] - 2025-04-23
 ### Changed
 - Allow python 3.13 in pypi
