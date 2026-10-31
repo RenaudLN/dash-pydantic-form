@@ -276,7 +276,10 @@ class BaseField(BaseModel):
                 if self.base_component not in NO_LABEL_COMPONENTS
                 else {}
             )
-            | ({"value": value} if value is not None else {})
+            # NOTE: Always set the discriminator value, even when None. Otherwise the re-rendered
+            # component sets its value to null on mount, which re-triggers the discriminator callback
+            # (infinite loop with Dash >= 4.5)
+            | ({"value": value} if value is not None or self.field_id_meta == "discriminator" else {})
         )
 
         component = self.base_component(
